@@ -1,0 +1,177 @@
+[
+  {
+    "id": "CLAUSTROPHOBIC",
+    "traits": "Claustrophobic",
+    "desc": "This Duplicant feels suffocated in spaces fewer than four tiles high or three tiles wide"
+  },
+  {
+    "id": "FASHIONABLE",
+    "traits": "Fashionista",
+    "desc": "This Duplicant dies a bit inside when forced to wear unstylish clothing"
+  },
+  {
+    "id": "CLIMACOPHOBIC",
+    "traits": "Vertigo Prone",
+    "desc": "Climbing ladders more than four tiles tall makes this Duplicant's stomach do flips"
+  },
+  {
+    "id": "SOLITARYSLEEPER",
+    "traits": "Solitary Sleeper",
+    "desc": "This Duplicant prefers to sleep alone"
+  },
+  {
+    "id": "PREFERSWARMER",
+    "traits": "Skinny",
+    "desc": "This Duplicant doesn't have much Insulation, so they are more Temperature sensitive than others"
+  },
+  {
+    "id": "PREFERSCOOLER",
+    "traits": "Pudgy",
+    "desc": "This Duplicant has some extra Insulation, so the room Temperature affects them a little less"
+  },
+  {
+    "id": "SENSITIVEFEET",
+    "traits": "Delicate Feetsies",
+    "desc": "This Duplicant is a sensitive sole and would rather walk on tile than raw bedrock"
+  },
+  {
+    "id": "WORKAHOLIC",
+    "traits": "Workaholic",
+    "desc": "This Duplicant gets antsy when left idle"
+  },
+  {
+    "id": "FUSSY",
+    "traits": "Fussy",
+    "desc": "Nothing's ever quite good enough for this Duplicant"
+  },
+  {
+    "id": "AGGRESSIVE",
+    "traits": "Destructive",
+    "desc": "This Duplicant handles stress by taking their frustrations out on defenseless machines"
+  },
+  {
+    "id": "UGLYCRIER",
+    "traits": "Ugly Crier",
+    "desc": "If this Duplicant gets too Stressed it won't be pretty"
+  },
+  {
+    "id": "BINGEEATER",
+    "traits": "Binge Eater",
+    "desc": "This Duplicant will dangerously overeat when "
+  },
+  {
+    "id": "ANXIOUS",
+    "traits": "Anxious",
+    "desc": "This Duplicant collapses when put under too much pressure"
+  },
+  {
+    "id": "STRESSVOMITER",
+    "traits": "Vomiter",
+    "desc": "This Duplicant is liable to puke everywhere when "
+  },
+  {
+    "id": "STRESSSHOCKER",
+    "traits": "Stunner",
+    "desc": "This Duplicant emits electrical shocks when "
+  },
+  {
+    "id": "BANSHEE",
+    "traits": "Banshee",
+    "desc": "This Duplicant wails uncontrollably when "
+  },
+  {
+    "id": "BALLOONARTIST",
+    "traits": "Balloon Artist",
+    "desc": "This Duplicant hands out balloons when they are "
+  },
+  {
+    "id": "SPARKLESTREAKER",
+    "traits": "Sparkle Streaker",
+    "desc": "This Duplicant leaves a trail of happy sparkles when they are "
+  },
+  {
+    "id": "STICKERBOMBER",
+    "traits": "Sticker Bomber",
+    "desc": "This Duplicant will spontaneously redecorate a room when they are "
+  },
+  {
+    "id": "SUPERPRODUCTIVE",
+    "traits": "Super Productive",
+    "desc": "This Duplicant is super productive when they are "
+  },
+  {
+    "id": "HAPPYSINGER",
+    "traits": "Yodeler",
+    "desc": "This Duplicant belts out catchy tunes when they are "
+  },
+  {
+    "id": "DATARAINER",
+    "traits": "Rainmaker",
+    "desc": "This Duplicant distributes microchips when they are "
+  },
+  {
+    "id": "ROBODANCER",
+    "traits": "Flash Mobber",
+    "desc": "This Duplicant breaks into dance when they are "
+  },
+  {
+    "id": "REGENERATION",
+    "traits": "Regenerative",
+    "desc": "This robust Duplicant is constantly regenerating health"
+  },
+  {
+    "id": "DEEPERDIVERSLUNGS",
+    "traits": "Deep Diver's Lungs",
+    "desc": "This Duplicant has a frankly impressive ability to hold their breath"
+  },
+  {
+    "id": "SUNNYDISPOSITION",
+    "traits": "Sunny Disposition",
+    "desc": "This Duplicant has an unwaveringly positive outlook on life"
+  },
+  {
+    "id": "ROCKCRUSHER",
+    "traits": "Beefsteak",
+    "desc": "This Duplicant's got muscles on their muscles!"
+  },
+  {
+    "id": "ARCHAEOLOGIST",
+    "traits": "Relic Hunter",
+    "desc": "This Duplicant was never taught the phrase \\"
+  },
+  {
+    "id": "BIONICBUG1",
+    "traits": "Bionic Bug: Rigid Thinking",
+    "desc": "This Duplicant's bionic systems are quite inflexible"
+  },
+  {
+    "id": "BIONICBUG2",
+    "traits": "Bionic Bug: Dissociative",
+    "desc": "This Duplicant's bionic systems are built without \\"
+  },
+  {
+    "id": "BIONICBUG3",
+    "traits": "Bionic Bug: All Thumbs",
+    "desc": "This Duplicant's bionic systems aren't designed to operate other systems"
+  },
+  {
+    "id": "BIONICBUG4",
+    "traits": "Bionic Bug: Overengineered",
+    "desc": "This Duplicant's bionic systems rarely get past the processing stage"
+  },
+  {
+    "id": "BIONICBUG5",
+    "traits": "Bionic Bug: Late Bloomer",
+    "desc": "This Duplicant's bionic systems weren't built for speed"
+  },
+  {
+    "id": "BIONICBUG6",
+    "traits": "Bionic Bug: Urbanite",
+    "desc": "This Duplicant's bionic systems were designed by someone who'd never seen a plant in real life"
+  },
+  {
+    "id": "BIONICBUG7",
+    "traits": "Bionic Bug: Error Prone",
+    "desc": "This Duplicant's bionic systems err on the side of erring"
+  }
+]

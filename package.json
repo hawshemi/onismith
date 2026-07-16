@@ -1,0 +1,43 @@
+{
+  "name": "onismith",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
+  },
+  "scripts": {
+    "dev": "npm run build:worker && next dev",
+    "build": "npm run build:worker && next build",
+    "build:worker": "node scripts/build-save-parser-worker.mjs",
+    "check": "eslint . --fix && prettier --write . && tsc --noEmit && npm run check:assets && vitest run",
+    "check:assets": "node scripts/check-avatar-assets.mjs",
+    "preview": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "dependencies": {
+    "next": "16.2.10",
+    "pako": "2.2.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-icons": "5.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.2",
+    "@types/node": "24.13.3",
+    "@types/pako": "2.0.4",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "esbuild": "0.28.1",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.2.10",
+    "prettier": "3.9.5",
+    "tailwindcss": "4.3.2",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10",
+    "wrangler": "4.110.0"
+  },
+  "overrides": {
+    "postcss": "8.5.19"
+  }
+}

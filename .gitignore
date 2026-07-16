@@ -1,0 +1,24 @@
+# Dependencies
+/node_modules/
+package-lock.json
+
+# Next.js and Cloudflare output
+/.next/
+/out/
+/.wrangler/
+/public/generated/
+
+# Tests and TypeScript
+/coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local configuration
+.env*
+.dev.vars*
+
+# Logs and system files
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.pem

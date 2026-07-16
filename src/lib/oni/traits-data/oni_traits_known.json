@@ -1,0 +1,352 @@
+[
+  {
+    "id": "ANCIENTKNOWLEDGE",
+    "traits": "Ancient Knowledge",
+    "desc": "This Duplicant has knowledge from the before times."
+  },
+  {
+    "id": "RANCHINGUP",
+    "traits": "Animal Lover",
+    "desc": "The fuzzy snoots! The little claws! The chitinous exoskeletons! This Duplicant's never met a critter they didn't like."
+  },
+  {
+    "id": "STRONGARM",
+    "traits": "Buff",
+    "desc": "This Duplicant has muscles on their muscles."
+  },
+  {
+    "id": "BEDSIDEMANNER",
+    "traits": "Caregiver",
+    "desc": "This Duplicant has good bedside manner and a healing touch."
+  },
+  {
+    "id": "CHATTY",
+    "traits": "Charismatic",
+    "desc": "This Duplicant's so charming, chatting with them is sometimes enough to trigger an Overjoyed response."
+  },
+  {
+    "id": "DIVERSLUNG",
+    "traits": "Diver's Lungs",
+    "desc": "This Duplicant could have been a talented opera singer in another life."
+  },
+  {
+    "id": "THRIVER",
+    "traits": "Duress to Impress",
+    "desc": "This Duplicant kicks into hyperdrive when the stress is on."
+  },
+  {
+    "id": "EARLYBIRD",
+    "traits": "Early Bird",
+    "desc": "This Duplicant always wakes up feeling fresh and efficient!"
+  },
+  {
+    "id": "STRONGIMMUNESYSTEM",
+    "traits": "Germ Resistant",
+    "desc": "This Duplicant's immune system bounces back faster than most."
+  },
+  {
+    "id": "FROSTPROOF",
+    "traits": "Frost Proof",
+    "desc": "This Duplicant is too cool to be bothered by the cold."
+  },
+  {
+    "id": "GLOWSTICK",
+    "traits": "Glow Stick",
+    "desc": "This Duplicant is positively glowing."
+  },
+  {
+    "id": "FOODIE",
+    "traits": "Gourmet",
+    "desc": "This Duplicant's refined palate demands only the most luxurious dishes the colony can offer."
+  },
+  {
+    "id": "GREASEMONKEY",
+    "traits": "Grease Monkey",
+    "desc": "This Duplicant likes to throw a wrench into the colony's plans... in a good way."
+  },
+  {
+    "id": "GREENTHUMB",
+    "traits": "Green Thumb",
+    "desc": "This Duplicant regards every plant as a potential friend."
+  },
+  {
+    "id": "CONSTRUCTIONUP",
+    "traits": "Handy",
+    "desc": "This Duplicant is a swift and skilled builder."
+  },
+  {
+    "id": "DECORUP",
+    "traits": "Innately Stylish",
+    "desc": "This Duplicant's radiant self-confidence makes even the rattiest outfits look trendy."
+  },
+  {
+    "id": "INTERIORDECORATOR",
+    "traits": "Interior Decorator",
+    "desc": "\"Move it a little to the left...\""
+  },
+  {
+    "id": "IRONGUT",
+    "traits": "Iron Gut",
+    "desc": "This Duplicant can eat just about anything without getting sick."
+  },
+  {
+    "id": "LONER",
+    "traits": "Loner",
+    "desc": "This Duplicant prefers solitary pursuits."
+  },
+  {
+    "id": "MOLEHANDS",
+    "traits": "Mole Hands",
+    "desc": "They're great for tunneling, but finding good gloves is a nightmare."
+  },
+  {
+    "id": "NIGHTOWL",
+    "traits": "Night Owl",
+    "desc": "This Duplicant does their best work when they'd ought to be sleeping."
+  },
+  {
+    "id": "FASTLEARNER",
+    "traits": "Quick Learner",
+    "desc": "This Duplicant's sharp as a tack and learns new skills with amazing speed."
+  },
+  {
+    "id": "RADIATIONEATER",
+    "traits": "Radiation Eater",
+    "desc": "This Duplicant eats radiation for breakfast (and dinner)."
+  },
+  {
+    "id": "METEORPHILE",
+    "traits": "Rock Fan",
+    "desc": "Meteor showers get this Duplicant really, really hyped."
+  },
+  {
+    "id": "SIMPLETASTES",
+    "traits": "Shrivelled Tastebuds",
+    "desc": "This Duplicant could lick a Puft's backside and taste nothing."
+  },
+  {
+    "id": "STARRYEYED",
+    "traits": "Starry Eyed",
+    "desc": "This Duplicant loves being in space."
+  },
+  {
+    "id": "TWINKLETOES",
+    "traits": "Twinkletoes",
+    "desc": "This Duplicant is light as a feather on their feet."
+  },
+  {
+    "id": "UNCULTURED",
+    "traits": "Uncultured",
+    "desc": "This Duplicant has simply no appreciation for the arts."
+  },
+  {
+    "id": "GRANTSKILL_ARTING2",
+    "traits": "Skilled: Aesthetic Design",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_ARTING1",
+    "traits": "Skilled: Art Fundamentals",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_MEDICINE2",
+    "traits": "Skilled: Bedside Manner",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_RANCHING1",
+    "traits": "Skilled: Critter Ranching I",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_FARMING2",
+    "traits": "Skilled: Crop Tending",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_TECHNICALS2",
+    "traits": "Skilled: Electrical Engineering",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_SUITS1",
+    "traits": "Skilled: Exosuit Training",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_COOKING1",
+    "traits": "Skilled: Grilling",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_MINING1",
+    "traits": "Skilled: Hard Digging",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_ARTING3",
+    "traits": "Skilled: Masterworks",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_ENGINEERING1",
+    "traits": "Skilled: Mechatronics Engineering",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_BASEKEEPING2",
+    "traits": "Skilled: Plumbing",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_MINING3",
+    "traits": "Skilled: Super-Duperhard Digging",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "GRANTSKILL_MINING2",
+    "traits": "Skilled: Superhard Digging",
+    "desc": "This Duplicant begins with a pre-learned Skill, but does not have increased Morale Requirements."
+  },
+  {
+    "id": "ALLERGIES",
+    "traits": "Allergies",
+    "desc": "This Duplicant will sneeze uncontrollably when exposed to the pollen present in Floral Scent."
+  },
+  {
+    "id": "ANEMIC",
+    "traits": "Anemic",
+    "desc": "This Duplicant has trouble keeping up with the others."
+  },
+  {
+    "id": "WEAKIMMUNESYSTEM",
+    "traits": "Biohazardous",
+    "desc": "All the vitamin C in space couldn't stop this Duplicant from getting sick."
+  },
+  {
+    "id": "CALORIEBURNER",
+    "traits": "Bottomless Stomach",
+    "desc": "This Duplicant might actually be several black holes in a trench coat."
+  },
+  {
+    "id": "CONSTRUCTIONDOWN",
+    "traits": "Building Impaired",
+    "desc": "This Duplicant has trouble constructing anything besides meaningful friendships."
+  },
+  {
+    "id": "RANCHINGDOWN",
+    "traits": "Critter Aversion",
+    "desc": "This Duplicant just doesn't trust those beadly little eyes."
+  },
+  {
+    "id": "FLATULENCE",
+    "traits": "Flatulent",
+    "desc": "Some Duplicants are just full of it."
+  },
+  {
+    "id": "CANTCOOK",
+    "traits": "Gastrophobia",
+    "desc": "This Duplicant has a deep-seated distrust of the culinary arts"
+  },
+  {
+    "id": "IRRITABLEBOWEL",
+    "traits": "Irritable Bowel",
+    "desc": "This Duplicant needs a little extra time to \"do their business\"."
+  },
+  {
+    "id": "COOKINGDOWN",
+    "traits": "Kitchen Menace",
+    "desc": "This Duplicant could probably figure out a way to burn ice cream."
+  },
+  {
+    "id": "SNORER",
+    "traits": "Loud Sleeper",
+    "desc": "In space, everyone can hear you snore."
+  },
+  {
+    "id": "MACHINERYDOWN",
+    "traits": "Luddite",
+    "desc": "This Duplicant always invites friends over just to make them hook up their electronics."
+  },
+  {
+    "id": "MOUTHBREATHER",
+    "traits": "Mouth Breather",
+    "desc": "This Duplicant sucks up way more than their fair share of Oxygen."
+  },
+  {
+    "id": "NARCOLEPSY",
+    "traits": "Narcoleptic",
+    "desc": "This Duplicant can fall asleep anytime, anyplace."
+  },
+  {
+    "id": "NOODLEARMS",
+    "traits": "Noodle Arms",
+    "desc": "This Duplicant's arms have all the tensile strength of overcooked linguine."
+  },
+  {
+    "id": "NIGHTLIGHT",
+    "traits": "Nyctophobic",
+    "desc": "This Duplicant will imagine scary shapes in the dark all night if no one leaves a light on."
+  },
+  {
+    "id": "SCAREDYCAT",
+    "traits": "Pacifist",
+    "desc": "This Duplicant abhors violence."
+  },
+  {
+    "id": "BOTANISTDOWN",
+    "traits": "Plant Murderer",
+    "desc": "Never ask this Duplicant to watch your ferns when you go on vacation."
+  },
+  {
+    "id": "DECORDOWN",
+    "traits": "Shabby Dresser",
+    "desc": "This Duplicant's clearly never heard of ironing."
+  },
+  {
+    "id": "SLOWLEARNER",
+    "traits": "Slow Learner",
+    "desc": "This Duplicant's a little slow on the uptake, but gosh do they try."
+  },
+  {
+    "id": "SMALLBLADDER",
+    "traits": "Small Bladder",
+    "desc": "This Duplicant has a tiny, pea-sized Bladder. Adorable!"
+  },
+  {
+    "id": "HEMOPHOBIA",
+    "traits": "Squeamish",
+    "desc": "This Duplicant is of delicate disposition and cannot tend to the sick."
+  },
+  {
+    "id": "CANTDIG",
+    "traits": "Trypophobia",
+    "desc": "This Duplicant's fear of holes makes it impossible for them to dig."
+  },
+  {
+    "id": "CANTBUILD",
+    "traits": "Unconstructive",
+    "desc": "This Duplicant is incapable of building even the most basic of structures."
+  },
+  {
+    "id": "DIGGINGDOWN",
+    "traits": "Undigging",
+    "desc": "This Duplicant couldn't dig themselves out of a paper bag."
+  },
+  {
+    "id": "CARINGDOWN",
+    "traits": "Unempathetic",
+    "desc": "This Duplicant's lack of bedside manner makes it difficult for them to nurse peers back to health."
+  },
+  {
+    "id": "ARTDOWN",
+    "traits": "Unpracticed Artist",
+    "desc": "This Duplicant proudly proclaims they \"can't even draw a stick figure\"."
+  },
+  {
+    "id": "CANTRESEARCH",
+    "traits": "Yokel",
+    "desc": "This Duplicant isn't the brightest star in the solar system."
+  }
+]

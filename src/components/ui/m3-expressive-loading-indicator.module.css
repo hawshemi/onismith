@@ -1,0 +1,33 @@
+.root {
+  --m3e-loading-size: 56px;
+  --m3e-loading-color: var(--accent);
+  display: inline-flex;
+  height: var(--m3e-loading-size);
+  width: var(--m3e-loading-size);
+  flex: 0 0 var(--m3e-loading-size);
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: calc(var(--m3e-loading-size) * 0.1) solid
+    color-mix(in srgb, var(--m3e-loading-color) 24%, transparent);
+  border-top-color: var(--m3e-loading-color);
+  animation: m3e-loading-spin 0.9s linear infinite;
+}
+
+@keyframes m3e-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+}

@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+build
+package-lock.json
+# Markdown is left alone.
+*.md
+# Editor/CI configs are not app code.
+.vscode
+.github
+# Generated/vendored data, not authored code.
+src/lib/oni/traits-data
+src/translations
+# Generated browser worker.
+public/generated
