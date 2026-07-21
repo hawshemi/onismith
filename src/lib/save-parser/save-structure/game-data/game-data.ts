@@ -11,7 +11,7 @@ export interface OverworldCell {
   biomeIdx: number;
 }
 
-export interface WorldDetail {
+interface WorldDetail {
   overworldCells: OverworldCell[];
   globalWorldSeed: number;
   globalWorldLayoutSeed: number;

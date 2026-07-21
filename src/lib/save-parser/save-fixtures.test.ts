@@ -1,10 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
 import { isDeepStrictEqual } from "node:util";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { parseSaveGame, writeSaveGame } from "./index";
-
-const FIXTURE_DIRECTORY = new URL("./test-fixtures/", import.meta.url);
+import {
+  localSaveFixtureExists,
+  parseLocalSaveFixture,
+} from "./local-save-fixtures.test-utils";
 
 const fixtures = [
   {
@@ -28,26 +28,14 @@ const fixtures = [
 ] as const;
 
 const hasLocalFixtures = fixtures.every(({ fileName }) =>
-  existsSync(fileURLToPath(new URL(fileName, FIXTURE_DIRECTORY))),
+  localSaveFixtureExists(fileName),
 );
-
-function readFixture(fileName: string): ArrayBuffer {
-  const bytes = readFileSync(
-    fileURLToPath(new URL(fileName, FIXTURE_DIRECTORY)),
-  );
-  return bytes.buffer.slice(
-    bytes.byteOffset,
-    bytes.byteOffset + bytes.byteLength,
-  ) as ArrayBuffer;
-}
 
 describe.skipIf(!hasLocalFixtures)("local ONI save fixtures", () => {
   it.each(fixtures)(
     "parses and semantically round-trips $fileName",
     ({ fileName, clusterId, groupCount, objectCount }) => {
-      const parsed = parseSaveGame(readFixture(fileName), {
-        versionStrictness: "minor",
-      });
+      const parsed = parseLocalSaveFixture(fileName);
 
       expect(parsed.version).toEqual({ major: 7, minor: 38 });
       expect(parsed.header.gameInfo.clusterId).toBe(clusterId);

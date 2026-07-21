@@ -134,9 +134,7 @@ button {
 }
 
 /* Filled default: only plain <button>s take the lighter accent on hover. Kept
-   at low specificity so every variant (.m3-button-outlined/-hollow/-ghost,
-   .m3-circle-button, .m3-select-trigger) reliably overrides it with its own
-   readable hover below. */
+   at low specificity so every button variant can override it below. */
 button:hover {
   background: var(--accent-hover);
 }
@@ -306,32 +304,6 @@ select option:focus,
 
 .m3-button-ghost-selected:hover {
   background: var(--accent-hover);
-}
-
-.m3-circle-button {
-  border: 1px solid var(--outline);
-  background: var(--surface-container);
-  color: var(--accent);
-  transition:
-    background-color var(--motion-fast) var(--ease-out),
-    border-color var(--motion-fast) var(--ease-out),
-    color var(--motion-fast) var(--ease-out),
-    filter var(--motion-fast) var(--ease-out),
-    opacity var(--motion-fast) var(--ease-out);
-}
-
-.m3-circle-button:hover {
-  border-color: var(--outline-strong);
-  background: var(--state-hover);
-}
-
-.m3-circle-button:active:not(:disabled) {
-  filter: brightness(0.9);
-}
-
-.m3-circle-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
 }
 
 .m3-field {

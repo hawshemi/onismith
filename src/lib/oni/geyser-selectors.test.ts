@@ -1,31 +1,17 @@
-import { existsSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseSaveGame } from "@/lib/save-parser";
+import {
+  localSaveFixtureExists,
+  parseLocalSaveFixture,
+} from "@/lib/save-parser/local-save-fixtures.test-utils";
 import { selectGeysers } from "./geyser-selectors";
 
-const AQUATIC_FIXTURE = new URL(
-  "../save-parser/test-fixtures/aquatic_fresh_revealed_build.sav",
-  import.meta.url,
-);
+const AQUATIC_FIXTURE = "aquatic_fresh_revealed_build.sav";
 
-function readAquaticFixture() {
-  const path = fileURLToPath(AQUATIC_FIXTURE);
-  const bytes = readFileSync(path);
-  return parseSaveGame(
-    bytes.buffer.slice(
-      bytes.byteOffset,
-      bytes.byteOffset + bytes.byteLength,
-    ) as ArrayBuffer,
-    { versionStrictness: "minor" },
-  );
-}
-
-describe.skipIf(!existsSync(fileURLToPath(AQUATIC_FIXTURE)))(
+describe.skipIf(!localSaveFixtureExists(AQUATIC_FIXTURE))(
   "Aquatic geyser selection",
   () => {
     it("includes opaque Aquatic world features as read-only geysers", () => {
-      const geysers = selectGeysers(readAquaticFixture());
+      const geysers = selectGeysers(parseLocalSaveFixture(AQUATIC_FIXTURE));
 
       expect(geysers).toHaveLength(38);
       expect(geysers.filter((geyser) => geyser.isEditable)).toHaveLength(19);

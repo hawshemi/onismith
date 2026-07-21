@@ -1,31 +1,19 @@
-import { existsSync, readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { parseSaveGame } from "@/lib/save-parser";
+import {
+  localSaveFixtureExists,
+  parseLocalSaveFixture,
+} from "@/lib/save-parser/local-save-fixtures.test-utils";
 import { selectPlanetoids } from "./planet-selectors";
 
-const AQUATIC_FIXTURE = new URL(
-  "../save-parser/test-fixtures/aquatic_fresh_revealed_build.sav",
-  import.meta.url,
-);
+const AQUATIC_FIXTURE = "aquatic_fresh_revealed_build.sav";
 
-function readAquaticFixture() {
-  const path = fileURLToPath(AQUATIC_FIXTURE);
-  const bytes = readFileSync(path);
-  return parseSaveGame(
-    bytes.buffer.slice(
-      bytes.byteOffset,
-      bytes.byteOffset + bytes.byteLength,
-    ) as ArrayBuffer,
-    { versionStrictness: "minor" },
-  );
-}
-
-describe.skipIf(!existsSync(fileURLToPath(AQUATIC_FIXTURE)))(
+describe.skipIf(!localSaveFixtureExists(AQUATIC_FIXTURE))(
   "Spaced Out planetoid selection",
   () => {
     it("associates world metadata and Aquatic biomes with each asteroid", () => {
-      const planetoids = selectPlanetoids(readAquaticFixture());
+      const planetoids = selectPlanetoids(
+        parseLocalSaveFixture(AQUATIC_FIXTURE),
+      );
 
       expect(planetoids).toHaveLength(8);
       expect(planetoids[0]).toMatchObject({
