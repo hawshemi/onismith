@@ -13,6 +13,10 @@ import {
 } from "@/lib/oni/oni-constants";
 import { isObjectLike } from "@/lib/oni/raw-path-utils";
 import {
+  BIONIC_VITAL_DEFINITIONS,
+  getBionicPowerBankCapacityKilojoules,
+} from "@/lib/oni/bionic-systems";
+import {
   DUPLICANT_INTEREST_NAMES,
   getSkillGroupDisplayName,
   getSkillGroupNameByHash,
@@ -63,6 +67,7 @@ export interface BionicVital {
   value: number;
   max: number | null;
   unit: string;
+  editable: boolean;
 }
 
 export interface BionicPowerBank {
@@ -71,6 +76,7 @@ export interface BionicPowerBank {
   displayName: string;
   chargeKilojoules: number;
   capacityKilojoules: number | null;
+  editable: boolean;
 }
 
 export interface BionicBooster {
@@ -212,37 +218,6 @@ const BIONIC_ITEM_DISPLAY_NAMES: Record<string, string> = {
   DisposableElectrobank_RawMetal: "Metal Power Bank",
 };
 
-const BIONIC_VITAL_DEFINITIONS = [
-  {
-    id: "BionicOil",
-    displayName: "Gear Oil",
-    max: 200,
-    divisor: 1,
-    unit: "kg",
-  },
-  {
-    id: "BionicGunk",
-    displayName: "Gunk",
-    max: 100,
-    divisor: 1,
-    unit: "%",
-  },
-  {
-    id: "BionicInternalBattery",
-    displayName: "Stored Power",
-    max: null,
-    divisor: 1000,
-    unit: "kJ",
-  },
-  {
-    id: "BionicOxygenTank",
-    displayName: "Oxygen Tank",
-    max: 240,
-    divisor: 1,
-    unit: "kg",
-  },
-] as const;
-
 import {
   asNumber,
   asString,
@@ -371,14 +346,19 @@ function readBionicSystems(
     }
     const prefabId = asString(storedObject.name, "Unknown power bank");
     const charge = electrobank.templateData?.charge;
+    const capacityKilojoules = getBionicPowerBankCapacityKilojoules(prefabId);
     return [
       {
         id: getGameObjectId(storedObject),
         prefabId,
         displayName: getStoredItemDisplayName(prefabId),
         chargeKilojoules: asNumber(charge, 0) / 1000,
-        capacityKilojoules:
-          prefabId === "DisposableElectrobank_RawMetal" ? 120 : null,
+        capacityKilojoules,
+        editable:
+          getGameObjectId(storedObject) !== null &&
+          capacityKilojoules !== null &&
+          typeof charge === "number" &&
+          Number.isFinite(charge),
       } satisfies BionicPowerBank,
     ];
   });
@@ -418,6 +398,7 @@ function readBionicSystems(
           value: rawValue / definition.divisor,
           max: dynamicMax,
           unit: definition.unit,
+          editable: definition.editable,
         } satisfies BionicVital,
       ];
     }),

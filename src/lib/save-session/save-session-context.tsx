@@ -81,6 +81,16 @@ export interface SaveSessionValue extends SaveSessionState {
     modifier: string,
     value: number,
   ) => void;
+  updateDuplicantBionicVital: (
+    duplicantId: number,
+    vitalId: string,
+    value: number,
+  ) => void;
+  updateDuplicantBionicPowerBankCharge: (
+    duplicantId: number,
+    powerBankId: number,
+    chargeKilojoules: number,
+  ) => void;
   updateDuplicantExperience: (duplicantId: number, experience: number) => void;
   setDuplicantSkillMastery: (
     duplicantId: number,
@@ -287,6 +297,8 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
     updateDuplicantExperience,
     updateDuplicantGender,
     updateDuplicantHealthModifier,
+    updateDuplicantBionicPowerBankCharge,
+    updateDuplicantBionicVital,
     updateDuplicantName,
   } = useDuplicantActions({
     saveGame: state.saveGame,
@@ -342,6 +354,8 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
       updateDuplicantAppearance,
       updateDuplicantGender,
       updateDuplicantHealthModifier,
+      updateDuplicantBionicPowerBankCharge,
+      updateDuplicantBionicVital,
       updateDuplicantExperience,
       setDuplicantSkillMastery,
       setDuplicantSkillsMastery,
@@ -400,6 +414,8 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
     updateDuplicantEffectCycles,
     updateDuplicantExperience,
     updateDuplicantHealthModifier,
+    updateDuplicantBionicPowerBankCharge,
+    updateDuplicantBionicVital,
     updateDifficultySetting,
     updateColonyName,
     updateCycleCount,

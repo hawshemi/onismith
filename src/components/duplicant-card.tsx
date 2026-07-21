@@ -155,13 +155,7 @@ function DuplicantCard({
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
             {duplicant.isBionic ? (
-              <span className="m3-tag text-[var(--accent)]">
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full bg-current"
-                />
-                Bionic
-              </span>
+              <span className="m3-tag text-[var(--accent)]">Bionic</span>
             ) : null}
             {!duplicant.isBionic ? (
               <span className="m3-tag">{traitIds.length} traits</span>

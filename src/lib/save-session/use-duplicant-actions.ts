@@ -13,6 +13,8 @@ import {
   mutateDuplicant,
   mutateGameObjectById,
   resolveBehaviorName,
+  setDuplicantBionicPowerBankCharge,
+  setDuplicantBionicVitalValue,
   setEffectCycles,
   setMasteryValues,
   updateAccessoryList,
@@ -371,6 +373,38 @@ export function useDuplicantActions({
         });
       });
 
+      setSaveGame(next, { isModified: next !== saveGame });
+    },
+    [setSaveGame, saveGame],
+  );
+
+  const updateDuplicantBionicVital = useCallback(
+    (duplicantId: number, vitalId: string, value: number) => {
+      if (!saveGame) {
+        return;
+      }
+      const next = setDuplicantBionicVitalValue(
+        saveGame,
+        duplicantId,
+        vitalId,
+        value,
+      );
+      setSaveGame(next, { isModified: next !== saveGame });
+    },
+    [setSaveGame, saveGame],
+  );
+
+  const updateDuplicantBionicPowerBankCharge = useCallback(
+    (duplicantId: number, powerBankId: number, chargeKilojoules: number) => {
+      if (!saveGame) {
+        return;
+      }
+      const next = setDuplicantBionicPowerBankCharge(
+        saveGame,
+        duplicantId,
+        powerBankId,
+        chargeKilojoules,
+      );
       setSaveGame(next, { isModified: next !== saveGame });
     },
     [setSaveGame, saveGame],
@@ -913,6 +947,8 @@ export function useDuplicantActions({
     updateDuplicantExperience,
     updateDuplicantGender,
     updateDuplicantHealthModifier,
+    updateDuplicantBionicPowerBankCharge,
+    updateDuplicantBionicVital,
     updateDuplicantName,
   };
 }
