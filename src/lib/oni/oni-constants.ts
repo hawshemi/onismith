@@ -220,7 +220,7 @@ export const BIONIC_MINION_SKILL_GROUPS = [
     skills: [
       { skillId: "BionicsC1", displayName: "Schematics" },
       { skillId: "BionicsC2", displayName: "Advanced Schematics" },
-      { skillId: "BionicsC3", displayName: "Top Gear" },
+      { skillId: "BionicsC3", displayName: "Power Banking" },
     ],
   },
   {

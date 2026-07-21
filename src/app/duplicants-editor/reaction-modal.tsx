@@ -8,7 +8,6 @@ import {
   getTraitDisplayName,
   getTraitDescription,
   normalizeTraitId,
-  isBionicIdentityTraitId,
   isBionicTraitId,
   splitTraitsByReaction,
 } from "@/lib/oni/trait-names";
@@ -35,6 +34,7 @@ type ReactionModalProps = {
   onCategoryChange: (category: string) => void;
   onAddTrait: (traitId: string) => void;
   onApplyReaction: (kind: ReactionKind, traitId: string) => void;
+  isBionic: boolean;
 };
 
 const ADD_TRAIT_CATEGORIES: Array<{
@@ -84,45 +84,45 @@ export default function ReactionModal({
   onCategoryChange,
   onAddTrait,
   onApplyReaction,
+  isBionic,
 }: ReactionModalProps) {
   const [traitQuery, setTraitQuery] = useState("");
   const { overjoyedReactions, stressReactions } = splitTraitsByReaction(traits);
-  const isBionicDuplicant = traits.some(isBionicIdentityTraitId);
   const selectedOverjoyedId = normalizeTraitId(overjoyedReactions[0]);
   const selectedStressId = normalizeTraitId(stressReactions[0]);
 
   const eligibleOverjoyedTraits = useMemo(() => {
     return [...OVERJOYED_TRAIT_IDS]
-      .filter((traitId) => isBionicTraitId(traitId) === isBionicDuplicant)
+      .filter((traitId) => isBionicTraitId(traitId) === isBionic)
       .map((traitId) => ({
         id: traitId,
         name: getTraitDisplayName(traitId),
         description: getTraitDescription(traitId),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [isBionicDuplicant]);
+  }, [isBionic]);
 
   const eligibleStressTraits = useMemo(() => {
     return [...STRESS_REACTION_TRAIT_IDS]
-      .filter((traitId) => isBionicTraitId(traitId) === isBionicDuplicant)
+      .filter((traitId) => isBionicTraitId(traitId) === isBionic)
       .map((traitId) => ({
         id: traitId,
         name: getTraitDisplayName(traitId),
         description: getTraitDescription(traitId),
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [isBionicDuplicant]);
+  }, [isBionic]);
 
   const knownAddableTraits = useMemo(
     () =>
       getAllKnownTraits()
-        .filter((trait) => isBionicTraitId(trait.id) === isBionicDuplicant)
+        .filter((trait) => isBionicTraitId(trait.id) === isBionic)
         .filter(
           (trait) =>
             !OVERJOYED_TRAIT_IDS.has(trait.id) &&
             !STRESS_REACTION_TRAIT_IDS.has(trait.id),
         ),
-    [isBionicDuplicant],
+    [isBionic],
   );
 
   const categoryCounts = useMemo(() => {

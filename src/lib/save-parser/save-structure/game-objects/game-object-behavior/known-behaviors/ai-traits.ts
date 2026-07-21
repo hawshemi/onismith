@@ -602,7 +602,7 @@ export const BIONIC_TRAITS: TraitDefinition[] = [
   {
     id: "BIONICBUG2",
     traits: "Bionic Bug: Dissociative",
-    desc: "This Duplicant's bionic systems are built without \\",
+    desc: 'This Duplicant\'s bionic systems are built without "connector" parts',
     status: "negative",
   },
   {
@@ -638,19 +638,19 @@ export const BIONIC_TRAITS: TraitDefinition[] = [
   {
     id: "STRESSSHOCKER",
     traits: "Stunner",
-    desc: "This Duplicant emits electrical shocks when ",
+    desc: "This Duplicant emits electrical shocks when Stressed",
     status: "stress",
   },
   {
     id: "DATARAINER",
     traits: "Rainmaker",
-    desc: "This Duplicant distributes microchips when they are ",
+    desc: "This Duplicant distributes microchips when they are Overjoyed",
     status: "overjoyed",
   },
   {
     id: "ROBODANCER",
     traits: "Flash Mobber",
-    desc: "This Duplicant breaks into dance when they are ",
+    desc: "This Duplicant breaks into dance when they are Overjoyed",
     status: "overjoyed",
   },
 ];

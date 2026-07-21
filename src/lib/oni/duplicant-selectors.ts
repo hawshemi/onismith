@@ -1,4 +1,8 @@
-import type { GameObjectBehavior, SaveGame } from "@/lib/save-parser/model";
+import type {
+  GameObject,
+  GameObjectBehavior,
+  SaveGame,
+} from "@/lib/save-parser/model";
 import {
   AI_EFFECT_IDS,
   BIONIC_MINION_SKILL_GROUPS,
@@ -53,6 +57,34 @@ interface DuplicantHealthModifier {
   max: number;
 }
 
+export interface BionicVital {
+  id: string;
+  displayName: string;
+  value: number;
+  max: number | null;
+  unit: string;
+}
+
+export interface BionicPowerBank {
+  id: number | null;
+  prefabId: string;
+  displayName: string;
+  chargeKilojoules: number;
+  capacityKilojoules: number | null;
+}
+
+export interface BionicBooster {
+  id: number | null;
+  prefabId: string;
+  displayName: string;
+}
+
+export interface BionicSystemsModel {
+  vitals: BionicVital[];
+  powerBanks: BionicPowerBank[];
+  boosters: BionicBooster[];
+}
+
 interface DuplicantSkill {
   skillId: string;
   displayName: string;
@@ -98,6 +130,7 @@ export interface DuplicantEditorModel {
   skills: DuplicantSkillModel;
   effects: DuplicantEffect[];
   availableEffects: string[];
+  bionicSystems: BionicSystemsModel | null;
 }
 
 const DUPLICANT_ATTRIBUTE_ORDER = [
@@ -173,6 +206,42 @@ function getOrderedDuplicantAttributeIds(
 const DUPLICANT_HEALTH_MAX: Record<string, number> = {
   Calories: 4000000,
 };
+
+const BIONIC_ITEM_DISPLAY_NAMES: Record<string, string> = {
+  Booster_Dig2: "Extreme Digging Booster",
+  DisposableElectrobank_RawMetal: "Metal Power Bank",
+};
+
+const BIONIC_VITAL_DEFINITIONS = [
+  {
+    id: "BionicOil",
+    displayName: "Gear Oil",
+    max: 200,
+    divisor: 1,
+    unit: "kg",
+  },
+  {
+    id: "BionicGunk",
+    displayName: "Gunk",
+    max: 100,
+    divisor: 1,
+    unit: "%",
+  },
+  {
+    id: "BionicInternalBattery",
+    displayName: "Stored Power",
+    max: null,
+    divisor: 1000,
+    unit: "kJ",
+  },
+  {
+    id: "BionicOxygenTank",
+    displayName: "Oxygen Tank",
+    max: 240,
+    divisor: 1,
+    unit: "kg",
+  },
+] as const;
 
 import {
   asNumber,
@@ -254,11 +323,107 @@ function readHealthModifiers(
     map[name] = asNumber(amount?.value?.value, 0);
   }
 
-  return DUPLICANT_HEALTH_MODIFIERS.map((modifier) => ({
+  return DUPLICANT_HEALTH_MODIFIERS.filter((modifier) =>
+    Object.prototype.hasOwnProperty.call(map, modifier),
+  ).map((modifier) => ({
     modifier,
     value: asNumber(map[modifier], 0),
     max: DUPLICANT_HEALTH_MAX[modifier] || 100,
   }));
+}
+
+type StoredGameObject = GameObject & { name?: unknown };
+
+function readStoredGameObjects(source: GameObject): StoredGameObject[] {
+  return (Array.isArray(source.behaviors) ? source.behaviors : [])
+    .filter((behavior) => behavior?.name === "Storage")
+    .flatMap((behavior) =>
+      Array.isArray(behavior.extraData)
+        ? (behavior.extraData as StoredGameObject[])
+        : [],
+    );
+}
+
+function getStoredItemDisplayName(prefabId: string): string {
+  return BIONIC_ITEM_DISPLAY_NAMES[prefabId] ?? prefabId;
+}
+
+function readBionicSystems(
+  source: GameObject,
+  modifiersBehavior: GameObjectBehavior | null,
+): BionicSystemsModel {
+  const rawAmounts = modifiersBehavior?.extraData?.amounts;
+  const amounts = Array.isArray(rawAmounts) ? rawAmounts : [];
+  const amountMap = new Map<string, number>();
+  for (const amount of amounts) {
+    const id = asString(amount?.name);
+    const value = amount?.value?.value;
+    if (id && typeof value === "number" && Number.isFinite(value)) {
+      amountMap.set(id, value);
+    }
+  }
+
+  const storedObjects = readStoredGameObjects(source);
+  const powerBanks = storedObjects.flatMap((storedObject) => {
+    const electrobank = getBehavior(storedObject, "Electrobank");
+    if (!electrobank) {
+      return [];
+    }
+    const prefabId = asString(storedObject.name, "Unknown power bank");
+    const charge = electrobank.templateData?.charge;
+    return [
+      {
+        id: getGameObjectId(storedObject),
+        prefabId,
+        displayName: getStoredItemDisplayName(prefabId),
+        chargeKilojoules: asNumber(charge, 0) / 1000,
+        capacityKilojoules:
+          prefabId === "DisposableElectrobank_RawMetal" ? 120 : null,
+      } satisfies BionicPowerBank,
+    ];
+  });
+  const boosters = storedObjects.flatMap((storedObject) => {
+    if (!getBehavior(storedObject, "BionicUpgradeComponent")) {
+      return [];
+    }
+    const prefabId = asString(storedObject.name, "Unknown booster");
+    return [
+      {
+        id: getGameObjectId(storedObject),
+        prefabId,
+        displayName: getStoredItemDisplayName(prefabId),
+      } satisfies BionicBooster,
+    ];
+  });
+
+  return {
+    vitals: BIONIC_VITAL_DEFINITIONS.flatMap((definition) => {
+      const rawValue = amountMap.get(definition.id);
+      if (rawValue === undefined) {
+        return [];
+      }
+      const dynamicMax =
+        definition.id === "BionicInternalBattery" &&
+        powerBanks.length > 0 &&
+        powerBanks.every((bank) => bank.capacityKilojoules !== null)
+          ? powerBanks.reduce(
+              (total, bank) => total + (bank.capacityKilojoules ?? 0),
+              0,
+            )
+          : definition.max;
+      return [
+        {
+          id: definition.id,
+          displayName: definition.displayName,
+          value: rawValue / definition.divisor,
+          max: dynamicMax,
+          unit: definition.unit,
+        } satisfies BionicVital,
+      ];
+    }),
+    powerBanks,
+    boosters,
+  };
 }
 
 function readSkillModel(
@@ -555,5 +720,9 @@ export function selectDuplicantEditorModel(
     health: readHealthModifiers(modifiersBehavior),
     skills: readSkillModel(resumeBehavior, summary.isBionic, activeDlcIds),
     ...readEffectsModel(effectsBehavior),
+    bionicSystems:
+      summary.isBionic && source
+        ? readBionicSystems(source, modifiersBehavior)
+        : null,
   };
 }

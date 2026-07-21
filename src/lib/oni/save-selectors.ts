@@ -7,7 +7,13 @@ export {
   selectDuplicantEditorModel,
   selectDuplicants,
 } from "./duplicant-selectors";
-export type { DuplicantEditorModel } from "./duplicant-selectors";
+export type {
+  BionicBooster,
+  BionicPowerBank,
+  BionicSystemsModel,
+  BionicVital,
+  DuplicantEditorModel,
+} from "./duplicant-selectors";
 
 export {
   selectCreatureEditorModel,
