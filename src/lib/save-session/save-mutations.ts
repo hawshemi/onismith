@@ -545,6 +545,64 @@ export function mutateGameObjectById(
   return replaceGameObjectAtLocation(saveGame, location, nextObject);
 }
 
+export function setBuildingName(
+  saveGame: SaveGame,
+  gameObjectId: number,
+  name: string,
+): SaveGame {
+  const nextName = name.trim().slice(0, 64);
+  if (!nextName) {
+    return saveGame;
+  }
+  return mutateGameObjectById(saveGame, gameObjectId, (gameObject) => {
+    if (
+      !getBehavior(gameObject, "BuildingComplete") ||
+      typeof getBehavior(gameObject, "UserNameable")?.templateData
+        ?.savedName !== "string"
+    ) {
+      return gameObject;
+    }
+    return updateBehaviorTemplate(gameObject, "UserNameable", (template) =>
+      template?.savedName === nextName
+        ? template
+        : { ...template, savedName: nextName },
+    );
+  });
+}
+
+export function setBuildingPriority(
+  saveGame: SaveGame,
+  gameObjectId: number,
+  priority: number,
+): SaveGame {
+  if (!Number.isFinite(priority)) {
+    return saveGame;
+  }
+  const nextPriority = Math.min(9, Math.max(1, Math.round(priority)));
+  return mutateGameObjectById(saveGame, gameObjectId, (gameObject) => {
+    if (!getBehavior(gameObject, "BuildingComplete")) {
+      return gameObject;
+    }
+    return updateBehaviorTemplate(gameObject, "Prioritizable", (template) => {
+      const setting = template?.masterPrioritySetting;
+      if (
+        !isPlainObject(setting) ||
+        typeof setting.priority_value !== "number" ||
+        setting.priority_value === nextPriority
+      ) {
+        return template;
+      }
+      return {
+        ...template,
+        masterPrioritySetting: {
+          ...setting,
+          priority_value: nextPriority,
+        },
+      };
+    });
+  });
+}
+
 export function mutateDuplicant(
   saveGame: SaveGame,
   duplicantId: number,

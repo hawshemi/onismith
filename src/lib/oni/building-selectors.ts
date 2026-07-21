@@ -10,6 +10,8 @@ export interface Building {
   id: number;
   type: string;
   displayName: string;
+  customName: string | null;
+  priority: number | null;
   position: { x: number; y: number; z: number };
   opaqueStateBytes: number;
 }
@@ -54,10 +56,19 @@ export function selectBuildings(saveGame: SaveGame | null): Building[] {
         gameObject,
         "StateMachineController",
       )?.extraRaw;
+      const savedName = getBehavior(gameObject, "UserNameable")?.templateData
+        ?.savedName;
+      const priority = getBehavior(gameObject, "Prioritizable")?.templateData
+        ?.masterPrioritySetting?.priority_value;
       buildings.push({
         id,
         type,
         displayName: getBuildingDisplayName(type),
+        customName: typeof savedName === "string" ? savedName : null,
+        priority:
+          typeof priority === "number" && Number.isFinite(priority)
+            ? priority
+            : null,
         position: {
           x: asNumber(gameObject.position?.x),
           y: asNumber(gameObject.position?.y),
