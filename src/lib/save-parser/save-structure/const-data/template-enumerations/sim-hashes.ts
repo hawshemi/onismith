@@ -8,6 +8,7 @@ export enum SimHashes {
   ZincGas = -1988727339, // -0x7689922B (Aquatic Planet Pack, DLC5)
   SaltGas = -1946026749, // -0x73FE02FD
   LiquidHelium = -1934139602, // -0x7348A0D2
+  Peat = -1927771704, // Prehistoric Planet Pack, DLC4
   ZincOre = -1921520130, // -0x72881202 (Aquatic Planet Pack, DLC5)
   LiquidOxygen = -1908044868, // -0x71BA7444
   PhosphateNodules = -1901832310, // -0x715BA876
@@ -18,6 +19,7 @@ export enum SimHashes {
   Copper = -1725038055, // -0x66D1FDE7
   CrushedRock = -1714565729, // -0x66323261
   SuperInsulator = -1713958528, // -0x6628EE80
+  Shale = -1708952091, // Prehistoric Planet Pack, DLC4
   Corallium = -1705953114, // -0x65AEC75A (Aquatic Planet Pack, DLC5)
   ViscoGel = -1683093854, // -0x6451F95E
   PalmWood = -1675462177, // -0x63DD8621 (Aquatic Planet Pack, DLC5)
@@ -139,6 +141,7 @@ export enum SimHashes {
   LiquidPhosphorus = 1323821489, // 0x4EE7E9B1
   Basalt = 1347222069, // 0x504CFA35 (Aquatic Planet Pack, DLC5)
   Regolith = 1362238252, // 0x51321B2C
+  NickelOre = 1387581016, // Prehistoric Planet Pack, DLC4
   Slabs = 1412740729, // 0x5434B679
   Bitumen = 1433229102, // 0x556D572E
   MoltenSteel = 1459013976, // 0x56F6C958

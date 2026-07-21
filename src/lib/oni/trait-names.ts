@@ -115,6 +115,10 @@ export function isBionicIdentityTraitId(id: unknown): boolean {
   return BIONIC_IDENTITY_TRAIT_IDS.has(normalized);
 }
 
+export function isBionicStarterBoosterTraitId(id: unknown): boolean {
+  return normalizeTraitId(id).startsWith("STARTWITHBOOSTER_");
+}
+
 export interface TraitReactionSplit {
   overjoyedReactions: string[];
   stressReactions: string[];

@@ -21,7 +21,6 @@ import {
   FaRotateRight,
 } from "react-icons/fa6";
 import { useI18n } from "@/lib/i18n/i18n-context";
-import { getDlcDisplayName } from "@/lib/oni/dlc";
 import {
   selectCreatures,
   selectDuplicants,
@@ -45,7 +44,6 @@ import {
   getErrorGuidance,
   getPageTitle,
   normalizePathname,
-  readDlcIds,
   routeRequiresSave,
 } from "./app-shell-support";
 
@@ -156,27 +154,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
     [deferredSaveGame],
   );
 
-  const dlcIds = useMemo(() => readDlcIds(saveGame), [saveGame]);
-  const dlcNames = useMemo(
-    () =>
-      dlcIds
-        .map(getDlcDisplayName)
-        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
-    [dlcIds],
-  );
-  const dlcHoverText = useMemo(() => {
-    if (!hasSave) {
-      return t("app.dlc.not-loaded", {
-        fallback: "Load a save to read DLC information.",
-      });
-    }
-    if (dlcNames.length === 0) {
-      return t("app.dlc.none", { fallback: "No DLC detected." });
-    }
-    // Title tooltips don't render newlines; comma-separate so it reads on one
-    // line.
-    return dlcNames.join(", ");
-  }, [dlcNames, hasSave, t]);
   const errorGuidance = useMemo(() => getErrorGuidance(error, t), [error, t]);
 
   // Loading replaces the session and resets undo history, so guard it when
@@ -471,7 +448,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       };
     }
     return {
-      label: t("app.save-file.clean", { fallback: "Clean" }),
+      label: t("app.save-file.clean", { fallback: "Loaded" }),
       chipClass: "border-[var(--success-outline)] bg-[var(--success-surface)]",
       valueClass: "text-[var(--success)]",
       dotClass: "bg-[var(--success)]",
@@ -606,35 +583,31 @@ export default function AppShell({ children }: { children: ReactNode }) {
             pathname={pathname}
             hasSave={hasSave}
             bottomSlot={
-              <div className="mt-auto flex flex-col items-start gap-2 border-t border-[var(--outline-faint)] pt-4">
-                <span
-                  className={`m3-chip inline-flex items-center gap-1.5 px-2 py-1 text-xs ${sessionStatus.chipClass}`}
+              <div className="mt-auto border-t border-[var(--outline-faint)] pt-4">
+                <div
+                  className={`w-full rounded-xl border px-3 py-2.5 ${sessionStatus.chipClass}`}
                   role="status"
                   aria-live="polite"
                 >
-                  <span className="sr-only">
-                    {t("app.status-label", { fallback: "Status" })}:{" "}
+                  <p className="text-[0.6875rem] font-medium uppercase tracking-[0.08em] opacity-60">
+                    {t("app.status-label", { fallback: "Save status" })}
+                  </p>
+                  <div className="mt-1 flex items-center gap-2 text-sm">
+                    <span
+                      aria-hidden="true"
+                      className={`h-2 w-2 shrink-0 rounded-full ${sessionStatus.dotClass}`}
+                    />
+                    <span className={sessionStatus.valueClass}>
+                      {sessionStatus.label}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 px-1 text-xs opacity-65">
+                  <span>Editor version</span>
+                  <span className="font-medium tracking-wide tabular-nums">
+                    {UI_VERSION_LABEL}
                   </span>
-                  <span
-                    aria-hidden="true"
-                    className={`h-1.5 w-1.5 rounded-full ${sessionStatus.dotClass}`}
-                  />
-                  <span className={sessionStatus.valueClass}>
-                    {sessionStatus.label}
-                  </span>
-                </span>
-                <span
-                  className="m3-chip inline-flex items-center gap-1.5 bg-[var(--surface-container-high)] px-2 py-1 text-xs"
-                  title={dlcHoverText}
-                >
-                  {t("app.dlc.found", {
-                    fallback: "DLC Found: {count}",
-                    params: { count: hasSave ? dlcNames.length : 0 },
-                  })}
-                </span>
-                <span className="px-1 text-xs tracking-wide opacity-70">
-                  {UI_VERSION_LABEL}
-                </span>
+                </div>
               </div>
             }
             t={t}

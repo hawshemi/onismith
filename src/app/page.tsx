@@ -16,6 +16,7 @@ import {
   getDifficultySettingLabel,
   getDifficultyValueLabel,
   selectDifficultySettings,
+  selectActiveMods,
 } from "@/lib/oni/save-selectors";
 
 const SAVE_PATHS = {
@@ -75,6 +76,7 @@ function formatParseTime(value: number | string | null | undefined): string {
 function makeOverviewSummary(session: OverviewSession) {
   const gameInfo: GameInfo = session.saveGame?.header?.gameInfo ?? {};
   const dlcIds = Array.isArray(gameInfo.dlcIds) ? gameInfo.dlcIds : [];
+  const activeMods = selectActiveMods(session.saveGame ?? null);
   return {
     fileName: session.fileName ?? "Unknown",
     parseTimeMs: formatParseTime(session.parseTimeMs),
@@ -86,9 +88,12 @@ function makeOverviewSummary(session: OverviewSession) {
     version: `${gameInfo.saveMajorVersion ?? "?"}.${gameInfo.saveMinorVersion ?? "?"}`,
     cluster: gameInfo.clusterId ?? "Unknown",
     autoSave: Boolean(gameInfo.isAutoSave),
-    dlcNames: dlcIds
-      .map(getDlcDisplayName)
-      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
+    dlcs: dlcIds
+      .map((id) => ({ id, name: getDlcDisplayName(id) }))
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+      ),
+    activeMods,
     lastWrittenBytes: formatBytes(session.lastWrittenBytes),
   };
 }
@@ -350,17 +355,76 @@ function ReadyState({
           <StatTile label="Auto Save" value={summary.autoSave ? "Yes" : "No"} />
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <span className="m3-label">DLC</span>
-          {summary.dlcNames.length === 0 ? (
-            <span className="text-xs opacity-70">None detected</span>
-          ) : (
-            summary.dlcNames.map((name) => (
-              <span key={name} className="m3-tag">
-                {name}
+        <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
+          <section className="m3-panel p-3" aria-labelledby="overview-dlc">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="overview-dlc" className="m3-label">
+                Downloadable content
+              </h2>
+              <span className="m3-tag shrink-0">
+                {summary.dlcs.length} active
               </span>
-            ))
-          )}
+            </div>
+            <div className="mt-2 grid gap-1.5">
+              {summary.dlcs.length === 0 ? (
+                <p className="m3-panel-inset px-3 py-2 text-xs opacity-70">
+                  None detected
+                </p>
+              ) : (
+                summary.dlcs.map((dlc) => (
+                  <div key={dlc.id} className="m3-panel-inset px-3 py-2">
+                    <p
+                      className="truncate text-sm font-medium"
+                      title={dlc.name}
+                    >
+                      {dlc.name}
+                    </p>
+                    <code
+                      className="mt-0.5 block truncate text-[0.6875rem] opacity-55"
+                      title={dlc.id}
+                    >
+                      {dlc.id}
+                    </code>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="m3-panel p-3" aria-labelledby="overview-mods">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="overview-mods" className="m3-label">
+                Active mods
+              </h2>
+              <span className="m3-tag shrink-0">
+                {summary.activeMods.length} active
+              </span>
+            </div>
+            <div className="mt-2 grid gap-1.5">
+              {summary.activeMods.length === 0 ? (
+                <p className="m3-panel-inset px-3 py-2 text-xs opacity-70">
+                  None recorded
+                </p>
+              ) : (
+                summary.activeMods.map((mod) => (
+                  <div key={mod.id} className="m3-panel-inset px-3 py-2">
+                    <p
+                      className="truncate text-sm font-medium"
+                      title={mod.title}
+                    >
+                      {mod.title}
+                    </p>
+                    <code
+                      className="mt-0.5 block truncate text-[0.6875rem] opacity-55"
+                      title={mod.id}
+                    >
+                      {mod.id}
+                    </code>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
         </div>
 
         <p className="mt-3 text-xs opacity-60">

@@ -10,7 +10,10 @@ import {
   selectDuplicantEditorModel,
   selectDuplicants,
 } from "@/lib/oni/save-selectors";
-import type { DuplicantEditorModel } from "@/lib/oni/save-selectors";
+import type {
+  BionicSystemsModel,
+  DuplicantEditorModel,
+} from "@/lib/oni/save-selectors";
 import { readStoredHairOffsets } from "@/lib/oni/hair-offsets";
 import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import M3Select from "@/components/ui/m3-select";
@@ -22,6 +25,8 @@ import {
   STRESS_REACTION_TRAIT_IDS,
   getTraitCategory,
   getTraitDisplayName,
+  isBionicIdentityTraitId,
+  isBionicStarterBoosterTraitId,
   normalizeTraitId,
   splitTraitsByReaction,
 } from "@/lib/oni/trait-names";
@@ -106,6 +111,280 @@ function TraitGroupCard({
             })}
           </div>
         )}
+      </div>
+    </section>
+  );
+}
+
+function formatBionicValue(value: number): string {
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits: 1,
+  });
+}
+
+function formatBionicDraftValue(value: number): string {
+  return String(Number(value.toFixed(3)));
+}
+
+function BionicSystemsPanel({
+  duplicantId,
+  systems,
+}: {
+  duplicantId: number;
+  systems: BionicSystemsModel;
+}) {
+  const { updateDuplicantBionicPowerBankCharge, updateDuplicantBionicVital } =
+    useSaveSession();
+  const [vitalDrafts, setVitalDrafts] = useState<Record<string, string>>({});
+  const [vitalErrors, setVitalErrors] = useState<Record<string, string>>({});
+  const [bankDrafts, setBankDrafts] = useState<Record<string, string>>({});
+  const [bankErrors, setBankErrors] = useState<Record<string, string>>({});
+
+  useSyncOnChange([duplicantId, systems.vitals, systems.powerBanks], () => {
+    setVitalDrafts(
+      Object.fromEntries(
+        systems.vitals.map((vital) => [
+          vital.id,
+          formatBionicDraftValue(vital.value),
+        ]),
+      ),
+    );
+    setBankDrafts(
+      Object.fromEntries(
+        systems.powerBanks.flatMap((bank) =>
+          bank.id === null
+            ? []
+            : [
+                [
+                  String(bank.id),
+                  formatBionicDraftValue(bank.chargeKilojoules),
+                ],
+              ],
+        ),
+      ),
+    );
+    setVitalErrors({});
+    setBankErrors({});
+  });
+
+  const commitVital = (vital: BionicSystemsModel["vitals"][number]) => {
+    if (!vital.editable || vital.max === null) {
+      return;
+    }
+    const max = vital.max;
+    const parsed = Number(vitalDrafts[vital.id]);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > max) {
+      setVitalErrors((previous) => ({
+        ...previous,
+        [vital.id]: `Use a value from 0 to ${formatBionicValue(max)}.`,
+      }));
+      return;
+    }
+    updateDuplicantBionicVital(duplicantId, vital.id, parsed);
+    setVitalErrors((previous) => ({ ...previous, [vital.id]: "" }));
+  };
+
+  const commitBank = (bank: BionicSystemsModel["powerBanks"][number]) => {
+    if (
+      !bank.editable ||
+      bank.id === null ||
+      bank.capacityKilojoules === null
+    ) {
+      return;
+    }
+    const key = String(bank.id);
+    const capacityKilojoules = bank.capacityKilojoules;
+    const parsed = Number(bankDrafts[key]);
+    if (!Number.isFinite(parsed) || parsed < 0 || parsed > capacityKilojoules) {
+      setBankErrors((previous) => ({
+        ...previous,
+        [key]: `Use a value from 0 to ${formatBionicValue(capacityKilojoules)} kJ.`,
+      }));
+      return;
+    }
+    updateDuplicantBionicPowerBankCharge(duplicantId, bank.id, parsed);
+    setBankErrors((previous) => ({ ...previous, [key]: "" }));
+  };
+
+  return (
+    <section className="m3-card p-4">
+      <div>
+        <h2 className="text-lg font-semibold">Bionic Systems</h2>
+        <p className="mt-0.5 text-xs opacity-65">
+          Edit stored resources and power bank charge. Installed equipment is
+          preserved.
+        </p>
+      </div>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        {systems.vitals.map((vital) => (
+          <div key={vital.id} className="m3-panel-inset px-3 py-2.5">
+            <label
+              htmlFor={vital.editable ? `bionic-vital-${vital.id}` : undefined}
+              className="m3-label"
+            >
+              {vital.displayName}
+            </label>
+            {vital.editable && vital.max !== null ? (
+              <>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <input
+                    id={`bionic-vital-${vital.id}`}
+                    type="number"
+                    min="0"
+                    max={vital.max}
+                    step="0.1"
+                    value={vitalDrafts[vital.id] ?? ""}
+                    onChange={(event) =>
+                      setVitalDrafts((previous) => ({
+                        ...previous,
+                        [vital.id]: event.target.value,
+                      }))
+                    }
+                    onBlur={() => commitVital(vital)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        commitVital(vital);
+                      }
+                    }}
+                    className="min-w-0 flex-1 m3-field px-2 py-1.5 text-right text-sm tabular-nums"
+                  />
+                  <span className="shrink-0 text-xs opacity-65">
+                    {vital.unit} / {formatBionicValue(vital.max)}
+                  </span>
+                </div>
+                {vitalErrors[vital.id] ? (
+                  <p role="alert" className="mt-1 text-xs m3-error-text">
+                    {vitalErrors[vital.id]}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-sm font-semibold tabular-nums">
+                  {formatBionicValue(vital.value)} {vital.unit}
+                  {vital.max !== null ? (
+                    <span className="font-normal opacity-55">
+                      {" "}
+                      / {formatBionicValue(vital.max)} {vital.unit}
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-1 text-[0.6875rem] opacity-55">
+                  Total from installed power banks
+                </p>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 grid items-start gap-3 md:grid-cols-2">
+        <section className="m3-panel p-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold">Installed Boosters</h3>
+            <span className="m3-tag shrink-0">{systems.boosters.length}</span>
+          </div>
+          <div className="mt-2 grid gap-1.5">
+            {systems.boosters.length === 0 ? (
+              <p className="m3-panel-inset px-3 py-2 text-xs opacity-70">
+                No installed boosters found
+              </p>
+            ) : (
+              systems.boosters.map((booster, index) => (
+                <div
+                  key={booster.id ?? `${booster.prefabId}-${index}`}
+                  className="m3-panel-inset px-3 py-2"
+                >
+                  <p className="truncate text-sm font-medium">
+                    {booster.displayName}
+                  </p>
+                  <code
+                    className="mt-0.5 block truncate text-[0.6875rem] opacity-55"
+                    title={booster.prefabId}
+                  >
+                    {booster.prefabId}
+                  </code>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="m3-panel p-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-sm font-semibold">Installed Power Banks</h3>
+            <span className="m3-tag shrink-0">{systems.powerBanks.length}</span>
+          </div>
+          <div className="mt-2 grid gap-1.5">
+            {systems.powerBanks.length === 0 ? (
+              <p className="m3-panel-inset px-3 py-2 text-xs opacity-70">
+                No installed power banks found
+              </p>
+            ) : (
+              systems.powerBanks.map((bank, index) => (
+                <div
+                  key={bank.id ?? `${bank.prefabId}-${index}`}
+                  className="m3-panel-inset px-3 py-2"
+                  title={bank.prefabId}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <label
+                      htmlFor={
+                        bank.id === null ? undefined : `power-bank-${bank.id}`
+                      }
+                      className="min-w-0 truncate text-sm font-medium"
+                    >
+                      {bank.displayName}
+                    </label>
+                    {bank.editable &&
+                    bank.id !== null &&
+                    bank.capacityKilojoules !== null ? (
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        <input
+                          id={`power-bank-${bank.id}`}
+                          type="number"
+                          min="0"
+                          max={bank.capacityKilojoules}
+                          step="0.1"
+                          value={bankDrafts[String(bank.id)] ?? ""}
+                          onChange={(event) =>
+                            setBankDrafts((previous) => ({
+                              ...previous,
+                              [String(bank.id)]: event.target.value,
+                            }))
+                          }
+                          onBlur={() => commitBank(bank)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              commitBank(bank);
+                            }
+                          }}
+                          className="w-20 m3-field px-2 py-1 text-right text-xs tabular-nums"
+                        />
+                        <span className="text-xs opacity-65">
+                          / {formatBionicValue(bank.capacityKilojoules)} kJ
+                        </span>
+                      </span>
+                    ) : (
+                      <p className="shrink-0 text-xs tabular-nums opacity-70">
+                        {formatBionicValue(bank.chargeKilojoules)} kJ
+                      </p>
+                    )}
+                  </div>
+                  {bank.id !== null && bankErrors[String(bank.id)] ? (
+                    <p
+                      role="alert"
+                      className="mt-1 text-right text-xs m3-error-text"
+                    >
+                      {bankErrors[String(bank.id)]}
+                    </p>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
       </div>
     </section>
   );
@@ -223,12 +502,16 @@ function DuplicantEditorPageContent() {
 
   const { overjoyedReactions, stressReactions, nonReactionTraits } =
     splitTraitsByReaction(modelTraits);
+  const editableNonReactionTraits = nonReactionTraits.filter(
+    (trait) => !isBionicStarterBoosterTraitId(trait),
+  );
+  const bionicBugCount = modelTraits.filter(isBionicIdentityTraitId).length;
   const traitGroups = [
     {
       id: "positive",
       label: "Positive traits",
       tone: "positive" as const,
-      traits: nonReactionTraits.filter(
+      traits: editableNonReactionTraits.filter(
         (trait) => getTraitCategory(trait) === "positive",
       ),
     },
@@ -236,7 +519,7 @@ function DuplicantEditorPageContent() {
       id: "universal",
       label: "General traits",
       tone: "universal" as const,
-      traits: nonReactionTraits.filter(
+      traits: editableNonReactionTraits.filter(
         (trait) => getTraitCategory(trait) === "universal",
       ),
     },
@@ -244,7 +527,7 @@ function DuplicantEditorPageContent() {
       id: "negative",
       label: "Negative traits",
       tone: "negative" as const,
-      traits: nonReactionTraits.filter(
+      traits: editableNonReactionTraits.filter(
         (trait) => getTraitCategory(trait) === "negative",
       ),
     },
@@ -413,6 +696,15 @@ function DuplicantEditorPageContent() {
             <h2 className="mt-3 max-w-full truncate text-xl font-semibold">
               {model.name}
             </h2>
+            {model.isBionic ? (
+              <span className="m3-tag mt-1.5 text-[var(--accent)]">
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 rounded-full bg-current"
+                />
+                Bionic
+              </span>
+            ) : null}
             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs opacity-60">
               <span>{genderDisplayName}</span>
               <span className="tabular-nums">ID {model.id}</span>
@@ -421,15 +713,21 @@ function DuplicantEditorPageContent() {
 
           <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
             <div className="rounded-xl bg-[var(--surface-container-low)] px-2 py-2.5">
-              <dt className="text-xs opacity-70">Traits</dt>
+              <dt className="text-xs opacity-70">
+                {model.isBionic ? "Bionic Bugs" : "Traits"}
+              </dt>
               <dd className="mt-0.5 font-semibold tabular-nums">
-                {modelTraits.length}
+                {model.isBionic ? bionicBugCount : modelTraits.length}
               </dd>
             </div>
             <div className="rounded-xl bg-[var(--surface-container-low)] px-2 py-2.5">
-              <dt className="text-xs opacity-70">Interests</dt>
+              <dt className="text-xs opacity-70">
+                {model.isBionic ? "Boosters" : "Interests"}
+              </dt>
               <dd className="mt-0.5 font-semibold tabular-nums">
-                {model.interests.length}
+                {model.isBionic
+                  ? (model.bionicSystems?.boosters.length ?? 0)
+                  : model.interests.length}
               </dd>
             </div>
             <div className="rounded-xl bg-[var(--surface-container-low)] px-2 py-2.5">
@@ -511,6 +809,13 @@ function DuplicantEditorPageContent() {
         onTabChange={setAppearanceEditorTab}
         onUpdateAppearance={updateDuplicantAppearance}
       />
+
+      {model.bionicSystems ? (
+        <BionicSystemsPanel
+          duplicantId={model.id}
+          systems={model.bionicSystems}
+        />
+      ) : null}
 
       <section className="m3-card p-4">
         <div>
@@ -603,10 +908,12 @@ function DuplicantEditorPageContent() {
       <section className="m3-card p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">Traits</h2>
+            <h2 className="text-lg font-semibold">
+              {model.isBionic ? "Bionic Traits" : "Traits"}
+            </h2>
             <p className="mt-0.5 text-xs opacity-65">
-              {nonReactionTraits.length} active trait
-              {nonReactionTraits.length === 1 ? "" : "s"}
+              {editableNonReactionTraits.length} active trait
+              {editableNonReactionTraits.length === 1 ? "" : "s"}
             </p>
           </div>
           <M3TonalButton
@@ -638,72 +945,76 @@ function DuplicantEditorPageContent() {
         onCategoryChange={setAddTraitCategory}
         onAddTrait={(traitId) => addDuplicantTrait(model.id, traitId)}
         onApplyReaction={applyReactionTrait}
+        isBionic={model.isBionic}
       />
 
-      <div className="m3-card p-4">
-        <h2 className="text-lg font-semibold">Interests</h2>
-        <div className="m3-scrollbar m3-horizontal-scroll mt-3 pb-2">
-          <div className="grid grid-flow-col grid-rows-4 items-start gap-2">
-            {model.interests.length === 0 ? (
-              <span className="text-sm opacity-70">No interests</span>
-            ) : (
-              model.interests.map((interest) => (
-                <M3OutlinedButton
-                  key={interest}
-                  onClick={() => removeDuplicantInterest(model.id, interest)}
-                  className="w-max max-w-56 px-2 py-1 text-xs"
-                  title="Remove interest"
-                >
-                  {getSkillGroupDisplayName(interest)} x
-                </M3OutlinedButton>
-              ))
-            )}
+      {!model.isBionic ? (
+        <div className="m3-card p-4">
+          <h2 className="text-lg font-semibold">Interests</h2>
+          <div className="m3-scrollbar m3-horizontal-scroll mt-3 pb-2">
+            <div className="grid grid-flow-col grid-rows-4 items-start gap-2">
+              {model.interests.length === 0 ? (
+                <span className="text-sm opacity-70">No interests</span>
+              ) : (
+                model.interests.map((interest) => (
+                  <M3OutlinedButton
+                    key={interest}
+                    onClick={() => removeDuplicantInterest(model.id, interest)}
+                    className="w-max max-w-56 px-2 py-1 text-xs"
+                    title="Remove interest"
+                  >
+                    {getSkillGroupDisplayName(interest)} x
+                  </M3OutlinedButton>
+                ))
+              )}
+            </div>
           </div>
+
+          {model.unknownInterestHashes.length > 0 ? (
+            <p className="m3-scrollbar m3-vertical-scroll mt-2 max-h-24 break-words pr-2 text-xs opacity-70">
+              Unknown interest hashes preserved:{" "}
+              {model.unknownInterestHashes.join(", ")}
+            </p>
+          ) : null}
+
+          {model.availableInterests.length > 0 ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <M3Select
+                aria-label="Interest to add"
+                value={interestToAdd}
+                onChange={(event) => setInterestToAdd(event.target.value)}
+                className="m3-field px-3 py-2 text-sm"
+              >
+                {model.availableInterests.map((interest) => (
+                  <option key={interest} value={interest}>
+                    {getSkillGroupDisplayName(interest)}
+                  </option>
+                ))}
+              </M3Select>
+              <M3OutlinedButton
+                onClick={() => {
+                  if (interestToAdd) {
+                    addDuplicantInterest(model.id, interestToAdd);
+                  }
+                }}
+                className="px-3 py-2 text-sm"
+              >
+                Add Interest
+              </M3OutlinedButton>
+            </div>
+          ) : (
+            <p className="mt-3 text-xs opacity-70">
+              All known interests already selected.
+            </p>
+          )}
         </div>
-
-        {model.unknownInterestHashes.length > 0 ? (
-          <p className="m3-scrollbar m3-vertical-scroll mt-2 max-h-24 break-words pr-2 text-xs opacity-70">
-            Unknown interest hashes preserved:{" "}
-            {model.unknownInterestHashes.join(", ")}
-          </p>
-        ) : null}
-
-        {model.availableInterests.length > 0 ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <M3Select
-              aria-label="Interest to add"
-              value={interestToAdd}
-              onChange={(event) => setInterestToAdd(event.target.value)}
-              className="m3-field px-3 py-2 text-sm"
-            >
-              {model.availableInterests.map((interest) => (
-                <option key={interest} value={interest}>
-                  {getSkillGroupDisplayName(interest)}
-                </option>
-              ))}
-            </M3Select>
-            <M3OutlinedButton
-              onClick={() => {
-                if (interestToAdd) {
-                  addDuplicantInterest(model.id, interestToAdd);
-                }
-              }}
-              className="px-3 py-2 text-sm"
-            >
-              Add Interest
-            </M3OutlinedButton>
-          </div>
-        ) : (
-          <p className="mt-3 text-xs opacity-70">
-            All known interests already selected.
-          </p>
-        )}
-      </div>
+      ) : null}
 
       <DuplicantActionsPanel
         key={model.id}
         duplicantId={model.id}
         duplicantName={model.name}
+        canClone={!model.isBionic}
       />
 
       <DuplicantStatsEditor model={model} />

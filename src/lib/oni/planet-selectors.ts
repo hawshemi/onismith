@@ -4,7 +4,12 @@ import {
   type OverworldCell,
   type SaveGame,
 } from "@/lib/save-parser/model";
-import { asNumber, asString, getBehavior } from "./save-selector-utils";
+import {
+  asNumber,
+  asString,
+  getBehavior,
+  getGameObjectId,
+} from "./save-selector-utils";
 
 interface PlanetRecoverableElement {
   element: string;
@@ -46,6 +51,14 @@ export interface Planetoid {
   biomes: PlanetoidBiome[];
 }
 
+export interface LargeImpactor {
+  id: number;
+  currentLocation: { q: number; r: number } | null;
+  targetLocation: { q: number; r: number } | null;
+  crashStampLocation: { x: number; y: number } | null;
+  opaqueStateBytes: number;
+}
+
 const NON_BIOME_TAG_NAMES = new Set([
   "ErodePointToBorderInv",
   "IgnoreCaveOverride",
@@ -57,6 +70,12 @@ const NON_BIOME_TAG_NAMES = new Set([
   "SwapLakesToBelow",
 ]);
 
+const BIOME_DISPLAY_NAMES: Record<string, string> = {
+  PrehistoricGarden: "Garden",
+  PrehistoricRaptor: "Feather",
+  PrehistoricWetlands: "Wetlands",
+};
+
 function isBiomeTag(name: string): boolean {
   return (
     Boolean(name) &&
@@ -67,11 +86,22 @@ function isBiomeTag(name: string): boolean {
 }
 
 function humanizeIdentifier(value: string): string {
+  const displayName = BIOME_DISPLAY_NAMES[value];
+  if (displayName) {
+    return displayName;
+  }
   return value
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function readOptionalPoint(value: unknown): { x: number; y: number } | null {
+  const point = value as { x?: unknown; y?: unknown } | null;
+  const x = asNumber(point?.x, NaN);
+  const y = asNumber(point?.y, NaN);
+  return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
 }
 
 function readPoint(value: unknown): { x: number; y: number } {
@@ -216,6 +246,43 @@ export function selectPlanetoids(saveGame: SaveGame | null): Planetoid[] {
       }
       return a.id - b.id;
     });
+}
+
+export function selectLargeImpactors(
+  saveGame: SaveGame | null,
+): LargeImpactor[] {
+  const groups = Array.isArray(saveGame?.gameObjects)
+    ? saveGame.gameObjects
+    : [];
+  const group = groups.find((entry) => entry?.name === "LargeImpactor");
+  const instances = Array.isArray(group?.gameObjects) ? group.gameObjects : [];
+
+  return instances
+    .map((instance) => {
+      const id = getGameObjectId(instance);
+      if (id === null) {
+        return null;
+      }
+      const state = getBehavior(instance, "StateMachineController")?.extraRaw;
+      return {
+        id,
+        currentLocation: readStarmapLocation(
+          getBehavior(instance, "ClusterMapMeteorShowerVisualizer")
+            ?.templateData?.m_location,
+        ),
+        targetLocation: readStarmapLocation(
+          getBehavior(instance, "ClusterDestinationSelector")?.templateData
+            ?.m_destination,
+        ),
+        crashStampLocation: readOptionalPoint(
+          getBehavior(instance, "LargeImpactorCrashStamp")?.templateData
+            ?.stampLocation,
+        ),
+        opaqueStateBytes: state instanceof ArrayBuffer ? state.byteLength : 0,
+      } satisfies LargeImpactor;
+    })
+    .filter((impactor): impactor is LargeImpactor => impactor !== null)
+    .sort((a, b) => a.id - b.id);
 }
 
 // Element names offered when adding a recoverable element to a planet.

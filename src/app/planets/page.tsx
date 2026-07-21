@@ -9,10 +9,12 @@ import { FractionField, NumberField } from "@/components/ui/numeric-fields";
 import {
   getSimHashByElementName,
   RECOVERABLE_ELEMENT_NAMES,
+  selectLargeImpactors,
   selectPlanetoids,
   selectPlanets,
   type Planet,
   type Planetoid,
+  type LargeImpactor,
 } from "@/lib/oni/save-selectors";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
 
@@ -323,6 +325,59 @@ const PlanetoidCard = memo(function PlanetoidCard({
   );
 });
 
+const LargeImpactorCard = memo(function LargeImpactorCard({
+  impactor,
+}: {
+  impactor: LargeImpactor;
+}) {
+  const formatAxial = (value: LargeImpactor["targetLocation"]) =>
+    value ? `Q ${value.q}, R ${value.r}` : "Unknown";
+  const crashStamp = impactor.crashStampLocation
+    ? `X ${impactor.crashStampLocation.x}, Y ${impactor.crashStampLocation.y}`
+    : "Unknown";
+
+  return (
+    <article className="m3-card border-[var(--warning)]/40 p-4 sm:p-5">
+      <div className="flex flex-wrap items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="m3-label">Prehistoric Planet Pack</p>
+          <h2 className="text-lg font-semibold">Demolior impactor</h2>
+        </div>
+        <span className="m3-tag">Read-only</span>
+      </div>
+      <dl className="mt-4 grid gap-2 sm:grid-cols-4">
+        <div className="m3-panel-inset px-3 py-2.5">
+          <dt className="m3-label">Object ID</dt>
+          <dd className="mt-1 font-mono text-sm font-semibold">
+            {impactor.id}
+          </dd>
+        </div>
+        <div className="m3-panel-inset px-3 py-2.5">
+          <dt className="m3-label">Current starmap cell</dt>
+          <dd className="mt-1 text-sm font-semibold">
+            {formatAxial(impactor.currentLocation)}
+          </dd>
+        </div>
+        <div className="m3-panel-inset px-3 py-2.5">
+          <dt className="m3-label">Target starmap cell</dt>
+          <dd className="mt-1 text-sm font-semibold">
+            {formatAxial(impactor.targetLocation)}
+          </dd>
+        </div>
+        <div className="m3-panel-inset px-3 py-2.5">
+          <dt className="m3-label">Crash stamp</dt>
+          <dd className="mt-1 text-sm font-semibold">{crashStamp}</dd>
+        </div>
+      </dl>
+      <p className="mt-3 text-xs opacity-70">
+        Event progression is stored in{" "}
+        {impactor.opaqueStateBytes.toLocaleString()} bytes of opaque state and
+        is preserved unchanged.
+      </p>
+    </article>
+  );
+});
+
 const SORT_OPTIONS = [
   { value: "name-asc", label: "Type A to Z" },
   { value: "name-desc", label: "Type Z to A" },
@@ -341,6 +396,10 @@ export default function PlanetsPage() {
   const { hasSave, saveGame, updatePlanet } = useSaveSession();
   const planets = useMemo(() => selectPlanets(saveGame), [saveGame]);
   const planetoids = useMemo(() => selectPlanetoids(saveGame), [saveGame]);
+  const largeImpactors = useMemo(
+    () => selectLargeImpactors(saveGame),
+    [saveGame],
+  );
   const hasPlanetoids = planetoids.length > 0;
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("name-asc");
@@ -435,10 +494,15 @@ export default function PlanetsPage() {
       deferredQuery={deferredQuery}
     >
       {hasPlanetoids ? (
-        <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
-          {visiblePlanetoids.map((planetoid) => (
-            <PlanetoidCard key={planetoid.id} planetoid={planetoid} />
+        <div className="grid gap-3">
+          {largeImpactors.map((impactor) => (
+            <LargeImpactorCard key={impactor.id} impactor={impactor} />
           ))}
+          <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+            {visiblePlanetoids.map((planetoid) => (
+              <PlanetoidCard key={planetoid.id} planetoid={planetoid} />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-3">

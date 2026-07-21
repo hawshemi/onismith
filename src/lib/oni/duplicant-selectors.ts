@@ -1,4 +1,8 @@
-import type { GameObjectBehavior, SaveGame } from "@/lib/save-parser/model";
+import type {
+  GameObject,
+  GameObjectBehavior,
+  SaveGame,
+} from "@/lib/save-parser/model";
 import {
   AI_EFFECT_IDS,
   BIONIC_MINION_SKILL_GROUPS,
@@ -9,11 +13,19 @@ import {
 } from "@/lib/oni/oni-constants";
 import { isObjectLike } from "@/lib/oni/raw-path-utils";
 import {
+  BIONIC_VITAL_DEFINITIONS,
+  getBionicPowerBankCapacityKilojoules,
+} from "@/lib/oni/bionic-systems";
+import {
   DUPLICANT_INTEREST_NAMES,
   getSkillGroupDisplayName,
   getSkillGroupNameByHash,
 } from "@/lib/oni/minion-interests";
 import { isBionicIdentityTraitId } from "@/lib/oni/trait-names";
+import {
+  getDuplicantGameObjects,
+  isDuplicantGroupName,
+} from "@/lib/oni/duplicant-groups";
 
 interface DuplicantAppearance {
   hairOrdinal: number;
@@ -30,6 +42,7 @@ interface DuplicantAttributeSummary {
 interface DuplicantSummary {
   id: number;
   name: string;
+  isBionic: boolean;
   gender: string;
   traits: string[];
   appearance: DuplicantAppearance;
@@ -46,6 +59,36 @@ interface DuplicantHealthModifier {
   modifier: string;
   value: number;
   max: number;
+}
+
+export interface BionicVital {
+  id: string;
+  displayName: string;
+  value: number;
+  max: number | null;
+  unit: string;
+  editable: boolean;
+}
+
+export interface BionicPowerBank {
+  id: number | null;
+  prefabId: string;
+  displayName: string;
+  chargeKilojoules: number;
+  capacityKilojoules: number | null;
+  editable: boolean;
+}
+
+export interface BionicBooster {
+  id: number | null;
+  prefabId: string;
+  displayName: string;
+}
+
+export interface BionicSystemsModel {
+  vitals: BionicVital[];
+  powerBanks: BionicPowerBank[];
+  boosters: BionicBooster[];
 }
 
 interface DuplicantSkill {
@@ -80,6 +123,7 @@ interface DuplicantEffectsModel {
 export interface DuplicantEditorModel {
   id: number;
   name: string;
+  isBionic: boolean;
   traits: string[];
   interests: string[];
   availableInterests: string[];
@@ -92,6 +136,7 @@ export interface DuplicantEditorModel {
   skills: DuplicantSkillModel;
   effects: DuplicantEffect[];
   availableEffects: string[];
+  bionicSystems: BionicSystemsModel | null;
 }
 
 const DUPLICANT_ATTRIBUTE_ORDER = [
@@ -166,6 +211,11 @@ function getOrderedDuplicantAttributeIds(
 
 const DUPLICANT_HEALTH_MAX: Record<string, number> = {
   Calories: 4000000,
+};
+
+const BIONIC_ITEM_DISPLAY_NAMES: Record<string, string> = {
+  Booster_Dig2: "Extreme Digging Booster",
+  DisposableElectrobank_RawMetal: "Metal Power Bank",
 };
 
 import {
@@ -248,11 +298,113 @@ function readHealthModifiers(
     map[name] = asNumber(amount?.value?.value, 0);
   }
 
-  return DUPLICANT_HEALTH_MODIFIERS.map((modifier) => ({
+  return DUPLICANT_HEALTH_MODIFIERS.filter((modifier) =>
+    Object.prototype.hasOwnProperty.call(map, modifier),
+  ).map((modifier) => ({
     modifier,
     value: asNumber(map[modifier], 0),
     max: DUPLICANT_HEALTH_MAX[modifier] || 100,
   }));
+}
+
+type StoredGameObject = GameObject & { name?: unknown };
+
+function readStoredGameObjects(source: GameObject): StoredGameObject[] {
+  return (Array.isArray(source.behaviors) ? source.behaviors : [])
+    .filter((behavior) => behavior?.name === "Storage")
+    .flatMap((behavior) =>
+      Array.isArray(behavior.extraData)
+        ? (behavior.extraData as StoredGameObject[])
+        : [],
+    );
+}
+
+function getStoredItemDisplayName(prefabId: string): string {
+  return BIONIC_ITEM_DISPLAY_NAMES[prefabId] ?? prefabId;
+}
+
+function readBionicSystems(
+  source: GameObject,
+  modifiersBehavior: GameObjectBehavior | null,
+): BionicSystemsModel {
+  const rawAmounts = modifiersBehavior?.extraData?.amounts;
+  const amounts = Array.isArray(rawAmounts) ? rawAmounts : [];
+  const amountMap = new Map<string, number>();
+  for (const amount of amounts) {
+    const id = asString(amount?.name);
+    const value = amount?.value?.value;
+    if (id && typeof value === "number" && Number.isFinite(value)) {
+      amountMap.set(id, value);
+    }
+  }
+
+  const storedObjects = readStoredGameObjects(source);
+  const powerBanks = storedObjects.flatMap((storedObject) => {
+    const electrobank = getBehavior(storedObject, "Electrobank");
+    if (!electrobank) {
+      return [];
+    }
+    const prefabId = asString(storedObject.name, "Unknown power bank");
+    const charge = electrobank.templateData?.charge;
+    const capacityKilojoules = getBionicPowerBankCapacityKilojoules(prefabId);
+    return [
+      {
+        id: getGameObjectId(storedObject),
+        prefabId,
+        displayName: getStoredItemDisplayName(prefabId),
+        chargeKilojoules: asNumber(charge, 0) / 1000,
+        capacityKilojoules,
+        editable:
+          getGameObjectId(storedObject) !== null &&
+          capacityKilojoules !== null &&
+          typeof charge === "number" &&
+          Number.isFinite(charge),
+      } satisfies BionicPowerBank,
+    ];
+  });
+  const boosters = storedObjects.flatMap((storedObject) => {
+    if (!getBehavior(storedObject, "BionicUpgradeComponent")) {
+      return [];
+    }
+    const prefabId = asString(storedObject.name, "Unknown booster");
+    return [
+      {
+        id: getGameObjectId(storedObject),
+        prefabId,
+        displayName: getStoredItemDisplayName(prefabId),
+      } satisfies BionicBooster,
+    ];
+  });
+
+  return {
+    vitals: BIONIC_VITAL_DEFINITIONS.flatMap((definition) => {
+      const rawValue = amountMap.get(definition.id);
+      if (rawValue === undefined) {
+        return [];
+      }
+      const dynamicMax =
+        definition.id === "BionicInternalBattery" &&
+        powerBanks.length > 0 &&
+        powerBanks.every((bank) => bank.capacityKilojoules !== null)
+          ? powerBanks.reduce(
+              (total, bank) => total + (bank.capacityKilojoules ?? 0),
+              0,
+            )
+          : definition.max;
+      return [
+        {
+          id: definition.id,
+          displayName: definition.displayName,
+          value: rawValue / definition.divisor,
+          max: dynamicMax,
+          unit: definition.unit,
+          editable: definition.editable,
+        } satisfies BionicVital,
+      ];
+    }),
+    powerBanks,
+    boosters,
+  };
 }
 
 function readSkillModel(
@@ -355,67 +507,73 @@ export function selectDuplicants(
   saveGame: SaveGame | null,
 ): DuplicantSummary[] {
   const groups = saveGame?.gameObjects;
-  const minionGroup = Array.isArray(groups)
-    ? groups.find((group) => group?.name === "Minion")
-    : null;
-
-  const minionGameObjects = minionGroup?.gameObjects;
-  const minions = Array.isArray(minionGameObjects) ? minionGameObjects : [];
   const list: DuplicantSummary[] = [];
 
-  for (const gameObject of minions) {
-    const id = getGameObjectId(gameObject);
-    if (id === null) {
-      continue;
-    }
-    const identity = getBehavior(gameObject, "MinionIdentity");
-    const traitsBehavior = getBehaviorAny(gameObject, [
-      "Klei.AI.Traits",
-      "MinionTraits",
-    ]);
-    const attributesBehavior = getBehaviorAny(gameObject, [
-      "Klei.AI.AttributeLevels",
-      "AttributeLevels",
-    ]);
-    const accessorizerBehavior = getBehavior(gameObject, "Accessorizer");
+  const duplicantGroups = Array.isArray(groups)
+    ? groups.filter((group) => isDuplicantGroupName(group?.name))
+    : [];
 
-    const rawAttributes = Array.isArray(
-      attributesBehavior?.templateData?.saveLoadLevels,
-    )
-      ? attributesBehavior?.templateData?.saveLoadLevels
+  for (const group of duplicantGroups) {
+    const gameObjects = Array.isArray(group?.gameObjects)
+      ? group.gameObjects
       : [];
-
-    const attributeMap: Record<string, number> = {};
-    for (const entry of rawAttributes) {
-      const attributeId = entry?.attributeId;
-      if (!attributeId) {
+    for (const gameObject of gameObjects) {
+      const id = getGameObjectId(gameObject);
+      if (id === null) {
         continue;
       }
-      attributeMap[attributeId] = entry?.level;
+      const identity = getBehavior(gameObject, "MinionIdentity");
+      const traitsBehavior = getBehaviorAny(gameObject, [
+        "Klei.AI.Traits",
+        "MinionTraits",
+      ]);
+      const attributesBehavior = getBehaviorAny(gameObject, [
+        "Klei.AI.AttributeLevels",
+        "AttributeLevels",
+      ]);
+      const accessorizerBehavior = getBehavior(gameObject, "Accessorizer");
+
+      const rawAttributes = Array.isArray(
+        attributesBehavior?.templateData?.saveLoadLevels,
+      )
+        ? attributesBehavior?.templateData?.saveLoadLevels
+        : [];
+
+      const attributeMap: Record<string, number> = {};
+      for (const entry of rawAttributes) {
+        const attributeId = entry?.attributeId;
+        if (!attributeId) {
+          continue;
+        }
+        attributeMap[attributeId] = entry?.level;
+      }
+
+      const traitIds = traitsBehavior?.templateData?.TraitIds;
+
+      list.push({
+        id,
+        name: asString(identity?.templateData?.name, `Duplicant ${id}`),
+        isBionic:
+          group.name === "BionicMinion" ||
+          (Array.isArray(traitIds) && traitIds.some(isBionicIdentityTraitId)),
+        gender: asString(
+          identity?.templateData?.genderStringKey ??
+            identity?.templateData?.gender,
+          "UNKNOWN",
+        ),
+        traits: Array.isArray(traitIds) ? traitIds : [],
+        appearance: readAccessoryOrdinals(
+          accessorizerBehavior?.templateData?.accessories,
+        ),
+        attributes: getOrderedDuplicantAttributeIds(attributeMap).map(
+          (attributeId) => ({
+            attributeId,
+            displayName: getAttributeDisplayName(attributeId),
+            levelLabel: levelWithSign(attributeMap[attributeId]),
+          }),
+        ),
+      });
     }
-
-    const traitIds = traitsBehavior?.templateData?.TraitIds;
-
-    list.push({
-      id,
-      name: asString(identity?.templateData?.name, `Duplicant ${id}`),
-      gender: asString(
-        identity?.templateData?.genderStringKey ??
-          identity?.templateData?.gender,
-        "UNKNOWN",
-      ),
-      traits: Array.isArray(traitIds) ? traitIds : [],
-      appearance: readAccessoryOrdinals(
-        accessorizerBehavior?.templateData?.accessories,
-      ),
-      attributes: getOrderedDuplicantAttributeIds(attributeMap).map(
-        (attributeId) => ({
-          attributeId,
-          displayName: getAttributeDisplayName(attributeId),
-          levelLabel: levelWithSign(attributeMap[attributeId]),
-        }),
-      ),
-    });
   }
 
   return list.sort((a, b) => a.id - b.id);
@@ -434,14 +592,9 @@ export function selectDuplicantEditorModel(
     return null;
   }
 
-  const groups = saveGame?.gameObjects;
-  const minionGroup = Array.isArray(groups)
-    ? groups.find((group) => group?.name === "Minion")
-    : null;
-  const minionGameObjects = minionGroup?.gameObjects;
-  const minions = Array.isArray(minionGameObjects) ? minionGameObjects : [];
-
-  const source = minions.find((obj) => getGameObjectId(obj) === duplicantId);
+  const source = getDuplicantGameObjects(saveGame).find(
+    (obj) => getGameObjectId(obj) === duplicantId,
+  );
 
   const identityBehavior = getBehavior(source, "MinionIdentity");
   const attributesBehavior = getBehaviorAny(source, [
@@ -521,6 +674,7 @@ export function selectDuplicantEditorModel(
   return {
     id: summary.id,
     name: summary.name,
+    isBionic: summary.isBionic,
     traits: summary.traits,
     interests: selectedInterests,
     availableInterests: DUPLICANT_INTEREST_NAMES.filter(
@@ -545,11 +699,11 @@ export function selectDuplicantEditorModel(
       accessorizerBehavior?.templateData?.accessories,
     ),
     health: readHealthModifiers(modifiersBehavior),
-    skills: readSkillModel(
-      resumeBehavior,
-      summary.traits.some(isBionicIdentityTraitId),
-      activeDlcIds,
-    ),
+    skills: readSkillModel(resumeBehavior, summary.isBionic, activeDlcIds),
     ...readEffectsModel(effectsBehavior),
+    bionicSystems:
+      summary.isBionic && source
+        ? readBionicSystems(source, modifiersBehavior)
+        : null,
   };
 }

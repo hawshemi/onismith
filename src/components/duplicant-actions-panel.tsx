@@ -19,6 +19,7 @@ type DuplicantActionsPanelProps = {
   expandSignal?: number;
   onCopied?: () => void;
   containerClassName?: string;
+  canClone?: boolean;
 };
 
 export default function DuplicantActionsPanel({
@@ -26,6 +27,7 @@ export default function DuplicantActionsPanel({
   duplicantName,
   expandSignal,
   onCopied,
+  canClone = true,
   containerClassName = "rounded-2xl border border-[var(--outline)] bg-[var(--surface-container)] p-3",
 }: DuplicantActionsPanelProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -204,6 +206,7 @@ export default function DuplicantActionsPanel({
             cloneDuplicant(duplicantId);
             setFeedback({ kind: "success", text: "Duplicant cloned." });
           }}
+          disabled={!canClone}
           className="px-3 py-1.5 text-xs font-semibold"
         >
           Clone
@@ -213,6 +216,12 @@ export default function DuplicantActionsPanel({
       {!canPaste ? (
         <p className="mt-2 text-xs opacity-65">
           Paste disabled: copied behaviors are from a different object type.
+        </p>
+      ) : null}
+
+      {!canClone ? (
+        <p className="mt-2 text-xs opacity-65">
+          Clone disabled: Bionic-specific state is preserved but not modeled.
         </p>
       ) : null}
 

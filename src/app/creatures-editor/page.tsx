@@ -259,8 +259,13 @@ function CreatureEditorPageContent() {
           <div className="min-w-0 flex-1">
             <p className="m3-label">Selected creature</p>
             <h2 className="truncate text-xl font-semibold sm:text-2xl">
-              {model.type}
+              {model.displayName}
             </h2>
+            {model.displayName !== model.type ? (
+              <code className="mt-1 block truncate text-xs opacity-60">
+                {model.type}
+              </code>
+            ) : null}
             <p className="mt-1 text-sm opacity-70">
               Edit behavior traits and world coordinates.
             </p>

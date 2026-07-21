@@ -6,6 +6,11 @@ import type {
   SaveGame,
 } from "@/lib/save-parser/model";
 import { EFFECT_SECONDS_PER_CYCLE } from "@/lib/oni/oni-constants";
+import { isDuplicantGroupName } from "@/lib/oni/duplicant-groups";
+import {
+  getBionicPowerBankCapacityKilojoules,
+  getBionicVitalDefinition,
+} from "@/lib/oni/bionic-systems";
 
 // Pure save-tree transforms shared by the session reducer and its action
 // creators. Everything here operates on parser types and returns new objects via
@@ -435,6 +440,44 @@ export function updateBehaviorData(
   return changed ? { ...gameObject, behaviors: nextBehaviors } : gameObject;
 }
 
+export function updateStoredGameObjectById(
+  owner: GameObject,
+  storedGameObjectId: number,
+  updater: (storedGameObject: GameObject) => GameObject,
+): GameObject {
+  if (!Array.isArray(owner.behaviors) || !Number.isFinite(storedGameObjectId)) {
+    return owner;
+  }
+
+  let changed = false;
+  const nextBehaviors = owner.behaviors.map((behavior) => {
+    if (behavior?.name !== "Storage" || !Array.isArray(behavior.extraData)) {
+      return behavior;
+    }
+
+    let behaviorChanged = false;
+    const nextStoredObjects = behavior.extraData.map(
+      (storedGameObject: GameObject) => {
+        if (getGameObjectId(storedGameObject) !== storedGameObjectId) {
+          return storedGameObject;
+        }
+        const nextStoredGameObject = updater(storedGameObject);
+        if (nextStoredGameObject !== storedGameObject) {
+          behaviorChanged = true;
+          changed = true;
+        }
+        return nextStoredGameObject;
+      },
+    );
+
+    return behaviorChanged
+      ? { ...behavior, extraData: nextStoredObjects }
+      : behavior;
+  });
+
+  return changed ? { ...owner, behaviors: nextBehaviors } : owner;
+}
+
 export function mutateGameObjectById(
   saveGame: SaveGame,
   gameObjectId: number,
@@ -460,7 +503,7 @@ export function mutateDuplicant(
     return saveGame;
   }
   const location = findGameObjectLocation(saveGame, duplicantId);
-  if (!location || location.group?.name !== "Minion") {
+  if (!location || !isDuplicantGroupName(location.group?.name)) {
     return saveGame;
   }
   const nextObject = mutator(location.gameObject);
@@ -581,7 +624,8 @@ export function updateAccessoryList(
 
 interface ModifierAmount {
   name: string;
-  value: { value: number };
+  value: { value: number; [key: string]: unknown };
+  [key: string]: unknown;
 }
 
 export function updateModifierAmounts(
@@ -591,20 +635,147 @@ export function updateModifierAmounts(
 ): ModifierAmount[] {
   const list = Array.isArray(amounts) ? [...amounts] : [];
   const index = list.findIndex((entry) => entry?.name === modifierName);
-  const patch: ModifierAmount = {
-    name: modifierName,
-    value: {
-      value: nextValue,
-    },
-  };
-
   if (index === -1) {
-    list.push(patch);
+    list.push({ name: modifierName, value: { value: nextValue } });
     return list;
   }
 
-  list[index] = patch;
+  const current = list[index];
+  list[index] = {
+    ...current,
+    value: {
+      ...current.value,
+      value: nextValue,
+    },
+  };
   return list;
+}
+
+export function setDuplicantBionicVitalValue(
+  saveGame: SaveGame,
+  duplicantId: number,
+  vitalId: string,
+  value: number,
+): SaveGame {
+  const definition = getBionicVitalDefinition(vitalId);
+  if (
+    !definition?.editable ||
+    definition.max === null ||
+    !Number.isFinite(value)
+  ) {
+    return saveGame;
+  }
+
+  const nextValue = Math.min(definition.max, Math.max(0, value));
+  return mutateDuplicant(saveGame, duplicantId, (gameObject) => {
+    const behavior = getBehavior(gameObject, "MinionModifiers");
+    const extraData = behavior?.extraData;
+    const amounts = Array.isArray(extraData?.amounts) ? extraData.amounts : [];
+    if (
+      !amounts.some(
+        (amount: { name?: unknown }) => amount?.name === definition.id,
+      )
+    ) {
+      return gameObject;
+    }
+
+    return updateBehaviorData(gameObject, "MinionModifiers", {
+      extraData: {
+        ...extraData,
+        amounts: updateModifierAmounts(
+          amounts,
+          definition.id,
+          nextValue * definition.divisor,
+        ),
+      },
+    });
+  });
+}
+
+export function setDuplicantBionicPowerBankCharge(
+  saveGame: SaveGame,
+  duplicantId: number,
+  powerBankId: number,
+  chargeKilojoules: number,
+): SaveGame {
+  if (!Number.isFinite(powerBankId) || !Number.isFinite(chargeKilojoules)) {
+    return saveGame;
+  }
+
+  return mutateDuplicant(saveGame, duplicantId, (gameObject) => {
+    const updatedGameObject = updateStoredGameObjectById(
+      gameObject,
+      powerBankId,
+      (storedGameObject) => {
+        const prefabId =
+          typeof (storedGameObject as GameObject & { name?: unknown }).name ===
+          "string"
+            ? (storedGameObject as GameObject & { name: string }).name
+            : "";
+        const capacityKilojoules =
+          getBionicPowerBankCapacityKilojoules(prefabId);
+        const electrobank = getBehavior(storedGameObject, "Electrobank");
+        if (
+          capacityKilojoules === null ||
+          typeof electrobank?.templateData?.charge !== "number" ||
+          !Number.isFinite(electrobank.templateData.charge)
+        ) {
+          return storedGameObject;
+        }
+
+        const nextCharge =
+          Math.min(capacityKilojoules, Math.max(0, chargeKilojoules)) * 1000;
+        return updateBehaviorTemplate(
+          storedGameObject,
+          "Electrobank",
+          (template) => ({
+            ...template,
+            charge: nextCharge,
+          }),
+        );
+      },
+    );
+    if (updatedGameObject === gameObject) {
+      return gameObject;
+    }
+
+    const totalCharge = (updatedGameObject.behaviors ?? [])
+      .filter((behavior) => behavior?.name === "Storage")
+      .flatMap((behavior) =>
+        Array.isArray(behavior.extraData) ? behavior.extraData : [],
+      )
+      .reduce((total, storedGameObject: GameObject) => {
+        const charge = getBehavior(storedGameObject, "Electrobank")
+          ?.templateData?.charge;
+        return (
+          total +
+          (typeof charge === "number" && Number.isFinite(charge) ? charge : 0)
+        );
+      }, 0);
+
+    const modifiers = getBehavior(updatedGameObject, "MinionModifiers");
+    const extraData = modifiers?.extraData;
+    const amounts = Array.isArray(extraData?.amounts) ? extraData.amounts : [];
+    if (
+      !amounts.some(
+        (amount: { name?: unknown }) =>
+          amount?.name === "BionicInternalBattery",
+      )
+    ) {
+      return updatedGameObject;
+    }
+
+    return updateBehaviorData(updatedGameObject, "MinionModifiers", {
+      extraData: {
+        ...extraData,
+        amounts: updateModifierAmounts(
+          amounts,
+          "BionicInternalBattery",
+          totalCharge,
+        ),
+      },
+    });
+  });
 }
 
 type MasteryEntry = [string, boolean];
