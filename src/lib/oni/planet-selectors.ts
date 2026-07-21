@@ -25,7 +25,7 @@ export interface Planet {
   recoverableElements: PlanetRecoverableElement[];
 }
 
-export interface PlanetoidBiome {
+interface PlanetoidBiome {
   zoneType: number;
   names: string[];
   cellCount: number;

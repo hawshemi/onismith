@@ -2,24 +2,25 @@
 
 import Link from "next/link";
 
-const BASE_CLASS =
-  "m3-circle-button inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full";
-
-type M3CircleButtonProps = {
+export type M3ButtonProps = {
+  variant: "hollow" | "outlined" | "tonal";
   href?: string;
-  className?: string;
   type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  className?: string;
   children?: React.ReactNode;
 } & React.HTMLAttributes<HTMLElement>;
 
-export default function M3CircleButton({
+export default function M3Button({
+  variant,
   href,
-  className = "",
   type = "button",
+  disabled,
+  className = "",
   children,
   ...props
-}: M3CircleButtonProps) {
-  const mergedClassName = `${BASE_CLASS} ${className}`.trim();
+}: M3ButtonProps) {
+  const mergedClassName = `m3-button m3-button-${variant} ${className}`.trim();
 
   if (href) {
     return (
@@ -30,7 +31,12 @@ export default function M3CircleButton({
   }
 
   return (
-    <button type={type} className={mergedClassName} {...props}>
+    <button
+      type={type}
+      disabled={disabled}
+      className={mergedClassName}
+      {...props}
+    >
       {children}
     </button>
   );

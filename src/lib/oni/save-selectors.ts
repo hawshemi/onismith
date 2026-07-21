@@ -7,10 +7,7 @@ export {
   selectDuplicantEditorModel,
   selectDuplicants,
 } from "./duplicant-selectors";
-export type {
-  DuplicantEditorModel,
-  DuplicantSummary,
-} from "./duplicant-selectors";
+export type { DuplicantEditorModel } from "./duplicant-selectors";
 
 export {
   selectCreatureEditorModel,
@@ -30,4 +27,4 @@ export {
   selectPlanetoids,
   selectPlanets,
 } from "./planet-selectors";
-export type { Planet, Planetoid, PlanetoidBiome } from "./planet-selectors";
+export type { Planet, Planetoid } from "./planet-selectors";

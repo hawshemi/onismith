@@ -654,18 +654,3 @@ export const BIONIC_TRAITS: TraitDefinition[] = [
     status: "overjoyed",
   },
 ];
-
-export const DUPE_OVERJOYED_REACTION_IDS: string[] = [
-  "HAPPYSINGER",
-  "STICKERBOMBER",
-  "SUPERPRODUCTIVE",
-  "BALLOONARTIST",
-  "SPARKLESTREAKER",
-];
-export const DUPE_STRESS_REACTION_IDS: string[] = [
-  "AGGRESSIVE",
-  "STRESSVOMITER",
-  "BINGEEATER",
-  "BANSHEE",
-  "UGLYCRIER",
-];

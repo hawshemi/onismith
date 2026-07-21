@@ -2,7 +2,7 @@
 // timeRemaining (seconds) <-> cycles conversions in the selectors and reducer.
 export const EFFECT_SECONDS_PER_CYCLE = 200;
 
-export interface MinionSkillDefinition {
+interface MinionSkillDefinition {
   skillId: string;
   displayName: string;
 }

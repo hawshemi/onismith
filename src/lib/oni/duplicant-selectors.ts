@@ -27,7 +27,7 @@ interface DuplicantAttributeSummary {
   levelLabel: string;
 }
 
-export interface DuplicantSummary {
+interface DuplicantSummary {
   id: number;
   name: string;
   gender: string;

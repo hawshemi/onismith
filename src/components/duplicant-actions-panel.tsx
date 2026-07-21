@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { FaCheck, FaXmark } from "react-icons/fa6";
-import { M3Chip } from "@/components/ui/m3-chips";
+import M3Chip from "@/components/ui/m3-chip";
 import M3CollapsibleSection from "@/components/ui/m3-collapsible-section";
 import M3OutlinedButton from "@/components/ui/m3-outlined-button";
 import { DUPLICANT_EXPORTABLE_BEHAVIORS } from "@/lib/oni/oni-constants";

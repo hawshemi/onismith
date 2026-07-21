@@ -176,7 +176,7 @@ const EFFECT_DEFINITIONS: Readonly<Record<string, EffectDefinition>> = {
   },
 };
 
-export function formatEffectId(effectId: string): string {
+function formatEffectId(effectId: string): string {
   return effectId
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/([A-Za-z])(\d)/g, "$1 $2")
