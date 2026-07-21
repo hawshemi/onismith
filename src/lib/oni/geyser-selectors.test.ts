@@ -1,31 +1,69 @@
 import { describe, expect, it } from "vitest";
-import {
-  localSaveFixtureExists,
-  parseLocalSaveFixture,
-} from "@/lib/save-parser/local-save-fixtures.test-utils";
+import type { SaveGame } from "@/lib/save-parser/model";
+import { getHashedStringHash } from "./minion-interests";
 import { selectGeysers } from "./geyser-selectors";
 
-const AQUATIC_FIXTURE = "aquatic_fresh_revealed_build.sav";
+function gameObject(id: number, x: number, behaviors: object[] = []) {
+  return {
+    position: { x, y: 20, z: 0 },
+    behaviors: [
+      { name: "KPrefabID", templateData: { InstanceID: id } },
+      ...behaviors,
+    ],
+  };
+}
 
-describe.skipIf(!localSaveFixtureExists(AQUATIC_FIXTURE))(
-  "Aquatic geyser selection",
-  () => {
-    it("includes opaque Aquatic world features as read-only geysers", () => {
-      const geysers = selectGeysers(parseLocalSaveFixture(AQUATIC_FIXTURE));
+const geyserSave = {
+  gameObjects: [
+    {
+      name: "GeyserGeneric_steam",
+      gameObjects: [
+        gameObject(1, 10, [
+          {
+            name: "Geyser",
+            templateData: {
+              configuration: {
+                typeId: { hash: getHashedStringHash("steam") },
+                rateRoll: 2,
+                yearLengthRoll: 3,
+                yearPercentRoll: 0.4,
+                iterationPercentRoll: 0.5,
+                iterationLengthRoll: 6,
+              },
+            },
+          },
+        ]),
+      ],
+    },
+    {
+      name: "SmallReefGeyser",
+      gameObjects: [gameObject(2, 30)],
+    },
+    {
+      name: "UnderwaterVent",
+      gameObjects: [gameObject(3, 40)],
+    },
+  ],
+} as unknown as SaveGame;
 
-      expect(geysers).toHaveLength(38);
-      expect(geysers.filter((geyser) => geyser.isEditable)).toHaveLength(19);
-      expect(
-        geysers.filter((geyser) => geyser.geyserType === "tidal_spring"),
-      ).toHaveLength(13);
-      expect(
-        geysers.filter((geyser) => geyser.geyserType === "thermal_gas_fissure"),
-      ).toHaveLength(6);
-      expect(
-        geysers
-          .filter((geyser) => !geyser.isEditable)
-          .every((geyser) => Number.isFinite(geyser.position.x)),
-      ).toBe(true);
+describe("Aquatic geyser selection", () => {
+  it("includes opaque Aquatic world features as read-only geysers", () => {
+    const geysers = selectGeysers(geyserSave);
+
+    expect(geysers).toHaveLength(3);
+    expect(geysers[0]).toMatchObject({
+      geyserType: "steam",
+      isEditable: true,
+      emitRate: 2,
     });
-  },
-);
+    expect(geysers[1]).toMatchObject({
+      geyserType: "tidal_spring",
+      isEditable: false,
+      position: { x: 30, y: 20, z: 0 },
+    });
+    expect(geysers[2]).toMatchObject({
+      geyserType: "thermal_gas_fissure",
+      isEditable: false,
+    });
+  });
+});
