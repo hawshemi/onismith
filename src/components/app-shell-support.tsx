@@ -1,4 +1,3 @@
-import type { SaveGame } from "@/lib/save-parser/model";
 import type { I18nContextValue } from "@/lib/i18n/i18n-context";
 import type { SaveSessionValue } from "@/lib/save-session/save-session-context";
 import {
@@ -153,21 +152,6 @@ export function routeRequiresSave(pathname: string): boolean {
     }
     return pathname.startsWith(`${prefix}/`);
   });
-}
-
-export function readDlcIds(saveGame: SaveGame | null | undefined): string[] {
-  const gameInfo = saveGame?.header?.gameInfo as
-    { dlcIds?: unknown; dlcId?: string } | undefined;
-  if (!gameInfo) {
-    return [];
-  }
-  if (Array.isArray(gameInfo.dlcIds) && gameInfo.dlcIds.length > 0) {
-    return gameInfo.dlcIds.filter(Boolean);
-  }
-  if (typeof gameInfo.dlcId === "string" && gameInfo.dlcId.length > 0) {
-    return [gameInfo.dlcId];
-  }
-  return [];
 }
 
 export function getErrorGuidance(
