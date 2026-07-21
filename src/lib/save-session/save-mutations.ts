@@ -570,39 +570,6 @@ export function setBuildingName(
   });
 }
 
-export function setBuildingPriority(
-  saveGame: SaveGame,
-  gameObjectId: number,
-  priority: number,
-): SaveGame {
-  if (!Number.isFinite(priority)) {
-    return saveGame;
-  }
-  const nextPriority = Math.min(9, Math.max(1, Math.round(priority)));
-  return mutateGameObjectById(saveGame, gameObjectId, (gameObject) => {
-    if (!getBehavior(gameObject, "BuildingComplete")) {
-      return gameObject;
-    }
-    return updateBehaviorTemplate(gameObject, "Prioritizable", (template) => {
-      const setting = template?.masterPrioritySetting;
-      if (
-        !isPlainObject(setting) ||
-        typeof setting.priority_value !== "number" ||
-        setting.priority_value === nextPriority
-      ) {
-        return template;
-      }
-      return {
-        ...template,
-        masterPrioritySetting: {
-          ...setting,
-          priority_value: nextPriority,
-        },
-      };
-    });
-  });
-}
-
 export function mutateDuplicant(
   saveGame: SaveGame,
   duplicantId: number,

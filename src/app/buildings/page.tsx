@@ -5,7 +5,6 @@ import { FaBuilding } from "react-icons/fa6";
 import BrowseListShell from "@/components/ui/browse-list-shell";
 import M3Dialog from "@/components/ui/m3-dialog";
 import M3OutlinedButton from "@/components/ui/m3-outlined-button";
-import { NumberField } from "@/components/ui/numeric-fields";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
 import { selectBuildings, type Building } from "@/lib/oni/save-selectors";
 
@@ -28,7 +27,7 @@ const BuildingCard = memo(function BuildingCard({
   building: Building;
   onEdit: (buildingId: number) => void;
 }) {
-  const canEdit = building.customName !== null || building.priority !== null;
+  const canEdit = building.customName !== null;
   const savedName = building.customName
     ? readableSavedName(building.customName)
     : null;
@@ -62,11 +61,11 @@ const BuildingCard = memo(function BuildingCard({
           </code>
         </div>
         <span className="m3-tag shrink-0">
-          {canEdit ? "Safe edits" : "Read-only"}
+          {canEdit ? "Name editable" : "Read-only"}
         </span>
       </div>
 
-      <dl className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <dl className="mt-4 grid grid-cols-2 gap-2">
         <div className="m3-panel-inset min-w-0 px-3 py-2.5">
           <dt className="m3-label">Game object ID</dt>
           <dd className="mt-1 truncate font-mono text-sm font-semibold tabular-nums">
@@ -79,12 +78,6 @@ const BuildingCard = memo(function BuildingCard({
             X {building.position.x.toFixed(1)} · Y{" "}
             {building.position.y.toFixed(1)} · Z{" "}
             {building.position.z.toFixed(1)}
-          </dd>
-        </div>
-        <div className="m3-panel-inset min-w-0 px-3 py-2.5">
-          <dt className="m3-label">Priority</dt>
-          <dd className="mt-1 text-sm font-semibold tabular-nums">
-            {building.priority ?? "n/a"}
           </dd>
         </div>
       </dl>
@@ -101,7 +94,7 @@ const BuildingCard = memo(function BuildingCard({
           className="mt-4 self-start px-4 py-2 text-sm"
           onClick={() => onEdit(building.id)}
         >
-          Edit safe fields
+          Edit name
         </M3OutlinedButton>
       ) : null}
     </article>
@@ -112,14 +105,12 @@ type BuildingEditorDialogProps = {
   building: Building | null;
   onClose: () => void;
   onNameChange: (buildingId: number, name: string) => void;
-  onPriorityChange: (buildingId: number, priority: number) => void;
 };
 
 function BuildingEditorDialog({
   building,
   onClose,
   onNameChange,
-  onPriorityChange,
 }: BuildingEditorDialogProps) {
   const currentName = building?.customName
     ? readableSavedName(building.customName)
@@ -146,30 +137,11 @@ function BuildingEditorDialog({
         id="building-editor-description"
         className="mt-2 text-sm leading-relaxed opacity-70"
       >
-        Only fields with a confirmed independent save value are editable. Grid
-        position, material, health, automation, storage, and runtime state stay
-        read-only.
+        This building carries ONI&apos;s independent custom-name value. All
+        other building data stays read-only.
       </p>
 
-      <div className="mt-5 grid gap-4">
-        {building.priority !== null ? (
-          <label className="grid gap-1.5 text-sm">
-            <span className="font-medium">Priority</span>
-            <span className="text-xs opacity-65">
-              Standard ONI building priority from 1 to 9.
-            </span>
-            <NumberField
-              value={building.priority}
-              min="1"
-              max="9"
-              step="1"
-              aria-label="Building priority"
-              className="m3-field w-28 px-3 py-2 text-sm tabular-nums"
-              onCommit={(priority) => onPriorityChange(building.id, priority)}
-            />
-          </label>
-        ) : null}
-
+      <div className="mt-5">
         {building.customName !== null ? (
           <form
             className="grid gap-1.5"
@@ -219,8 +191,7 @@ function BuildingEditorDialog({
 }
 
 export default function BuildingsPage() {
-  const { saveGame, hasSave, updateBuildingName, updateBuildingPriority } =
-    useSaveSession();
+  const { saveGame, hasSave, updateBuildingName } = useSaveSession();
   const buildings = useMemo(() => selectBuildings(saveGame), [saveGame]);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("name-asc");
@@ -267,7 +238,7 @@ export default function BuildingsPage() {
     <BrowseListShell
       hasSave={hasSave}
       title="Buildings"
-      description="Edit confirmed independent fields and inspect the linked runtime state of completed buildings."
+      description="Rename supported buildings and inspect the linked runtime state of completed buildings."
       saveRequiredDescription="Load a save first to inspect completed buildings."
       emptyMessage="No completed buildings found in this save."
       search={{
@@ -301,7 +272,6 @@ export default function BuildingsPage() {
         building={selectedBuilding}
         onClose={() => setSelectedBuildingId(null)}
         onNameChange={updateBuildingName}
-        onPriorityChange={updateBuildingPriority}
       />
     </BrowseListShell>
   );

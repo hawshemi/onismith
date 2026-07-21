@@ -14,7 +14,6 @@ import {
   moveGameObjectToGroup,
   mutateGameObjectById,
   setBuildingName,
-  setBuildingPriority,
   setCycleCount,
   updateBehaviorExtra,
   updateBehaviorTemplate,
@@ -177,14 +176,6 @@ export function useWorldActions(
     [commit, saveGame],
   );
 
-  const updateBuildingPriority = useCallback(
-    (gameObjectId: number, priority: number) => {
-      if (!saveGame) return;
-      commit(setBuildingPriority(saveGame, gameObjectId, priority));
-    },
-    [commit, saveGame],
-  );
-
   const modifyBehavior = useCallback(
     (
       gameObjectId: number,
@@ -284,7 +275,6 @@ export function useWorldActions(
     deleteLooseMaterial,
     modifyBehavior,
     updateBuildingName,
-    updateBuildingPriority,
     updateColonyName,
     updateCreaturePosition,
     updateCycleCount,
