@@ -21,6 +21,9 @@ export {
 } from "./creature-selectors";
 export type { Creature, CreaturePosition } from "./creature-selectors";
 
+export { selectBuildings } from "./building-selectors";
+export type { Building } from "./building-selectors";
+
 export { selectGeysers } from "./geyser-selectors";
 export type { Geyser } from "./geyser-selectors";
 
@@ -38,3 +41,6 @@ export type { LargeImpactor, Planet, Planetoid } from "./planet-selectors";
 
 export { selectActiveMods } from "./mod-selectors";
 export type { ActiveMod } from "./mod-selectors";
+
+export { selectDlcMixingSettings } from "./mixing-selectors";
+export type { DlcMixingSetting } from "./mixing-selectors";

@@ -25,11 +25,14 @@ const CREATURE_DISPLAY_NAMES: Record<string, string> = {
   AlgaeStego: "Blum Lumb",
   Butterfly: "Mimika",
   Chameleon: "Dartle",
+  IceBelly: "Bammoth",
   Mosquito: "Gnit",
   MosquitoBaby: "Gnit Larva",
   PrehistoricPacu: "Jawbo",
   Raptor: "Rhex",
+  Seal: "Spigot Seal",
   Stego: "Lumb",
+  WoodDeer: "Flox",
 };
 
 export function getCreatureDisplayName(type: string): string {

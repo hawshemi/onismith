@@ -17,6 +17,7 @@ import {
   setDuplicantBionicVitalValue,
   setEffectCycles,
   setMasteryValues,
+  syncDuplicantHeaderCount,
   updateAccessoryList,
   updateBehaviorData,
   updateBehaviorTemplate,
@@ -911,14 +912,14 @@ export function useDuplicantActions({
         };
       });
 
-      const nextSaveGame: SaveGame = {
+      const nextSaveGame = syncDuplicantHeaderCount({
         ...saveGame,
         settings: {
           ...saveGame.settings,
           nextUniqueID: newId! + 1,
         },
         gameObjects: nextGroups,
-      };
+      });
       setSaveGame(nextSaveGame, { isModified: true });
       setSelectedDuplicantId(newId);
     },

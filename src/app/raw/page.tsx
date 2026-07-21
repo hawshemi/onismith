@@ -9,7 +9,7 @@ import {
   useState,
   type RefObject,
 } from "react";
-import type { SaveGame } from "@/lib/save-parser/model";
+import type { GameObject, SaveGame } from "@/lib/save-parser/model";
 import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa6";
 import M3GhostButton from "@/components/ui/m3-ghost-button";
@@ -23,6 +23,7 @@ import {
   getRawSegmentName,
   isObjectLike,
 } from "@/lib/oni/raw-path-utils";
+import { getBehavior } from "@/lib/oni/save-selector-utils";
 
 const TREE_CHILD_SCAN_LIMIT = 5000;
 const TREE_CHILD_INITIAL_RENDER = 50;
@@ -187,6 +188,7 @@ type PrimitiveValueEditorProps = {
   fieldPath: string[];
   fieldName: string;
   value: unknown;
+  readOnlyReason?: string | null;
   onCommit: (path: string[], value: string | number | boolean) => void;
 };
 
@@ -194,6 +196,7 @@ function PrimitiveValueEditor({
   fieldPath,
   fieldName,
   value,
+  readOnlyReason,
   onCommit,
 }: PrimitiveValueEditorProps) {
   const type = getPrimitiveType(value);
@@ -231,9 +234,13 @@ function PrimitiveValueEditor({
         <input
           type="checkbox"
           checked={Boolean(value)}
+          disabled={Boolean(readOnlyReason)}
           onChange={(event) => onCommit(fieldPath, event.target.checked)}
-          className="h-4 w-4 accent-[var(--accent)]"
+          className="h-4 w-4 accent-[var(--accent)] disabled:opacity-50"
         />
+        {readOnlyReason ? (
+          <span className="text-xs opacity-60">Read-only</span>
+        ) : null}
       </label>
     );
   }
@@ -248,11 +255,12 @@ function PrimitiveValueEditor({
           id={fieldId}
           type={type === "number" ? "number" : "text"}
           value={draft}
+          disabled={Boolean(readOnlyReason)}
           onChange={(event) => setDraft(event.target.value)}
-          className="m3-field min-w-[240px] px-3 py-2 text-sm"
+          className="m3-field min-w-[240px] px-3 py-2 text-sm disabled:opacity-60"
         />
         <M3OutlinedButton
-          disabled={isLongString}
+          disabled={isLongString || Boolean(readOnlyReason)}
           onClick={
             type === "number" ? commitNumber : () => onCommit(fieldPath, draft)
           }
@@ -267,6 +275,9 @@ function PrimitiveValueEditor({
           {MAX_STRING_EDITOR_LENGTH} characters.
         </p>
       ) : null}
+      {readOnlyReason ? (
+        <p className="mt-2 text-xs opacity-65">{readOnlyReason}</p>
+      ) : null}
       {error ? (
         <p role="alert" className="m3-error-text mt-2 text-xs">
           {error}
@@ -274,6 +285,107 @@ function PrimitiveValueEditor({
       ) : null}
     </div>
   );
+}
+
+function startsWithPath(path: string[], prefix: string[]): boolean {
+  return prefix.every((segment, index) => path[index] === segment);
+}
+
+const LINKED_HEADER_PATHS = new Set([
+  "header.buildVersion",
+  "header.gameInfo.clusterId",
+  "header.gameInfo.numberOfCycles",
+  "header.gameInfo.numberOfDuplicants",
+  "header.gameInfo.sandboxEnabled",
+  "gameData.debugWasUsed",
+]);
+
+function getRawEditRestriction(
+  saveGame: SaveGame,
+  path: string[],
+): string | null {
+  if (startsWithPath(path, ["world", "streamed"])) {
+    return "Streamed grid data is opaque and is preserved without editing.";
+  }
+  if (startsWithPath(path, ["simData"]) || path.includes("extraRaw")) {
+    return "Opaque binary data is preserved without editing.";
+  }
+  if (startsWithPath(path, ["gameData", "storySetings"])) {
+    return "Story data has a linked copy elsewhere in the save and is inspect-only.";
+  }
+  if (startsWithPath(path, ["header", "gameInfo", "dlcIds"])) {
+    return "Active DLC metadata is read-only because changing it does not add or remove DLC content.";
+  }
+  if (
+    startsWithPath(path, [
+      "gameData",
+      "customGameSettings",
+      "CurrentMixingLevelsBySetting",
+    ])
+  ) {
+    return "DLC mixing choices are world-generation metadata and are read-only after generation.";
+  }
+
+  if (LINKED_HEADER_PATHS.has(path.join("."))) {
+    return "This metadata is linked to gameplay data or save history and cannot be edited independently.";
+  }
+
+  if (
+    path[0] === "gameObjects" &&
+    path[2] === "gameObjects" &&
+    path.length > 4
+  ) {
+    const gameObject = getPathValue(
+      saveGame,
+      path.slice(0, 4),
+    ) as GameObject | null;
+    if (getBehavior(gameObject, "BuildingComplete")) {
+      return "Building data includes linked runtime state and is inspect-only.";
+    }
+  }
+
+  const behaviorsIndex = path.indexOf("behaviors");
+  if (behaviorsIndex >= 0 && path.length > behaviorsIndex + 1) {
+    const behaviorPath = path.slice(0, behaviorsIndex + 2);
+    const behavior = getPathValue(saveGame, behaviorPath) as
+      { name?: unknown } | undefined;
+    const fieldPath = path.slice(behaviorsIndex + 2).join(".");
+    if (
+      behavior?.name === "StoryManager" &&
+      fieldPath.startsWith("templateData")
+    ) {
+      return "Story data has a linked copy elsewhere in the save and is inspect-only.";
+    }
+    if (behavior?.name === "GameClock" && fieldPath === "templateData.cycle") {
+      return "Cycle is linked to the save header. Use the Overview editor.";
+    }
+    if (
+      behavior?.name === "SaveGame" &&
+      fieldPath === "templateData.sandboxEnabled"
+    ) {
+      return "Sandbox mode is linked to other save fields. Use the Overview editor.";
+    }
+  }
+
+  if (
+    startsWithPath(path, [
+      "gameData",
+      "customGameSettings",
+      "CurrentQualityLevelsBySetting",
+    ]) &&
+    path.at(-1) === "1"
+  ) {
+    const pair = getPathValue(saveGame, path.slice(0, -1));
+    const settingName = Array.isArray(pair) ? pair[0] : null;
+    if (settingName === "SandboxMode") {
+      return "Sandbox mode is linked to other save fields. Use the Overview editor.";
+    }
+    if (settingName === "ClusterLayout") {
+      return "Cluster layout is world-generation metadata and is read-only after generation.";
+    }
+  }
+
+  return null;
 }
 
 type RawTreeNodeProps = {
@@ -550,6 +662,10 @@ export default function RawEditorPage() {
                     fieldPath={[...selectedPath, field.key]}
                     fieldName={field.key}
                     value={field.value}
+                    readOnlyReason={getRawEditRestriction(saveGame, [
+                      ...selectedPath,
+                      field.key,
+                    ])}
                     onCommit={updateRawValue}
                   />
                 ))}

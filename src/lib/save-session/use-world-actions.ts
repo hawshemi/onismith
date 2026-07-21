@@ -13,6 +13,7 @@ import {
   mergeDeep,
   moveGameObjectToGroup,
   mutateGameObjectById,
+  setCycleCount,
   updateBehaviorExtra,
   updateBehaviorTemplate,
   updateSaveGameRoot,
@@ -80,17 +81,10 @@ export function useWorldActions(
 
   const updateCycleCount = useCallback(
     (cycles: number) => {
-      const gameInfo = saveGame?.header?.gameInfo;
-      if (!saveGame || !gameInfo || !Number.isFinite(cycles)) return;
-      const nextCycles = Math.max(0, Math.trunc(cycles));
-      if (gameInfo.numberOfCycles === nextCycles) return;
-      commit({
-        ...saveGame,
-        header: {
-          ...saveGame.header,
-          gameInfo: { ...gameInfo, numberOfCycles: nextCycles },
-        },
-      });
+      if (!saveGame) return;
+      const next = setCycleCount(saveGame, cycles);
+      if (next === saveGame) return;
+      commit(next);
     },
     [commit, saveGame],
   );

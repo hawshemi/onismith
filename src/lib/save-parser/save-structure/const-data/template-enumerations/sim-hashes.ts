@@ -96,6 +96,7 @@ export enum SimHashes {
   Ethanol = -87974045, // -0x053E609D
   Radium = -47820500, // -0x02D9AED4
   SuperCoolantGas = -3376362, // -0x003384EA
+  WoodLog = 16214647, // 0x00F76A77 (Frosty Planet Pack, DLC2)
   Electrum = 28407099, // 0x01B1753B
   SolidCarbonDioxide = 83003332, // 0x04F287C4
   AluminumGas = 100766521, // 0x06019339
@@ -161,6 +162,7 @@ export enum SimHashes {
   DirtyWater = 1832607973, // 0x6D3B60E5
   Water = 1836671383, // 0x6D796197
   Unobtanium = 1838482828, // 0x6D95058C
+  Cinnabar = 1875790680, // 0x6FCE4B58 (Frosty Planet Pack, DLC2)
   PhosphorusGas = 1887387588, // 0x707F3FC4
   SaltWater = 1911997537, // 0x71F6C461
   SolidEthanol = 1937241528, // 0x7377F5B8

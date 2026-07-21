@@ -22,6 +22,7 @@ import {
 } from "react-icons/fa6";
 import { useI18n } from "@/lib/i18n/i18n-context";
 import {
+  selectBuildings,
   selectCreatures,
   selectDuplicants,
   selectGeysers,
@@ -151,6 +152,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
   );
   const geysersCount = useMemo(
     () => selectGeysers(deferredSaveGame).length,
+    [deferredSaveGame],
+  );
+  const buildingsCount = useMemo(
+    () => selectBuildings(deferredSaveGame).length,
     [deferredSaveGame],
   );
 
@@ -577,6 +582,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                     "/duplicants": duplicantsCount,
                     "/creatures": creaturesCount,
                     "/geysers": geysersCount,
+                    "/buildings": buildingsCount,
                   }
                 : undefined
             }

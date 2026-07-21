@@ -87,6 +87,10 @@
     "container_count": "{{count}} container",
     "container_count_plural": "{{count}} containers"
   },
+  "building": {
+    "noun_titlecase": "Building",
+    "noun_titlecase_plural": "Buildings"
+  },
   "time_cycles": {
     "noun_titlecase": "Cycle Time"
   },
