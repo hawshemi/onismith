@@ -260,8 +260,14 @@ const PlanetoidCard = memo(function PlanetoidCard({
         </span>
       </div>
 
+      <p
+        className="mt-2 truncate text-sm font-medium"
+        title={planetoid.displayWorldName}
+      >
+        {planetoid.displayWorldName}
+      </p>
       <code
-        className="mt-2 block truncate text-xs opacity-65"
+        className="mt-1 block truncate text-xs opacity-65"
         title={planetoid.worldName}
       >
         {planetoid.worldName}

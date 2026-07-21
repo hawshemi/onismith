@@ -82,6 +82,13 @@ export const NAV_ITEMS = [
     icon: FaBuilding,
   },
   {
+    href: "/objects",
+    i18nKey: "object.noun_titlecase_plural",
+    fallback: "Objects",
+    saveRequired: true,
+    icon: FaCubes,
+  },
+  {
     href: "/raw",
     i18nKey: "raw-editor-page.title",
     fallback: "Raw Editor",
@@ -100,6 +107,7 @@ const SAVE_REQUIRED_PATH_PREFIXES = [
   "/planets",
   "/materials",
   "/buildings",
+  "/objects",
 ];
 export const UI_VERSION_LABEL = "v1.0.0";
 export const SAVED_STATUS_DURATION_MS = 3000;
