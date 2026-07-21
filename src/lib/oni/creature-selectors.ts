@@ -16,8 +16,24 @@ export interface CreaturePosition {
 export interface Creature {
   id: number;
   type: string;
+  displayName: string;
   traits: string[];
   position: CreaturePosition;
+}
+
+const CREATURE_DISPLAY_NAMES: Record<string, string> = {
+  AlgaeStego: "Blum Lumb",
+  Butterfly: "Mimika",
+  Chameleon: "Dartle",
+  Mosquito: "Gnit",
+  MosquitoBaby: "Gnit Larva",
+  PrehistoricPacu: "Jawbo",
+  Raptor: "Rhex",
+  Stego: "Lumb",
+};
+
+export function getCreatureDisplayName(type: string): string {
+  return CREATURE_DISPLAY_NAMES[type] ?? type;
 }
 
 export function selectCreatures(saveGame: SaveGame | null): Creature[] {
@@ -48,9 +64,11 @@ export function selectCreatures(saveGame: SaveGame | null): Creature[] {
       const traits = Array.isArray(traitIds) ? traitIds : [];
 
       const position = gameObject?.position;
+      const type = asString(group?.name, "Creature");
       list.push({
         id,
-        type: asString(group?.name, "Creature"),
+        type,
+        displayName: getCreatureDisplayName(type),
         traits,
         position: {
           x: asNumber(position?.x),

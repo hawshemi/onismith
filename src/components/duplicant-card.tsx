@@ -29,6 +29,7 @@ interface DuplicantAppearance {
 interface DuplicantView {
   id: number;
   name: string;
+  isBionic?: boolean;
   gender?: string;
   traits?: string[];
   appearance?: DuplicantAppearance;
@@ -153,6 +154,7 @@ function DuplicantCard({
             </p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
+            {duplicant.isBionic ? <span className="m3-tag">Bionic</span> : null}
             <span className="m3-tag">{traitIds.length} traits</span>
             <span className="m3-tag">{attributeCount} attributes</span>
           </div>

@@ -47,8 +47,13 @@ const CreatureCard = memo(function CreatureCard({
         <div className="min-w-0">
           <p className="m3-label">Creature</p>
           <h2 className="truncate text-lg font-semibold leading-tight">
-            {creature.type}
+            {creature.displayName}
           </h2>
+          {creature.displayName !== creature.type ? (
+            <code className="mt-1 block truncate text-xs opacity-60">
+              {creature.type}
+            </code>
+          ) : null}
         </div>
         <M3OutlinedButton
           href={`/creatures-editor?id=${creature.id}`}
@@ -126,21 +131,23 @@ export default function CreaturesPage() {
   const visibleCreatures = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
     const filtered = needle
-      ? creatures.filter((creature) =>
-          creature.type.toLowerCase().includes(needle),
+      ? creatures.filter(
+          (creature) =>
+            creature.type.toLowerCase().includes(needle) ||
+            creature.displayName.toLowerCase().includes(needle),
         )
       : creatures;
     return [...filtered].sort((a, b) => {
       switch (sort) {
         case "type-desc":
-          return b.type.localeCompare(a.type);
+          return b.displayName.localeCompare(a.displayName);
         case "id-asc":
           return a.id - b.id;
         case "id-desc":
           return b.id - a.id;
         case "type-asc":
         default:
-          return a.type.localeCompare(b.type);
+          return a.displayName.localeCompare(b.displayName);
       }
     });
   }, [creatures, deferredQuery, sort]);

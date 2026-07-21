@@ -1,4 +1,5 @@
 import { isObjectLike } from "@/lib/oni/raw-path-utils";
+import { getDuplicantGameObjects } from "@/lib/oni/duplicant-groups";
 
 interface ProbeTerm {
   id: string;
@@ -180,15 +181,9 @@ interface AppearanceSummary {
 }
 
 function extractAppearanceSummary(saveGame: unknown): AppearanceSummary {
-  const gameObjectsValue = getIn(saveGame, ["gameObjects"]);
-  const groups = Array.isArray(gameObjectsValue) ? gameObjectsValue : [];
-  const minionGroup = groups.find(
-    (group) => isObjectLike(group) && group.name === "Minion",
+  const minions = getDuplicantGameObjects(
+    saveGame as Parameters<typeof getDuplicantGameObjects>[0],
   );
-  const minionGameObjects = isObjectLike(minionGroup)
-    ? minionGroup.gameObjects
-    : undefined;
-  const minions = Array.isArray(minionGameObjects) ? minionGameObjects : [];
 
   const hairNames = new Set<string>();
   const headshapeNames = new Set<string>();

@@ -704,6 +704,7 @@ function DuplicantEditorPageContent() {
         key={model.id}
         duplicantId={model.id}
         duplicantName={model.name}
+        canClone={!model.isBionic}
       />
 
       <DuplicantStatsEditor model={model} />

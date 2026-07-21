@@ -6,6 +6,7 @@ import type {
   SaveGame,
 } from "@/lib/save-parser/model";
 import { EFFECT_SECONDS_PER_CYCLE } from "@/lib/oni/oni-constants";
+import { isDuplicantGroupName } from "@/lib/oni/duplicant-groups";
 
 // Pure save-tree transforms shared by the session reducer and its action
 // creators. Everything here operates on parser types and returns new objects via
@@ -460,7 +461,7 @@ export function mutateDuplicant(
     return saveGame;
   }
   const location = findGameObjectLocation(saveGame, duplicantId);
-  if (!location || location.group?.name !== "Minion") {
+  if (!location || !isDuplicantGroupName(location.group?.name)) {
     return saveGame;
   }
   const nextObject = mutator(location.gameObject);

@@ -14,6 +14,10 @@ import {
   getSkillGroupNameByHash,
 } from "@/lib/oni/minion-interests";
 import { isBionicIdentityTraitId } from "@/lib/oni/trait-names";
+import {
+  getDuplicantGameObjects,
+  isDuplicantGroupName,
+} from "@/lib/oni/duplicant-groups";
 
 interface DuplicantAppearance {
   hairOrdinal: number;
@@ -30,6 +34,7 @@ interface DuplicantAttributeSummary {
 interface DuplicantSummary {
   id: number;
   name: string;
+  isBionic: boolean;
   gender: string;
   traits: string[];
   appearance: DuplicantAppearance;
@@ -80,6 +85,7 @@ interface DuplicantEffectsModel {
 export interface DuplicantEditorModel {
   id: number;
   name: string;
+  isBionic: boolean;
   traits: string[];
   interests: string[];
   availableInterests: string[];
@@ -355,67 +361,73 @@ export function selectDuplicants(
   saveGame: SaveGame | null,
 ): DuplicantSummary[] {
   const groups = saveGame?.gameObjects;
-  const minionGroup = Array.isArray(groups)
-    ? groups.find((group) => group?.name === "Minion")
-    : null;
-
-  const minionGameObjects = minionGroup?.gameObjects;
-  const minions = Array.isArray(minionGameObjects) ? minionGameObjects : [];
   const list: DuplicantSummary[] = [];
 
-  for (const gameObject of minions) {
-    const id = getGameObjectId(gameObject);
-    if (id === null) {
-      continue;
-    }
-    const identity = getBehavior(gameObject, "MinionIdentity");
-    const traitsBehavior = getBehaviorAny(gameObject, [
-      "Klei.AI.Traits",
-      "MinionTraits",
-    ]);
-    const attributesBehavior = getBehaviorAny(gameObject, [
-      "Klei.AI.AttributeLevels",
-      "AttributeLevels",
-    ]);
-    const accessorizerBehavior = getBehavior(gameObject, "Accessorizer");
+  const duplicantGroups = Array.isArray(groups)
+    ? groups.filter((group) => isDuplicantGroupName(group?.name))
+    : [];
 
-    const rawAttributes = Array.isArray(
-      attributesBehavior?.templateData?.saveLoadLevels,
-    )
-      ? attributesBehavior?.templateData?.saveLoadLevels
+  for (const group of duplicantGroups) {
+    const gameObjects = Array.isArray(group?.gameObjects)
+      ? group.gameObjects
       : [];
-
-    const attributeMap: Record<string, number> = {};
-    for (const entry of rawAttributes) {
-      const attributeId = entry?.attributeId;
-      if (!attributeId) {
+    for (const gameObject of gameObjects) {
+      const id = getGameObjectId(gameObject);
+      if (id === null) {
         continue;
       }
-      attributeMap[attributeId] = entry?.level;
+      const identity = getBehavior(gameObject, "MinionIdentity");
+      const traitsBehavior = getBehaviorAny(gameObject, [
+        "Klei.AI.Traits",
+        "MinionTraits",
+      ]);
+      const attributesBehavior = getBehaviorAny(gameObject, [
+        "Klei.AI.AttributeLevels",
+        "AttributeLevels",
+      ]);
+      const accessorizerBehavior = getBehavior(gameObject, "Accessorizer");
+
+      const rawAttributes = Array.isArray(
+        attributesBehavior?.templateData?.saveLoadLevels,
+      )
+        ? attributesBehavior?.templateData?.saveLoadLevels
+        : [];
+
+      const attributeMap: Record<string, number> = {};
+      for (const entry of rawAttributes) {
+        const attributeId = entry?.attributeId;
+        if (!attributeId) {
+          continue;
+        }
+        attributeMap[attributeId] = entry?.level;
+      }
+
+      const traitIds = traitsBehavior?.templateData?.TraitIds;
+
+      list.push({
+        id,
+        name: asString(identity?.templateData?.name, `Duplicant ${id}`),
+        isBionic:
+          group.name === "BionicMinion" ||
+          (Array.isArray(traitIds) && traitIds.some(isBionicIdentityTraitId)),
+        gender: asString(
+          identity?.templateData?.genderStringKey ??
+            identity?.templateData?.gender,
+          "UNKNOWN",
+        ),
+        traits: Array.isArray(traitIds) ? traitIds : [],
+        appearance: readAccessoryOrdinals(
+          accessorizerBehavior?.templateData?.accessories,
+        ),
+        attributes: getOrderedDuplicantAttributeIds(attributeMap).map(
+          (attributeId) => ({
+            attributeId,
+            displayName: getAttributeDisplayName(attributeId),
+            levelLabel: levelWithSign(attributeMap[attributeId]),
+          }),
+        ),
+      });
     }
-
-    const traitIds = traitsBehavior?.templateData?.TraitIds;
-
-    list.push({
-      id,
-      name: asString(identity?.templateData?.name, `Duplicant ${id}`),
-      gender: asString(
-        identity?.templateData?.genderStringKey ??
-          identity?.templateData?.gender,
-        "UNKNOWN",
-      ),
-      traits: Array.isArray(traitIds) ? traitIds : [],
-      appearance: readAccessoryOrdinals(
-        accessorizerBehavior?.templateData?.accessories,
-      ),
-      attributes: getOrderedDuplicantAttributeIds(attributeMap).map(
-        (attributeId) => ({
-          attributeId,
-          displayName: getAttributeDisplayName(attributeId),
-          levelLabel: levelWithSign(attributeMap[attributeId]),
-        }),
-      ),
-    });
   }
 
   return list.sort((a, b) => a.id - b.id);
@@ -434,14 +446,9 @@ export function selectDuplicantEditorModel(
     return null;
   }
 
-  const groups = saveGame?.gameObjects;
-  const minionGroup = Array.isArray(groups)
-    ? groups.find((group) => group?.name === "Minion")
-    : null;
-  const minionGameObjects = minionGroup?.gameObjects;
-  const minions = Array.isArray(minionGameObjects) ? minionGameObjects : [];
-
-  const source = minions.find((obj) => getGameObjectId(obj) === duplicantId);
+  const source = getDuplicantGameObjects(saveGame).find(
+    (obj) => getGameObjectId(obj) === duplicantId,
+  );
 
   const identityBehavior = getBehavior(source, "MinionIdentity");
   const attributesBehavior = getBehaviorAny(source, [
@@ -521,6 +528,7 @@ export function selectDuplicantEditorModel(
   return {
     id: summary.id,
     name: summary.name,
+    isBionic: summary.isBionic,
     traits: summary.traits,
     interests: selectedInterests,
     availableInterests: DUPLICANT_INTEREST_NAMES.filter(
@@ -545,11 +553,7 @@ export function selectDuplicantEditorModel(
       accessorizerBehavior?.templateData?.accessories,
     ),
     health: readHealthModifiers(modifiersBehavior),
-    skills: readSkillModel(
-      resumeBehavior,
-      summary.traits.some(isBionicIdentityTraitId),
-      activeDlcIds,
-    ),
+    skills: readSkillModel(resumeBehavior, summary.isBionic, activeDlcIds),
     ...readEffectsModel(effectsBehavior),
   };
 }

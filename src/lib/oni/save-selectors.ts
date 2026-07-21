@@ -25,6 +25,10 @@ export {
   RECOVERABLE_ELEMENT_NAMES,
   getSimHashByElementName,
   selectPlanetoids,
+  selectLargeImpactors,
   selectPlanets,
 } from "./planet-selectors";
-export type { Planet, Planetoid } from "./planet-selectors";
+export type { LargeImpactor, Planet, Planetoid } from "./planet-selectors";
+
+export { selectActiveMods } from "./mod-selectors";
+export type { ActiveMod } from "./mod-selectors";

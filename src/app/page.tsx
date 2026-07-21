@@ -16,6 +16,7 @@ import {
   getDifficultySettingLabel,
   getDifficultyValueLabel,
   selectDifficultySettings,
+  selectActiveMods,
 } from "@/lib/oni/save-selectors";
 
 const SAVE_PATHS = {
@@ -75,6 +76,7 @@ function formatParseTime(value: number | string | null | undefined): string {
 function makeOverviewSummary(session: OverviewSession) {
   const gameInfo: GameInfo = session.saveGame?.header?.gameInfo ?? {};
   const dlcIds = Array.isArray(gameInfo.dlcIds) ? gameInfo.dlcIds : [];
+  const activeMods = selectActiveMods(session.saveGame ?? null);
   return {
     fileName: session.fileName ?? "Unknown",
     parseTimeMs: formatParseTime(session.parseTimeMs),
@@ -89,6 +91,7 @@ function makeOverviewSummary(session: OverviewSession) {
     dlcNames: dlcIds
       .map(getDlcDisplayName)
       .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })),
+    activeMods,
     lastWrittenBytes: formatBytes(session.lastWrittenBytes),
   };
 }
@@ -358,6 +361,19 @@ function ReadyState({
             summary.dlcNames.map((name) => (
               <span key={name} className="m3-tag">
                 {name}
+              </span>
+            ))
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="m3-label">Active mods</span>
+          {summary.activeMods.length === 0 ? (
+            <span className="text-xs opacity-70">None recorded</span>
+          ) : (
+            summary.activeMods.map((mod) => (
+              <span key={mod.id} className="m3-tag" title={mod.id}>
+                {mod.title}
               </span>
             ))
           )}
