@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { isDeepStrictEqual } from "node:util";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -27,6 +27,10 @@ const fixtures = [
   },
 ] as const;
 
+const hasLocalFixtures = fixtures.every(({ fileName }) =>
+  existsSync(fileURLToPath(new URL(fileName, FIXTURE_DIRECTORY))),
+);
+
 function readFixture(fileName: string): ArrayBuffer {
   const bytes = readFileSync(
     fileURLToPath(new URL(fileName, FIXTURE_DIRECTORY)),
@@ -37,7 +41,7 @@ function readFixture(fileName: string): ArrayBuffer {
   ) as ArrayBuffer;
 }
 
-describe("current ONI save fixtures", () => {
+describe.skipIf(!hasLocalFixtures)("local ONI save fixtures", () => {
   it.each(fixtures)(
     "parses and semantically round-trips $fileName",
     ({ fileName, clusterId, groupCount, objectCount }) => {

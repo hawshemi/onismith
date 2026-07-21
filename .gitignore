@@ -17,6 +17,9 @@ next-env.d.ts
 .env*
 .dev.vars*
 
+# Local ONI saves
+*.sav
+
 # Logs and system files
 npm-debug.log*
 .DS_Store
