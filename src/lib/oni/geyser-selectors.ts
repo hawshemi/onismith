@@ -12,12 +12,19 @@ export interface Geyser {
   id: number;
   objectType: string;
   geyserType: string;
+  isEditable: boolean;
+  position: { x: number; y: number; z: number };
   emitRate: number;
   lifecycleLength: number;
   activeFraction: number;
   emissionFraction: number;
   iterationLength: number;
 }
+
+const SPECIAL_GEYSER_TYPES: Record<string, string> = {
+  SmallReefGeyser: "tidal_spring",
+  UnderwaterVent: "thermal_gas_fissure",
+};
 
 const GEYSER_TYPE_BY_HASH: Record<string, string> = Object.fromEntries(
   GEYSER_TYPE_NAMES.map((typeName) => [
@@ -36,16 +43,18 @@ export function selectGeysers(saveGame: SaveGame | null): Geyser[] {
     const gameObjects = Array.isArray(groupGameObjects) ? groupGameObjects : [];
     for (const gameObject of gameObjects) {
       const geyserBehavior = getBehavior(gameObject, "Geyser");
-      if (!geyserBehavior) {
+      const specialType = SPECIAL_GEYSER_TYPES[asString(group?.name)];
+      if (!geyserBehavior && !specialType) {
         continue;
       }
       const id = getGameObjectId(gameObject);
       if (id === null || !Number.isFinite(id)) {
         continue;
       }
-      const config = geyserBehavior.templateData?.configuration || {};
+      const config = geyserBehavior?.templateData?.configuration || {};
       const typeHash = config.typeId?.hash;
       const resolvedType =
+        specialType ||
         (Number.isFinite(typeHash)
           ? GEYSER_TYPE_BY_HASH[String(typeHash)]
           : null) ||
@@ -56,6 +65,12 @@ export function selectGeysers(saveGame: SaveGame | null): Geyser[] {
         id,
         objectType: asString(group?.name, "Geyser"),
         geyserType: resolvedType,
+        isEditable: Boolean(geyserBehavior),
+        position: {
+          x: asNumber(gameObject.position?.x, 0),
+          y: asNumber(gameObject.position?.y, 0),
+          z: asNumber(gameObject.position?.z, 0),
+        },
         emitRate: asNumber(config.rateRoll, 0),
         lifecycleLength: asNumber(config.yearLengthRoll, 0),
         activeFraction: asNumber(config.yearPercentRoll, 0),

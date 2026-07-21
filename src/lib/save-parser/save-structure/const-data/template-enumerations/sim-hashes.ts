@@ -1,11 +1,14 @@
 export enum SimHashes {
   CrushedIce = -2123557039, // -0x7E92E8AF
   SulfurGas = -2120504832, // -0x7E645600
+  Latex = -2108601198, // -0x7DAEB36E (Aquatic Planet Pack, DLC5)
   Diamond = -2079931820, // -0x7BF93DAC
   Aerogel = -2070223827, // -0x7B651BD3
   Isoresin = -2008682336, // -0x77BA0F60
+  ZincGas = -1988727339, // -0x7689922B (Aquatic Planet Pack, DLC5)
   SaltGas = -1946026749, // -0x73FE02FD
   LiquidHelium = -1934139602, // -0x7348A0D2
+  ZincOre = -1921520130, // -0x72881202 (Aquatic Planet Pack, DLC5)
   LiquidOxygen = -1908044868, // -0x71BA7444
   PhosphateNodules = -1901832310, // -0x715BA876
   Algae = -1870043872, // -0x6F769AE0
@@ -15,6 +18,7 @@ export enum SimHashes {
   Copper = -1725038055, // -0x66D1FDE7
   CrushedRock = -1714565729, // -0x66323261
   SuperInsulator = -1713958528, // -0x6628EE80
+  Corallium = -1705953114, // -0x65AEC75A (Aquatic Planet Pack, DLC5)
   ViscoGel = -1683093854, // -0x6451F95E
   PalmWood = -1675462177, // -0x63DD8621 (Aquatic Planet Pack, DLC5)
   MoltenAluminum = -1637472877, // -0x6199DA6D
@@ -34,6 +38,7 @@ export enum SimHashes {
   ChlorineGas = -1324664829, // -0x4EF4C7FD
   MoltenGlass = -1312713527, // -0x4E3E6B37
   SolidCrudeOil = -1224086026, // -0x48F6120A
+  PollutedBrine = -1220003949, // -0x48B7C86D (Aquatic Planet Pack, DLC5)
   Wolframite = -1208854194, // -0x480DA6B2
   SlimeMold = -1153056158, // -0x44BA3D9E
   Polypropylene = -1142341158, // -0x4416BE26
@@ -63,8 +68,10 @@ export enum SimHashes {
   SolidSyngas = -690658692, // -0x292A9D84
   SolidChlorine = -690060127, // -0x29217B5F
   LiquidPropane = -645698215, // -0x267C92A7
+  SolidMucin = -554277707, // -0x21099B4B (Aquatic Planet Pack, DLC5)
   SolidMercury = -537625624, // -0x200B8418
   MoltenTungsten = -509585641, // -0x1E5FA8E9
+  Coquina = -487705524, // -0x1D11CBB4 (Aquatic Planet Pack, DLC5)
   Petroleum = -486269331, // -0x1CFBE193
   Obsidian = -474151749, // -0x1C42FB45
   SolidPetroleum = -473261502, // -0x1C3565BE
@@ -72,7 +79,9 @@ export enum SimHashes {
   MoltenSalt = -422045879, // -0x1927E8B7
   SolidSuperCoolant = -389019570, // -0x172FF7B2
   IgneousRock = -355957251, // -0x15377A03
+  Rubber = -351425712, // -0x14F254B0 (Aquatic Planet Pack, DLC5)
   EnrichedUranium = -348942381, // -0x14CC702D
+  SiltStone = -328791769, // -0x1398F6D9 (Aquatic Planet Pack, DLC5)
   Brick = -325269471, // -0x136337DF
   Brine = -324547888, // -0x13583530
   CarbonGas = -314016756, // -0x12B783F4
@@ -92,6 +101,7 @@ export enum SimHashes {
   UraniumOre = 134298891, // 0x08013D0B
   SolidPropane = 166493482, // 0x09EC7D2A
   AluminumOre = 167973730, // 0x0A031362
+  FrozenOvolene = 175678264, // 0x0A78A338 (Aquatic Planet Pack, DLC5)
   SedimentaryRock = 183408504, // 0x0AEE9778
   Fullerene = 245514112, // 0x0EA23F80
   GoldAmalgam = 361868060, // 0x1591AB1C
@@ -104,12 +114,15 @@ export enum SimHashes {
   MoltenIron = 502659099, // 0x1DF5F81B
   MoltenCarbon = 505665536, // 0x1E23D800
   Glass = 623986332, // 0x2531469C
+  FrozenInk = 641221190, // 0x26384246 (Aquatic Planet Pack, DLC5)
   MoltenSyngas = 660593444, // 0x275FDB24
   ContaminatedOxygen = 721531317, // 0x2B01B1B5
   Vacuum = 758759285, // 0x2D39BF75
+  MoltenZinc = 813320439, // 0x307A48F7 (Aquatic Planet Pack, DLC5)
   Clay = 867327137, // 0x33B25CA1
   ToxicSand = 869554203, // 0x33D4581B
   Ice = 873952427, // 0x341774AB
+  Ink = 874674022, // 0x34227766 (Aquatic Planet Pack, DLC5)
   LeadGas = 905042813, // 0x35F1DB7D
   Carbon = 947100397, // 0x38739AED
   SolidOxygen = 973502379, // 0x3A0677AB
@@ -117,20 +130,25 @@ export enum SimHashes {
   DepletedUranium = 1064294988, // 0x3F6FDA4C
   Katairite = 1071649902, // 0x3FE0146E
   Syngas = 1102028305, // 0x41AF9E11
+  Pearl = 1120921638, // 0x42CFE826 (Aquatic Planet Pack, DLC5)
   Naphtha = 1157157570, // 0x44F8D2C2
   SolidMethane = 1183979137, // 0x46921681
   OxyRock = 1262005685, // 0x4B38ADB5
   MaficRock = 1282846257, // 0x4C76AE31
   Iron = 1306370440, // 0x4DDDA188
   LiquidPhosphorus = 1323821489, // 0x4EE7E9B1
+  Basalt = 1347222069, // 0x504CFA35 (Aquatic Planet Pack, DLC5)
   Regolith = 1362238252, // 0x51321B2C
   Slabs = 1412740729, // 0x5434B679
   Bitumen = 1433229102, // 0x556D572E
   MoltenSteel = 1459013976, // 0x56F6C958
   MoltenNiobium = 1499134368, // 0x595AF9A0
+  Ovolene = 1536800856, // 0x5B99B858 (Aquatic Planet Pack, DLC5)
   IronGas = 1541626289, // 0x5BE359B1
   TempConductorSolid = 1559722904, // 0x5CF77B98
   IronOre = 1608833498, // 0x5FE4D9DA
+  Zinc = 1617031780, // 0x6061F264 (Aquatic Planet Pack, DLC5)
+  Mucin = 1617621984, // 0x606AF3E0 (Aquatic Planet Pack, DLC5)
   Dirt = 1624244999, // 0x60D00307
   Cement = 1627140480, // 0x60FC3180
   DirtyIce = 1664334585, // 0x6333BAF9
@@ -147,6 +165,7 @@ export enum SimHashes {
   CarbonDioxide = 1960575215, // 0x74DC00EF
   CopperGas = 1966552544, // 0x753735E0
   FoolsGold = 2059777261, // 0x7AC5B4ED
+  Galena = 2071292326, // 0x7B7569A6 (Aquatic Planet Pack, DLC5)
   Aluminum = 2108244480, // 0x7DA94200
   MoltenCopper = 2128494380, // 0x7EDE3F2C
 }
