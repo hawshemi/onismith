@@ -60,6 +60,7 @@ export interface SaveSessionValue extends SaveSessionState {
   updateDifficultySetting: (difficultyType: string, value: string) => void;
   updateColonyName: (name: string) => void;
   updateCycleCount: (cycles: number) => void;
+  updateBuildingName: (gameObjectId: number, name: string) => void;
   updateDuplicantName: (duplicantId: number, name: string) => void;
   addDuplicantTrait: (duplicantId: number, traitId: string) => void;
   removeDuplicantTrait: (duplicantId: number, traitId: string) => void;
@@ -265,6 +266,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
   const {
     deleteLooseMaterial,
     modifyBehavior,
+    updateBuildingName,
     updateColonyName,
     updateCreaturePosition,
     updateCycleCount,
@@ -343,6 +345,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
       setSelectedDuplicantId,
       setSelectedCreatureId,
       updateDifficultySetting,
+      updateBuildingName,
       updateColonyName,
       updateCycleCount,
       updateDuplicantName,
@@ -416,6 +419,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
     updateDuplicantHealthModifier,
     updateDuplicantBionicPowerBankCharge,
     updateDuplicantBionicVital,
+    updateBuildingName,
     updateDifficultySetting,
     updateColonyName,
     updateCycleCount,

@@ -71,9 +71,11 @@ const NON_BIOME_TAG_NAMES = new Set([
 ]);
 
 const BIOME_DISPLAY_NAMES: Record<string, string> = {
+  CarrotQuarry: "Cool Pool",
   PrehistoricGarden: "Garden",
   PrehistoricRaptor: "Feather",
   PrehistoricWetlands: "Wetlands",
+  SugarWoods: "Nectar",
 };
 
 function isBiomeTag(name: string): boolean {

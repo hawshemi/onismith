@@ -13,6 +13,8 @@ import {
   mergeDeep,
   moveGameObjectToGroup,
   mutateGameObjectById,
+  setBuildingName,
+  setCycleCount,
   updateBehaviorExtra,
   updateBehaviorTemplate,
   updateSaveGameRoot,
@@ -80,17 +82,10 @@ export function useWorldActions(
 
   const updateCycleCount = useCallback(
     (cycles: number) => {
-      const gameInfo = saveGame?.header?.gameInfo;
-      if (!saveGame || !gameInfo || !Number.isFinite(cycles)) return;
-      const nextCycles = Math.max(0, Math.trunc(cycles));
-      if (gameInfo.numberOfCycles === nextCycles) return;
-      commit({
-        ...saveGame,
-        header: {
-          ...saveGame.header,
-          gameInfo: { ...gameInfo, numberOfCycles: nextCycles },
-        },
-      });
+      if (!saveGame) return;
+      const next = setCycleCount(saveGame, cycles);
+      if (next === saveGame) return;
+      commit(next);
     },
     [commit, saveGame],
   );
@@ -169,6 +164,14 @@ export function useWorldActions(
     (path: Array<string | number>, value: unknown) => {
       if (!saveGame || path.length === 0) return;
       commit(setPathValue(saveGame, path, value) as SaveGame);
+    },
+    [commit, saveGame],
+  );
+
+  const updateBuildingName = useCallback(
+    (gameObjectId: number, name: string) => {
+      if (!saveGame) return;
+      commit(setBuildingName(saveGame, gameObjectId, name));
     },
     [commit, saveGame],
   );
@@ -271,6 +274,7 @@ export function useWorldActions(
   return {
     deleteLooseMaterial,
     modifyBehavior,
+    updateBuildingName,
     updateColonyName,
     updateCreaturePosition,
     updateCycleCount,

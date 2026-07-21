@@ -166,6 +166,8 @@ export function saveSessionReducer(
         error: null,
         pendingFile: action.file,
         lastLoadAttemptStrictness: action.strictness,
+        copyPasteData: null,
+        importWarning: null,
       };
     case "LOAD_PROGRESS":
       return { ...state, progressMessage: action.message || "" };
@@ -183,6 +185,7 @@ export function saveSessionReducer(
         isModified: false,
         selectedDuplicantId: null,
         selectedCreatureId: null,
+        copyPasteData: null,
         pendingFile: null,
         importWarning: null,
         history: EMPTY_HISTORY,

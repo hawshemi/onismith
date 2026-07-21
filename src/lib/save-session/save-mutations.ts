@@ -330,6 +330,57 @@ export function updateSaveGameRoot(
   };
 }
 
+export function setCycleCount(saveGame: SaveGame, cycles: number): SaveGame {
+  if (!Number.isFinite(cycles)) {
+    return saveGame;
+  }
+  const nextCycles = Math.max(0, Math.trunc(cycles));
+  const gameInfo = saveGame.header.gameInfo;
+  const withHeader =
+    gameInfo.numberOfCycles === nextCycles
+      ? saveGame
+      : {
+          ...saveGame,
+          header: {
+            ...saveGame.header,
+            gameInfo: { ...gameInfo, numberOfCycles: nextCycles },
+          },
+        };
+
+  return updateSaveGameRoot(withHeader, (gameObject) =>
+    updateBehaviorTemplate(gameObject, "GameClock", (template) => {
+      if (!template || typeof template !== "object") {
+        return template;
+      }
+      return template.cycle === nextCycles
+        ? template
+        : { ...template, cycle: nextCycles };
+    }),
+  );
+}
+
+export function syncDuplicantHeaderCount(
+  saveGame: SaveGame,
+  gameObjects: GameObjectGroup[] = saveGame.gameObjects,
+): SaveGame {
+  const numberOfDuplicants = gameObjects
+    .filter((group) => isDuplicantGroupName(group?.name))
+    .reduce((count, group) => count + (group.gameObjects?.length ?? 0), 0);
+  if (saveGame.header.gameInfo.numberOfDuplicants === numberOfDuplicants) {
+    return saveGame;
+  }
+  return {
+    ...saveGame,
+    header: {
+      ...saveGame.header,
+      gameInfo: {
+        ...saveGame.header.gameInfo,
+        numberOfDuplicants,
+      },
+    },
+  };
+}
+
 export function updateBehaviorTemplate(
   gameObject: GameObject,
   behaviorName: string,
@@ -492,6 +543,31 @@ export function mutateGameObjectById(
     return saveGame;
   }
   return replaceGameObjectAtLocation(saveGame, location, nextObject);
+}
+
+export function setBuildingName(
+  saveGame: SaveGame,
+  gameObjectId: number,
+  name: string,
+): SaveGame {
+  const nextName = name.trim().slice(0, 64);
+  if (!nextName) {
+    return saveGame;
+  }
+  return mutateGameObjectById(saveGame, gameObjectId, (gameObject) => {
+    if (
+      !getBehavior(gameObject, "BuildingComplete") ||
+      typeof getBehavior(gameObject, "UserNameable")?.templateData
+        ?.savedName !== "string"
+    ) {
+      return gameObject;
+    }
+    return updateBehaviorTemplate(gameObject, "UserNameable", (template) =>
+      template?.savedName === nextName
+        ? template
+        : { ...template, savedName: nextName },
+    );
+  });
 }
 
 export function mutateDuplicant(

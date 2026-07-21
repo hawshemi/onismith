@@ -1,6 +1,7 @@
 import type { I18nContextValue } from "@/lib/i18n/i18n-context";
 import type { SaveSessionValue } from "@/lib/save-session/save-session-context";
 import {
+  FaBuilding,
   FaCode,
   FaCubes,
   FaEarthAmericas,
@@ -74,6 +75,13 @@ export const NAV_ITEMS = [
     icon: FaCubes,
   },
   {
+    href: "/buildings",
+    i18nKey: "building.noun_titlecase_plural",
+    fallback: "Buildings",
+    saveRequired: true,
+    icon: FaBuilding,
+  },
+  {
     href: "/raw",
     i18nKey: "raw-editor-page.title",
     fallback: "Raw Editor",
@@ -91,6 +99,7 @@ const SAVE_REQUIRED_PATH_PREFIXES = [
   "/raw",
   "/planets",
   "/materials",
+  "/buildings",
 ];
 export const UI_VERSION_LABEL = "v1.0.0";
 export const SAVED_STATUS_DURATION_MS = 3000;
@@ -135,6 +144,9 @@ export function getPageTitle(
   }
   if (normalizedPathname.startsWith("/materials")) {
     return t("app.page-title.materials", { fallback: "Materials" });
+  }
+  if (normalizedPathname.startsWith("/buildings")) {
+    return t("building.noun_titlecase_plural", { fallback: "Buildings" });
   }
   if (normalizedPathname.startsWith("/raw")) {
     return t("raw-editor-page.title", { fallback: "Raw Editor" });

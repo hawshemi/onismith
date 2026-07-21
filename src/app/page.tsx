@@ -15,8 +15,9 @@ import { getDlcDisplayName } from "@/lib/oni/dlc";
 import {
   getDifficultySettingLabel,
   getDifficultyValueLabel,
-  selectDifficultySettings,
   selectActiveMods,
+  selectDifficultySettings,
+  selectDlcMixingSettings,
 } from "@/lib/oni/save-selectors";
 
 const SAVE_PATHS = {
@@ -77,6 +78,7 @@ function makeOverviewSummary(session: OverviewSession) {
   const gameInfo: GameInfo = session.saveGame?.header?.gameInfo ?? {};
   const dlcIds = Array.isArray(gameInfo.dlcIds) ? gameInfo.dlcIds : [];
   const activeMods = selectActiveMods(session.saveGame ?? null);
+  const mixingSettings = selectDlcMixingSettings(session.saveGame ?? null);
   return {
     fileName: session.fileName ?? "Unknown",
     parseTimeMs: formatParseTime(session.parseTimeMs),
@@ -86,7 +88,9 @@ function makeOverviewSummary(session: OverviewSession) {
       : 0,
     duplicants: gameInfo.numberOfDuplicants ?? "Unknown",
     version: `${gameInfo.saveMajorVersion ?? "?"}.${gameInfo.saveMinorVersion ?? "?"}`,
+    buildVersion: session.saveGame?.header?.buildVersion ?? "Unknown",
     cluster: gameInfo.clusterId ?? "Unknown",
+    developerToolsUsed: Boolean(session.saveGame?.gameData?.debugWasUsed),
     autoSave: Boolean(gameInfo.isAutoSave),
     dlcs: dlcIds
       .map((id) => ({ id, name: getDlcDisplayName(id) }))
@@ -94,6 +98,7 @@ function makeOverviewSummary(session: OverviewSession) {
         a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
       ),
     activeMods,
+    mixingSettings,
     lastWrittenBytes: formatBytes(session.lastWrittenBytes),
   };
 }
@@ -350,6 +355,12 @@ function ReadyState({
           </div>
           <StatTile label="Duplicants" value={summary.duplicants} />
           <StatTile label="Save Version" value={summary.version} />
+          <StatTile label="Game Build" value={summary.buildVersion} />
+          <StatTile label="Cluster" value={summary.cluster} mono />
+          <StatTile
+            label="Developer Tools Used"
+            value={summary.developerToolsUsed ? "Yes" : "No"}
+          />
           <StatTile label="File" value={summary.fileName} mono />
           <StatTile label="Last Saved Size" value={summary.lastWrittenBytes} />
           <StatTile label="Auto Save" value={summary.autoSave ? "Yes" : "No"} />
@@ -426,6 +437,39 @@ function ReadyState({
             </div>
           </section>
         </div>
+
+        {summary.mixingSettings.length > 0 ? (
+          <details className="m3-panel mt-3 p-3">
+            <summary className="cursor-pointer text-sm font-semibold">
+              Saved DLC mixing choices ({summary.mixingSettings.length})
+            </summary>
+            <p className="mt-2 text-xs opacity-65">
+              Read-only world-generation settings. Changing them after the
+              worlds exist would not regenerate the cluster.
+            </p>
+            <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+              {summary.mixingSettings.map((setting) => (
+                <div
+                  key={setting.id}
+                  className="m3-panel-inset flex items-center justify-between gap-3 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm" title={setting.label}>
+                      {setting.label}
+                    </p>
+                    <code
+                      className="block truncate text-[0.6875rem] opacity-55"
+                      title={setting.id}
+                    >
+                      {setting.id}
+                    </code>
+                  </div>
+                  <span className="m3-tag shrink-0">{setting.value}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        ) : null}
 
         <p className="mt-3 text-xs opacity-60">
           Parsed in {summary.parseTimeMs}
