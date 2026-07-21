@@ -27,6 +27,7 @@ export type { LooseMaterial } from "./material-selectors";
 export {
   RECOVERABLE_ELEMENT_NAMES,
   getSimHashByElementName,
+  selectPlanetoids,
   selectPlanets,
 } from "./planet-selectors";
-export type { Planet } from "./planet-selectors";
+export type { Planet, Planetoid, PlanetoidBiome } from "./planet-selectors";

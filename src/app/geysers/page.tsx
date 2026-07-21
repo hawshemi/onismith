@@ -58,103 +58,119 @@ const GeyserCard = memo(function GeyserCard({
         </span>
       </div>
 
-      <div className="m3-panel mt-4 p-3">
-        <label className="flex flex-col gap-2">
-          <span className="m3-label">Geyser type</span>
-          <M3Select
-            aria-label={`Type for geyser #${geyser.id}`}
-            value={geyser.geyserType}
-            onChange={(event) => onTypeChange(geyser.id, event.target.value)}
-            className="px-3 py-2.5 text-sm"
-          >
-            {ORDERED_GEYSER_TYPE_NAMES.map((typeName) => (
-              <option key={typeName} value={typeName}>
-                {humanizeIdentifier(typeName)}
-              </option>
-            ))}
-          </M3Select>
-        </label>
-      </div>
-
-      <div className="mt-4 flex items-start justify-between gap-3 border-t border-[var(--outline-faint)] pt-3">
-        <div>
-          <h4 className="text-sm font-semibold">Configuration</h4>
-          <p className="mt-0.5 text-xs leading-relaxed opacity-65">
-            Raw generated values stored directly in the save.
+      {geyser.isEditable ? (
+        <div className="m3-panel mt-4 p-3">
+          <label className="flex flex-col gap-2">
+            <span className="m3-label">Geyser type</span>
+            <M3Select
+              aria-label={`Type for geyser #${geyser.id}`}
+              value={geyser.geyserType}
+              onChange={(event) => onTypeChange(geyser.id, event.target.value)}
+              className="px-3 py-2.5 text-sm"
+            >
+              {ORDERED_GEYSER_TYPE_NAMES.map((typeName) => (
+                <option key={typeName} value={typeName}>
+                  {humanizeIdentifier(typeName)}
+                </option>
+              ))}
+            </M3Select>
+          </label>
+        </div>
+      ) : (
+        <div className="m3-panel mt-4 p-3">
+          <p className="m3-label">World position</p>
+          <p className="mt-1 text-sm font-semibold tabular-nums">
+            X {geyser.position.x.toFixed(1)} · Y {geyser.position.y.toFixed(1)}
+          </p>
+          <p className="mt-2 text-xs opacity-70">
+            This Aquatic feature uses opaque state and is currently read-only.
           </p>
         </div>
-      </div>
+      )}
 
-      <section className="m3-panel-inset mt-3 p-3">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h5 className="text-sm font-semibold">Roll values</h5>
-          <span className="m3-tag shrink-0">Raw values</span>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="m3-label">Emission rate</span>
-            <NumberField
-              value={geyser.emitRate}
-              step="0.01"
-              onCommit={(next) =>
-                onParameterChange(geyser.id, "rateRoll", next)
-              }
-              className="m3-field w-full px-3 py-2.5 text-sm tabular-nums"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="m3-label">Lifecycle length</span>
-            <NumberField
-              value={geyser.lifecycleLength}
-              step="0.01"
-              onCommit={(next) =>
-                onParameterChange(geyser.id, "yearLengthRoll", next)
-              }
-              className="m3-field w-full px-3 py-2.5 text-sm tabular-nums"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="m3-label">Eruption cycle</span>
-            <NumberField
-              value={geyser.iterationLength}
-              step="0.01"
-              onCommit={(next) =>
-                onParameterChange(geyser.id, "iterationLengthRoll", next)
-              }
-              className="m3-field w-full px-3 py-2.5 text-sm tabular-nums"
-            />
-          </label>
-        </div>
-      </section>
+      {geyser.isEditable ? (
+        <>
+          <div className="mt-4 flex items-start justify-between gap-3 border-t border-[var(--outline-faint)] pt-3">
+            <div>
+              <h4 className="text-sm font-semibold">Configuration</h4>
+              <p className="mt-0.5 text-xs leading-relaxed opacity-65">
+                Raw generated values stored directly in the save.
+              </p>
+            </div>
+          </div>
 
-      <section className="m3-panel-inset mt-2 flex-1 p-3">
-        <div className="mb-3">
-          <h5 className="text-sm font-semibold">Activity windows</h5>
-          <p className="mt-0.5 text-xs opacity-65">
-            Active lifecycle time and emitting eruption time.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FractionField
-            label="Active time"
-            value={geyser.activeFraction}
-            onChange={(value) =>
-              onParameterChange(geyser.id, "yearPercentRoll", value)
-            }
-            displayAsPercentage
-            labelClassName="m3-label"
-          />
-          <FractionField
-            label="Emitting time"
-            value={geyser.emissionFraction}
-            onChange={(value) =>
-              onParameterChange(geyser.id, "iterationPercentRoll", value)
-            }
-            displayAsPercentage
-            labelClassName="m3-label"
-          />
-        </div>
-      </section>
+          <section className="m3-panel-inset mt-3 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h5 className="text-sm font-semibold">Roll values</h5>
+              <span className="m3-tag shrink-0">Raw values</span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="flex flex-col gap-1.5">
+                <span className="m3-label">Emission rate</span>
+                <NumberField
+                  value={geyser.emitRate}
+                  step="0.01"
+                  onCommit={(next) =>
+                    onParameterChange(geyser.id, "rateRoll", next)
+                  }
+                  className="m3-field w-full px-3 py-2.5 text-sm tabular-nums"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="m3-label">Lifecycle length</span>
+                <NumberField
+                  value={geyser.lifecycleLength}
+                  step="0.01"
+                  onCommit={(next) =>
+                    onParameterChange(geyser.id, "yearLengthRoll", next)
+                  }
+                  className="m3-field w-full px-3 py-2.5 text-sm tabular-nums"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="m3-label">Eruption cycle</span>
+                <NumberField
+                  value={geyser.iterationLength}
+                  step="0.01"
+                  onCommit={(next) =>
+                    onParameterChange(geyser.id, "iterationLengthRoll", next)
+                  }
+                  className="m3-field w-full px-3 py-2.5 text-sm tabular-nums"
+                />
+              </label>
+            </div>
+          </section>
+
+          <section className="m3-panel-inset mt-2 flex-1 p-3">
+            <div className="mb-3">
+              <h5 className="text-sm font-semibold">Activity windows</h5>
+              <p className="mt-0.5 text-xs opacity-65">
+                Active lifecycle time and emitting eruption time.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FractionField
+                label="Active time"
+                value={geyser.activeFraction}
+                onChange={(value) =>
+                  onParameterChange(geyser.id, "yearPercentRoll", value)
+                }
+                displayAsPercentage
+                labelClassName="m3-label"
+              />
+              <FractionField
+                label="Emitting time"
+                value={geyser.emissionFraction}
+                onChange={(value) =>
+                  onParameterChange(geyser.id, "iterationPercentRoll", value)
+                }
+                displayAsPercentage
+                labelClassName="m3-label"
+              />
+            </div>
+          </section>
+        </>
+      ) : null}
     </article>
   );
 });
@@ -219,8 +235,8 @@ export default function GeysersPage() {
     <BrowseListShell
       hasSave={hasSave}
       title="Geysers"
-      description="Retune each geyser's type, output, and lifecycle timing."
-      saveRequiredDescription="Load a save first to edit geyser type and lifecycle parameters."
+      description="Inspect every geyser and retune supported generic geysers."
+      saveRequiredDescription="Load a save first to inspect geysers and edit supported parameters."
       emptyMessage="No geysers found in this save."
       search={{
         value: query,

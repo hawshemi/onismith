@@ -1,6 +1,7 @@
 import {
   SimHashes,
   SimHashNames,
+  type OverworldCell,
   type SaveGame,
 } from "@/lib/save-parser/model";
 import { asNumber, asString, getBehavior } from "./save-selector-utils";
@@ -22,6 +23,199 @@ export interface Planet {
   activePeriod: number;
   inactivePeriod: number;
   recoverableElements: PlanetRecoverableElement[];
+}
+
+export interface PlanetoidBiome {
+  zoneType: number;
+  names: string[];
+  cellCount: number;
+}
+
+export interface Planetoid {
+  id: number;
+  name: string;
+  worldName: string;
+  worldType: string;
+  starmapLocation: { q: number; r: number } | null;
+  worldOffset: { x: number; y: number };
+  worldSize: { x: number; y: number };
+  isStartWorld: boolean;
+  isDiscovered: boolean;
+  isDupeVisited: boolean;
+  isSurfaceRevealed: boolean;
+  biomes: PlanetoidBiome[];
+}
+
+const NON_BIOME_TAG_NAMES = new Set([
+  "ErodePointToBorderInv",
+  "IgnoreCaveOverride",
+  "NoGlobalFeatureSpawning",
+  "NoGravitasFeatures",
+  "Overworld",
+  "RemoveWorldBorderOverVacuum",
+  "StartWorld",
+  "SwapLakesToBelow",
+]);
+
+function isBiomeTag(name: string): boolean {
+  return (
+    Boolean(name) &&
+    !name.startsWith("At") &&
+    !name.startsWith("Erode") &&
+    !NON_BIOME_TAG_NAMES.has(name)
+  );
+}
+
+function humanizeIdentifier(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function readPoint(value: unknown): { x: number; y: number } {
+  const point = value as { x?: unknown; y?: unknown } | null;
+  return {
+    x: asNumber(point?.x, 0),
+    y: asNumber(point?.y, 0),
+  };
+}
+
+function readStarmapLocation(value: unknown): { q: number; r: number } | null {
+  const location = value as { q?: unknown; r?: unknown } | null;
+  const q = asNumber(location?.q, NaN);
+  const r = asNumber(location?.r, NaN);
+  return Number.isFinite(q) && Number.isFinite(r) ? { q, r } : null;
+}
+
+function getCellCenter(cell: OverworldCell): { x: number; y: number } | null {
+  const vertices = Array.isArray(cell?.poly?.vertices)
+    ? cell.poly.vertices
+    : [];
+  if (vertices.length === 0) {
+    return null;
+  }
+  let x = 0;
+  let y = 0;
+  for (const vertex of vertices) {
+    x += asNumber(vertex?.x, 0);
+    y += asNumber(vertex?.y, 0);
+  }
+  return { x: x / vertices.length, y: y / vertices.length };
+}
+
+function cellBelongsToPlanetoid(
+  cell: OverworldCell,
+  worldOffset: Planetoid["worldOffset"],
+  worldSize: Planetoid["worldSize"],
+): boolean {
+  const center = getCellCenter(cell);
+  if (!center) {
+    return false;
+  }
+  return (
+    center.x >= worldOffset.x &&
+    center.x < worldOffset.x + worldSize.x &&
+    center.y >= worldOffset.y &&
+    center.y < worldOffset.y + worldSize.y
+  );
+}
+
+function selectPlanetoidBiomes(
+  cells: OverworldCell[],
+  worldOffset: Planetoid["worldOffset"],
+  worldSize: Planetoid["worldSize"],
+): PlanetoidBiome[] {
+  const byZone = new Map<
+    number,
+    { zoneType: number; names: Set<string>; cellCount: number }
+  >();
+
+  for (const cell of cells) {
+    if (!cellBelongsToPlanetoid(cell, worldOffset, worldSize)) {
+      continue;
+    }
+    const zoneType = asNumber(cell?.zoneType, NaN);
+    if (!Number.isFinite(zoneType)) {
+      continue;
+    }
+    const current = byZone.get(zoneType) ?? {
+      zoneType,
+      names: new Set<string>(),
+      cellCount: 0,
+    };
+    current.cellCount += 1;
+    for (const tag of Array.isArray(cell?.tags?.tags) ? cell.tags.tags : []) {
+      const name = asString(tag?.name);
+      if (isBiomeTag(name)) {
+        current.names.add(humanizeIdentifier(name));
+      }
+    }
+    byZone.set(zoneType, current);
+  }
+
+  return [...byZone.values()]
+    .map(({ zoneType, names, cellCount }) => ({
+      zoneType,
+      names: [...names].sort((a, b) => a.localeCompare(b)),
+      cellCount,
+    }))
+    .sort((a, b) => a.zoneType - b.zoneType);
+}
+
+export function selectPlanetoids(saveGame: SaveGame | null): Planetoid[] {
+  const groups = Array.isArray(saveGame?.gameObjects)
+    ? saveGame.gameObjects
+    : [];
+  const asteroidGroup = groups.find((group) => group?.name === "Asteroid");
+  const instances = Array.isArray(asteroidGroup?.gameObjects)
+    ? asteroidGroup.gameObjects
+    : [];
+  const cells = Array.isArray(saveGame?.gameData?.worldDetail?.overworldCells)
+    ? saveGame.gameData.worldDetail.overworldCells
+    : [];
+
+  return instances
+    .map((instance) => {
+      const world = getBehavior(instance, "WorldContainer")?.templateData;
+      if (!world || typeof world !== "object") {
+        return null;
+      }
+      const id = asNumber(world.id, NaN);
+      if (!Number.isFinite(id)) {
+        return null;
+      }
+      const grid = getBehavior(instance, "AsteroidGridEntity")?.templateData;
+      const worldOffset = readPoint(world.worldOffset);
+      const worldSize = readPoint(world.worldSize);
+      const worldName = asString(world.worldName, "Unknown");
+      const fallbackName = humanizeIdentifier(
+        worldName.split("/").pop() || `Planetoid ${id}`,
+      );
+
+      return {
+        id,
+        name: asString(grid?.m_name, fallbackName),
+        worldName,
+        worldType: asString(world.worldType),
+        starmapLocation: readStarmapLocation(grid?.m_location),
+        worldOffset,
+        worldSize,
+        isStartWorld: Boolean(world.isStartWorld),
+        isDiscovered: Boolean(world.isDiscovered),
+        isDupeVisited: Boolean(world.isDupeVisited),
+        isSurfaceRevealed: Boolean(world.isSurfaceRevealed),
+        biomes: selectPlanetoidBiomes(cells, worldOffset, worldSize),
+      } satisfies Planetoid;
+    })
+    .filter((planetoid): planetoid is Planetoid => planetoid !== null)
+    .sort((a, b) => {
+      if (a.isStartWorld !== b.isStartWorld) {
+        return a.isStartWorld ? -1 : 1;
+      }
+      return a.id - b.id;
+    });
 }
 
 // Element names offered when adding a recoverable element to a planet.
