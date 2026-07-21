@@ -10,6 +10,7 @@ import {
   getBehavior,
   getGameObjectId,
 } from "./save-selector-utils";
+import { getWorldDisplayName } from "./world-names";
 
 interface PlanetRecoverableElement {
   element: string;
@@ -40,6 +41,7 @@ export interface Planetoid {
   id: number;
   name: string;
   worldName: string;
+  displayWorldName: string;
   worldType: string;
   starmapLocation: { q: number; r: number } | null;
   worldOffset: { x: number; y: number };
@@ -230,6 +232,7 @@ export function selectPlanetoids(saveGame: SaveGame | null): Planetoid[] {
         id,
         name: asString(grid?.m_name, fallbackName),
         worldName,
+        displayWorldName: getWorldDisplayName(worldName),
         worldType: asString(world.worldType),
         starmapLocation: readStarmapLocation(grid?.m_location),
         worldOffset,

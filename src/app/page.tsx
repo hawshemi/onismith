@@ -12,12 +12,14 @@ import M3OutlinedButton from "@/components/ui/m3-outlined-button";
 import { NumberField } from "@/components/ui/numeric-fields";
 import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import { getDlcDisplayName } from "@/lib/oni/dlc";
+import { getClusterDisplayName } from "@/lib/oni/world-names";
 import {
   getDifficultySettingLabel,
   getDifficultyValueLabel,
   selectActiveMods,
   selectDifficultySettings,
   selectDlcMixingSettings,
+  selectFogSummary,
 } from "@/lib/oni/save-selectors";
 
 const SAVE_PATHS = {
@@ -79,6 +81,8 @@ function makeOverviewSummary(session: OverviewSession) {
   const dlcIds = Array.isArray(gameInfo.dlcIds) ? gameInfo.dlcIds : [];
   const activeMods = selectActiveMods(session.saveGame ?? null);
   const mixingSettings = selectDlcMixingSettings(session.saveGame ?? null);
+  const fog = selectFogSummary(session.saveGame ?? null);
+  const clusterId = gameInfo.clusterId ?? "";
   return {
     fileName: session.fileName ?? "Unknown",
     parseTimeMs: formatParseTime(session.parseTimeMs),
@@ -89,7 +93,7 @@ function makeOverviewSummary(session: OverviewSession) {
     duplicants: gameInfo.numberOfDuplicants ?? "Unknown",
     version: `${gameInfo.saveMajorVersion ?? "?"}.${gameInfo.saveMinorVersion ?? "?"}`,
     buildVersion: session.saveGame?.header?.buildVersion ?? "Unknown",
-    cluster: gameInfo.clusterId ?? "Unknown",
+    cluster: clusterId ? getClusterDisplayName(clusterId) : "Unknown",
     developerToolsUsed: Boolean(session.saveGame?.gameData?.debugWasUsed),
     autoSave: Boolean(gameInfo.isAutoSave),
     dlcs: dlcIds
@@ -99,6 +103,7 @@ function makeOverviewSummary(session: OverviewSession) {
       ),
     activeMods,
     mixingSettings,
+    fog,
     lastWrittenBytes: formatBytes(session.lastWrittenBytes),
   };
 }
@@ -356,7 +361,7 @@ function ReadyState({
           <StatTile label="Duplicants" value={summary.duplicants} />
           <StatTile label="Save Version" value={summary.version} />
           <StatTile label="Game Build" value={summary.buildVersion} />
-          <StatTile label="Cluster" value={summary.cluster} mono />
+          <StatTile label="Cluster" value={summary.cluster} />
           <StatTile
             label="Developer Tools Used"
             value={summary.developerToolsUsed ? "Yes" : "No"}
@@ -437,6 +442,64 @@ function ReadyState({
             </div>
           </section>
         </div>
+
+        <section className="m3-panel mt-3 p-3" aria-labelledby="overview-fog">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="overview-fog" className="m3-label">
+              Fog and streamed grids
+            </h2>
+            <span className="m3-tag shrink-0">Read-only</span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="m3-panel-inset px-3 py-2">
+              <p className="m3-label">World grid</p>
+              <p className="mt-1 text-sm font-semibold tabular-nums">
+                {summary.fog.width} × {summary.fog.height}
+              </p>
+            </div>
+            <div className="m3-panel-inset px-3 py-2">
+              <p className="m3-label">Streamed data</p>
+              <p className="mt-1 text-sm font-semibold tabular-nums">
+                {formatBytes(summary.fog.totalBytes)}
+              </p>
+            </div>
+            <div className="m3-panel-inset col-span-2 px-3 py-2">
+              <p className="m3-label">Stored visible entries</p>
+              <p className="mt-1 text-sm font-semibold tabular-nums">
+                {summary.fog.visibleEntryCount === null
+                  ? "Not recorded"
+                  : summary.fog.visibleEntryCount.toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed opacity-65">
+            This is the non-zero entry count from ONI&apos;s opaque visibility
+            stream, not a map-reveal percentage. Editing fog safely also
+            requires synchronized grid, simulation, and object state.
+          </p>
+          {summary.fog.streams.length > 0 ? (
+            <details className="mt-2">
+              <summary className="cursor-pointer text-xs font-medium">
+                Stream details ({summary.fog.streams.length})
+              </summary>
+              <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                {summary.fog.streams.map((stream) => (
+                  <div
+                    key={stream.name}
+                    className="m3-panel-inset flex items-center justify-between gap-3 px-3 py-2 text-xs"
+                  >
+                    <code className="truncate" title={stream.name}>
+                      {stream.name}
+                    </code>
+                    <span className="shrink-0 tabular-nums opacity-70">
+                      {formatBytes(stream.bytes)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
+        </section>
 
         {summary.mixingSettings.length > 0 ? (
           <details className="m3-panel mt-3 p-3">

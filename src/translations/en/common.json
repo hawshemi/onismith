@@ -91,6 +91,9 @@
     "noun_titlecase": "Building",
     "noun_titlecase_plural": "Buildings"
   },
+  "object": {
+    "noun_titlecase_plural": "Objects"
+  },
   "time_cycles": {
     "noun_titlecase": "Cycle Time"
   },
