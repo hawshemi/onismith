@@ -565,6 +565,35 @@ function DuplicantEditorPageContent() {
     setReactionModal(null);
   }, []);
 
+  const setCategoryTraits = (traitIds: string[], enabled: boolean) => {
+    if (!model || traitIds.length === 0) {
+      return;
+    }
+    const categoryTraitIds = new Set(traitIds.map(normalizeTraitId));
+    const currentTraits = Array.isArray(model.traits) ? model.traits : [];
+    const currentTraitIds = new Set(currentTraits.map(normalizeTraitId));
+    const nextTraitIds = enabled
+      ? [
+          ...currentTraits,
+          ...traitIds.filter(
+            (traitId) => !currentTraitIds.has(normalizeTraitId(traitId)),
+          ),
+        ]
+      : currentTraits.filter(
+          (traitId) => !categoryTraitIds.has(normalizeTraitId(traitId)),
+        );
+
+    if (
+      nextTraitIds.length === currentTraits.length &&
+      nextTraitIds.every((traitId, index) => traitId === currentTraits[index])
+    ) {
+      return;
+    }
+    modifyBehavior(model.id, "Klei.AI.Traits", "templateData", {
+      TraitIds: nextTraitIds,
+    });
+  };
+
   const openAppearanceModal = useCallback(() => {
     setAppearanceEditorTab("head");
     setAppearanceModalOpen(true);
@@ -944,6 +973,7 @@ function DuplicantEditorPageContent() {
         addTraitCategory={addTraitCategory}
         onCategoryChange={setAddTraitCategory}
         onAddTrait={(traitId) => addDuplicantTrait(model.id, traitId)}
+        onSetCategoryTraits={setCategoryTraits}
         onApplyReaction={applyReactionTrait}
         isBionic={model.isBionic}
       />

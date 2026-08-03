@@ -22,6 +22,7 @@ export default function DuplicantStatsEditor({
   const {
     addDuplicantEffect,
     removeDuplicantEffect,
+    setDuplicantAttributeLevels,
     setDuplicantSkillMastery,
     setDuplicantSkillsMastery,
     updateDuplicantAttributeLevel,
@@ -88,6 +89,17 @@ export default function DuplicantStatsEditor({
   const selectedSkillCount = skills.filter((skill) => skill.mastered).length;
   const allSkillsSelected = skills.every((skill) => skill.mastered);
   const noSkillsSelected = skills.every((skill) => !skill.mastered);
+  const attributeIds = model.attributes.map(
+    (attribute) => attribute.attributeId,
+  );
+  const allAttributesAtMax =
+    model.attributes.length > 0 &&
+    model.attributes.every(
+      (attribute) => attribute.level === ATTRIBUTE_MAX_LEVEL,
+    );
+  const allAttributesAtZero =
+    model.attributes.length > 0 &&
+    model.attributes.every((attribute) => attribute.level === 0);
 
   useSyncOnChange([model.attributes, model.id], () => {
     setAttributeDrafts(
@@ -141,10 +153,19 @@ export default function DuplicantStatsEditor({
       }));
       return;
     }
-    if (parsed < ATTRIBUTE_MIN_LEVEL || parsed > ATTRIBUTE_MAX_LEVEL) {
+    if (parsed > ATTRIBUTE_MAX_LEVEL) {
+      setAttributeDrafts((previous) => ({
+        ...previous,
+        [attributeId]: String(ATTRIBUTE_MAX_LEVEL),
+      }));
+      updateDuplicantAttributeLevel(model.id, attributeId, ATTRIBUTE_MAX_LEVEL);
+      setAttributeErrors((previous) => ({ ...previous, [attributeId]: "" }));
+      return;
+    }
+    if (parsed < ATTRIBUTE_MIN_LEVEL) {
       setAttributeErrors((previous) => ({
         ...previous,
-        [attributeId]: `Level must be ${ATTRIBUTE_MIN_LEVEL} to ${ATTRIBUTE_MAX_LEVEL}.`,
+        [attributeId]: `Level cannot be less than ${ATTRIBUTE_MIN_LEVEL}.`,
       }));
       return;
     }
@@ -224,10 +245,38 @@ export default function DuplicantStatsEditor({
   return (
     <div className="grid items-start gap-4 xl:grid-cols-2">
       <div className="m3-card p-4">
-        <h2 className="text-lg font-semibold">Attributes</h2>
-        <p className="mt-1 text-xs opacity-70">
-          Whole numbers from {ATTRIBUTE_MIN_LEVEL} to {ATTRIBUTE_MAX_LEVEL}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Attributes</h2>
+            <p className="mt-1 text-xs opacity-70">
+              Whole numbers from {ATTRIBUTE_MIN_LEVEL} to {ATTRIBUTE_MAX_LEVEL}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <M3OutlinedButton
+              disabled={attributeIds.length === 0 || allAttributesAtMax}
+              onClick={() =>
+                setDuplicantAttributeLevels(
+                  model.id,
+                  attributeIds,
+                  ATTRIBUTE_MAX_LEVEL,
+                )
+              }
+              className="px-3 py-1.5 text-sm"
+            >
+              Set all to 99
+            </M3OutlinedButton>
+            <M3OutlinedButton
+              disabled={attributeIds.length === 0 || allAttributesAtZero}
+              onClick={() =>
+                setDuplicantAttributeLevels(model.id, attributeIds, 0)
+              }
+              className="px-3 py-1.5 text-sm"
+            >
+              Set all to 0
+            </M3OutlinedButton>
+          </div>
+        </div>
         <div className="m3-scrollbar m3-vertical-scroll mt-3 grid max-h-96 gap-2 pr-2 sm:grid-cols-2">
           {model.attributes.map((attribute) => (
             <div
@@ -245,13 +294,20 @@ export default function DuplicantStatsEditor({
                   id={`attribute-${attribute.attributeId}`}
                   type="number"
                   step="1"
+                  min={ATTRIBUTE_MIN_LEVEL}
+                  max={ATTRIBUTE_MAX_LEVEL}
                   value={attributeDrafts[attribute.attributeId] ?? ""}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const nextDraft = event.target.value;
+                    const parsed = Number(nextDraft);
                     setAttributeDrafts((prev) => ({
                       ...prev,
-                      [attribute.attributeId]: event.target.value,
-                    }))
-                  }
+                      [attribute.attributeId]:
+                        Number.isFinite(parsed) && parsed > ATTRIBUTE_MAX_LEVEL
+                          ? String(ATTRIBUTE_MAX_LEVEL)
+                          : nextDraft,
+                    }));
+                  }}
                   onBlur={() => commitAttribute(attribute.attributeId)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
