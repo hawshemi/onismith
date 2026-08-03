@@ -33,6 +33,7 @@ type ReactionModalProps = {
   addTraitCategory: string;
   onCategoryChange: (category: string) => void;
   onAddTrait: (traitId: string) => void;
+  onSetCategoryTraits: (traitIds: string[], enabled: boolean) => void;
   onApplyReaction: (kind: ReactionKind, traitId: string) => void;
   isBionic: boolean;
 };
@@ -83,6 +84,7 @@ export default function ReactionModal({
   addTraitCategory,
   onCategoryChange,
   onAddTrait,
+  onSetCategoryTraits,
   onApplyReaction,
   isBionic,
 }: ReactionModalProps) {
@@ -125,15 +127,23 @@ export default function ReactionModal({
     [isBionic],
   );
 
-  const categoryCounts = useMemo(() => {
+  const categoryStats = useMemo(() => {
+    const ownedTraitIds = new Set(traits.map(normalizeTraitId));
     return Object.fromEntries(
-      ADD_TRAIT_CATEGORIES.map((category) => [
-        category.id,
-        knownAddableTraits.filter((trait) => trait.category === category.id)
-          .length,
-      ]),
-    ) as Record<TraitCategory, number>;
-  }, [knownAddableTraits]);
+      ADD_TRAIT_CATEGORIES.map((category) => {
+        const traitIds = knownAddableTraits
+          .filter((trait) => trait.category === category.id)
+          .map((trait) => trait.id);
+        return [
+          category.id,
+          {
+            traitIds,
+            ownedCount: traitIds.filter((id) => ownedTraitIds.has(id)).length,
+          },
+        ];
+      }),
+    ) as Record<TraitCategory, { traitIds: string[]; ownedCount: number }>;
+  }, [knownAddableTraits, traits]);
 
   const addableTraits = useMemo(() => {
     const ownedTraitIds = new Set(traits.map(normalizeTraitId));
@@ -214,21 +224,40 @@ export default function ReactionModal({
           >
             {ADD_TRAIT_CATEGORIES.map((category) => {
               const isActive = addTraitCategory === category.id;
+              const stats = categoryStats[category.id];
+              const allOwned =
+                stats.traitIds.length > 0 &&
+                stats.ownedCount === stats.traitIds.length;
               return (
-                <button
+                <div
                   key={category.id}
-                  type="button"
-                  aria-pressed={isActive}
-                  onClick={() => onCategoryChange(category.id)}
-                  className={`rounded-xl border px-3 py-2 text-sm font-semibold text-[var(--foreground)] transition-colors ${
+                  className={`rounded-xl border p-2 text-[var(--foreground)] transition-colors ${
                     isActive ? category.activeTabClass : category.tabClass
                   }`}
                 >
-                  <span className="block">{category.label}</span>
-                  <span className="mt-0.5 block text-xs font-normal opacity-70">
-                    {categoryCounts[category.id]} traits
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => onCategoryChange(category.id)}
+                    className="w-full rounded-lg px-1 py-0.5 text-sm font-semibold hover:bg-[var(--state-hover)]"
+                  >
+                    <span className="block">{category.label}</span>
+                    <span className="mt-0.5 block text-xs font-normal opacity-70">
+                      {stats.ownedCount} of {stats.traitIds.length} owned
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={stats.traitIds.length === 0}
+                    onClick={() =>
+                      onSetCategoryTraits(stats.traitIds, !allOwned)
+                    }
+                    className="mt-2 w-full rounded-lg border border-[var(--outline)] bg-[var(--surface-container-lowest)] px-2 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--state-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={`${allOwned ? "Remove" : "Add"} all ${category.label.toLocaleLowerCase()} traits`}
+                  >
+                    {allOwned ? "Remove all" : "Add all"}
+                  </button>
+                </div>
               );
             })}
           </div>

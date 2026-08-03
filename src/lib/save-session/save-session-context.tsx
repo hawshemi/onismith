@@ -71,6 +71,11 @@ export interface SaveSessionValue extends SaveSessionState {
     attributeId: string,
     nextLevel: number,
   ) => void;
+  setDuplicantAttributeLevels: (
+    duplicantId: number,
+    attributeIds: readonly string[],
+    nextLevel: number,
+  ) => void;
   updateDuplicantAppearance: (
     duplicantId: number,
     type: string,
@@ -291,6 +296,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
     removeDuplicantEffect,
     removeDuplicantInterest,
     removeDuplicantTrait,
+    setDuplicantAttributeLevels,
     setDuplicantSkillMastery,
     setDuplicantSkillsMastery,
     updateDuplicantAppearance,
@@ -354,6 +360,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
       addDuplicantInterest,
       removeDuplicantInterest,
       updateDuplicantAttributeLevel,
+      setDuplicantAttributeLevels,
       updateDuplicantAppearance,
       updateDuplicantGender,
       updateDuplicantHealthModifier,
@@ -401,6 +408,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
     pasteDuplicantBehaviors,
     saveCurrentFile,
     setParseStrictness,
+    setDuplicantAttributeLevels,
     setDuplicantSkillMastery,
     setDuplicantSkillsMastery,
     setSaveGame,

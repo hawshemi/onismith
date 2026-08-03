@@ -40,6 +40,15 @@ const DUPLICANT_CLONE_BEHAVIOR_BLACKLIST = new Set<string>([
   "StateMachineController",
   "Navigator",
 ]);
+const DUPLICANT_ATTRIBUTE_MIN_LEVEL = -20;
+const DUPLICANT_ATTRIBUTE_MAX_LEVEL = 99;
+
+function clampDuplicantAttributeLevel(level: number): number {
+  return Math.min(
+    DUPLICANT_ATTRIBUTE_MAX_LEVEL,
+    Math.max(DUPLICANT_ATTRIBUTE_MIN_LEVEL, Math.round(level)),
+  );
+}
 
 type SetSaveGame = (
   saveGame: SaveGame | null,
@@ -158,9 +167,8 @@ export function useDuplicantActions({
       if (!saveGame || !Number.isFinite(nextLevel)) {
         return;
       }
-      // Attribute levels are whole numbers in ONI; round at the write boundary
-      // so the invariant holds for any caller, not just the editor's own check.
-      const level = Math.round(nextLevel);
+      // Enforce the save invariant at the write boundary, not only in the UI.
+      const level = clampDuplicantAttributeLevel(nextLevel);
       const next = mutateDuplicant(saveGame, duplicantId, (gameObject) =>
         updateBehaviorTemplateAny(
           gameObject,
@@ -186,6 +194,66 @@ export function useDuplicantActions({
                 experience: 0,
                 level,
               });
+            }
+            return {
+              ...(template || {}),
+              saveLoadLevels: nextLevels,
+            };
+          },
+        ),
+      );
+      setSaveGame(next, { isModified: next !== saveGame });
+    },
+    [setSaveGame, saveGame],
+  );
+
+  const setDuplicantAttributeLevels = useCallback(
+    (
+      duplicantId: number,
+      attributeIds: readonly string[],
+      nextLevel: number,
+    ) => {
+      if (!saveGame || !Number.isFinite(nextLevel)) {
+        return;
+      }
+      const targetIds = new Set(attributeIds.filter(Boolean));
+      if (targetIds.size === 0) {
+        return;
+      }
+      const level = clampDuplicantAttributeLevel(nextLevel);
+      const next = mutateDuplicant(saveGame, duplicantId, (gameObject) =>
+        updateBehaviorTemplateAny(
+          gameObject,
+          ["Klei.AI.AttributeLevels", "AttributeLevels"],
+          (template) => {
+            const levels = Array.isArray(template?.saveLoadLevels)
+              ? template.saveLoadLevels
+              : [];
+            const foundIds = new Set<string>();
+            let changed = false;
+            const nextLevels = levels.map((entry: BehaviorTemplate) => {
+              const attributeId = entry?.attributeId;
+              if (
+                typeof attributeId !== "string" ||
+                !targetIds.has(attributeId)
+              ) {
+                return entry;
+              }
+              foundIds.add(attributeId);
+              if (entry.level === level) {
+                return entry;
+              }
+              changed = true;
+              return { ...entry, level };
+            });
+            for (const attributeId of targetIds) {
+              if (!foundIds.has(attributeId)) {
+                changed = true;
+                nextLevels.push({ attributeId, experience: 0, level });
+              }
+            }
+            if (!changed) {
+              return template;
             }
             return {
               ...(template || {}),
@@ -942,6 +1010,7 @@ export function useDuplicantActions({
     removeDuplicantTrait,
     setDuplicantSkillMastery,
     setDuplicantSkillsMastery,
+    setDuplicantAttributeLevels,
     updateDuplicantAppearance,
     updateDuplicantAttributeLevel,
     updateDuplicantEffectCycles,
