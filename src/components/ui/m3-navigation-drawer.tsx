@@ -2,6 +2,7 @@
 
 import { Fragment, type ReactNode, type Ref } from "react";
 import type { IconType } from "react-icons";
+import Image from "next/image";
 import Link from "next/link";
 
 function isActive(pathname: string, href: string): boolean {
@@ -71,16 +72,29 @@ export default function M3NavigationDrawer({
         role={open ? "dialog" : undefined}
         aria-modal={open ? true : undefined}
         aria-label={open ? "Navigation" : undefined}
-        className={`m3-surface m3-scrollbar m3-vertical-scroll m3-navigation-drawer fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col p-4 transition-transform duration-200 md:static md:z-auto md:h-full md:w-56 md:visible md:translate-x-0 ${
+        className={`m3-scrollbar m3-vertical-scroll m3-navigation-drawer fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col p-3 transition-transform duration-200 md:static md:z-auto md:h-full md:w-52 md:visible md:translate-x-0 ${
           open ? "visible translate-x-0" : "invisible -translate-x-full"
         }`}
       >
-        <div className="flex items-start justify-between gap-2 px-1">
-          <div>
-            <p className="m3-brand text-lg font-semibold leading-tight">
-              {appName}
-            </p>
-            <p className="mt-1 text-xs text-[var(--muted)]">ONI save editor</p>
+        <div className="flex items-center justify-between gap-2 px-2 py-2">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--state-hover)] text-[var(--accent)]">
+              <Image
+                src="/brand/onismith-mark.svg"
+                alt=""
+                width={36}
+                height={36}
+                aria-hidden="true"
+              />
+            </span>
+            <div>
+              <p className="m3-brand text-lg font-semibold leading-tight">
+                {appName}
+              </p>
+              <p className="mt-0.5 text-xs text-[var(--muted)]">
+                ONI save editor
+              </p>
+            </div>
           </div>
           {open ? (
             <button
@@ -94,10 +108,10 @@ export default function M3NavigationDrawer({
           ) : null}
         </div>
         <nav
-          className="mt-5"
+          className="mt-4"
           aria-label={t("app.nav.label", { fallback: "Main navigation" })}
         >
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {navItems
               .filter((item) => hasSave || !item.saveRequired)
               .map((item, index, items) => {
@@ -112,7 +126,7 @@ export default function M3NavigationDrawer({
                 return (
                   <Fragment key={item.href}>
                     {item.group && item.group !== items[index - 1]?.group ? (
-                      <li className="px-3 pt-5 pb-1 text-xs font-semibold text-[var(--muted)]">
+                      <li className="px-3 pt-4 pb-1.5 text-xs font-medium text-[var(--muted)]">
                         {item.group}
                       </li>
                     ) : null}
@@ -121,7 +135,7 @@ export default function M3NavigationDrawer({
                         href={item.href}
                         onClick={onNavigate}
                         aria-current={active ? "page" : undefined}
-                        className={`m3-navigation-drawer-item block w-full px-3 py-2.5 text-sm ${
+                        className={`m3-navigation-drawer-item block w-full px-3 py-2 text-sm ${
                           active ? "m3-navigation-drawer-item-active" : ""
                         }`}
                       >

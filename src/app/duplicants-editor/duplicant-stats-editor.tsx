@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { FaChevronRight, FaXmark } from "react-icons/fa6";
 import type { DuplicantEditorModel } from "@/lib/oni/save-selectors";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
 import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import M3Dialog from "@/components/ui/m3-dialog";
 import M3OutlinedButton from "@/components/ui/m3-outlined-button";
+import M3HollowButton from "@/components/ui/m3-hollow-button";
 import M3TonalButton from "@/components/ui/m3-tonal-button";
 import { getEffectDefinition } from "@/lib/oni/effect-data";
 
@@ -609,9 +611,12 @@ export default function DuplicantStatsEditor({
         </div>
       </div>
 
-      <div id="effects" className="m3-card scroll-mt-20 p-4 xl:col-span-2">
+      <div
+        id="effects"
+        className="m3-card @container scroll-mt-20 p-4 xl:col-span-2"
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Effects</h2>
+          <h2 className="text-base font-semibold">Effects</h2>
           <div className="flex items-center gap-3">
             <span className="text-xs tabular-nums opacity-60">
               {model.effects.length} active
@@ -619,7 +624,7 @@ export default function DuplicantStatsEditor({
             {orderedAvailableEffects.length > 0 ? (
               <M3TonalButton
                 onClick={openEffectPicker}
-                className="px-4 py-2 text-sm"
+                className="px-3 py-1.5 text-sm"
               >
                 Add effect
               </M3TonalButton>
@@ -630,31 +635,35 @@ export default function DuplicantStatsEditor({
         {orderedEffects.length === 0 ? (
           <p className="mt-3 text-sm opacity-70">No active effects</p>
         ) : (
-          <div className="mt-3 grid items-stretch gap-3 md:grid-cols-2">
+          <div className="mt-3 grid items-start gap-2 @min-[31rem]:grid-cols-2 @min-[46rem]:grid-cols-3 @min-[58rem]:grid-cols-4">
             {orderedEffects.map((effect) => (
-              <div
-                key={effect.id}
-                className="m3-panel flex min-h-28 min-w-0 flex-col justify-between px-3 py-2.5"
-              >
-                <div className="flex min-w-0 items-start justify-between gap-3">
-                  <div className="min-w-0" title={effect.id}>
-                    <p className="break-words text-sm font-semibold">
-                      {getEffectDefinition(effect.id).name}
-                    </p>
-                    <p className="mt-1 text-xs leading-4 opacity-60">
+              <div key={effect.id} className="m3-panel min-w-0 px-2.5 py-2">
+                <div className="flex min-w-0 items-start gap-1">
+                  <details className="group min-w-0 flex-1">
+                    <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 text-sm font-semibold md:min-h-9 [&::-webkit-details-marker]:hidden">
+                      <FaChevronRight
+                        aria-hidden="true"
+                        className="h-2.5 w-2.5 shrink-0 text-[var(--muted)] transition-transform group-open:rotate-90"
+                      />
+                      <span className="min-w-0 break-words">
+                        {getEffectDefinition(effect.id).name}
+                      </span>
+                    </summary>
+                    <p className="pb-2 text-xs leading-relaxed text-[var(--muted)]">
                       {getEffectDefinition(effect.id).summary}
                     </p>
-                  </div>
-                  <M3OutlinedButton
+                  </details>
+                  <M3HollowButton
                     onClick={() => removeDuplicantEffect(model.id, effect.id)}
-                    className="shrink-0 px-2.5 py-1 text-xs"
+                    aria-label={`Remove ${getEffectDefinition(effect.id).name}`}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center md:h-9 md:w-9"
                   >
-                    Remove
-                  </M3OutlinedButton>
+                    <FaXmark aria-hidden="true" className="h-3.5 w-3.5" />
+                  </M3HollowButton>
                 </div>
-                <label className="mt-2 flex items-center justify-between gap-3 text-xs">
-                  <span className="opacity-65">Duration</span>
-                  <span className="flex items-center gap-2">
+                <label className="mt-1 flex items-center justify-between gap-2 text-xs">
+                  <span className="text-[var(--muted)]">Duration</span>
+                  <span className="flex items-center gap-1.5">
                     <input
                       type="number"
                       min="0"
@@ -687,9 +696,9 @@ export default function DuplicantStatsEditor({
                           ? `effect-error-${effect.id}`
                           : undefined
                       }
-                      className="w-24 m3-field px-2 py-1 text-right text-sm tabular-nums"
+                      className="m3-field min-h-11 w-20 px-2 py-1 text-right text-sm tabular-nums md:min-h-9"
                     />
-                    <span className="opacity-65">cycles</span>
+                    <span className="text-[var(--muted)]">cycles</span>
                   </span>
                 </label>
                 {effectErrors[effect.id] ? (
@@ -710,14 +719,14 @@ export default function DuplicantStatsEditor({
           open={effectPickerOpen}
           onClose={closeEffectPicker}
           labelledBy="add-effect-title"
-          className="flex max-h-[82vh] w-full max-w-2xl flex-col overflow-hidden p-5"
+          className="flex max-h-[82vh] w-full max-w-3xl flex-col overflow-hidden p-4"
         >
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 id="add-effect-title" className="text-xl font-semibold">
+              <h3 id="add-effect-title" className="text-lg font-semibold">
                 Add effect
               </h3>
-              <p className="mt-1 text-xs opacity-65">
+              <p className="mt-0.5 text-xs text-[var(--muted)]">
                 Choose an effect and set its duration
               </p>
             </div>
@@ -729,7 +738,7 @@ export default function DuplicantStatsEditor({
             </M3OutlinedButton>
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-3 flex items-center gap-2">
             <label htmlFor="effect-search" className="sr-only">
               Search effects
             </label>
@@ -753,20 +762,20 @@ export default function DuplicantStatsEditor({
                 }
               }}
               placeholder="Search effects"
-              className="m3-field min-w-0 flex-1 px-3 py-2.5 text-sm"
+              className="m3-field min-h-11 min-w-0 flex-1 px-3 py-1.5 text-sm md:min-h-9"
             />
             <span className="shrink-0 text-xs tabular-nums opacity-60">
               {filteredAvailableEffects.length} results
             </span>
           </div>
 
-          <div className="m3-scrollbar m3-vertical-scroll mt-3 min-h-0 flex-1 pr-2">
+          <div className="m3-scrollbar m3-vertical-scroll @container mt-3 min-h-0 flex-1 pr-1">
             {filteredAvailableEffects.length === 0 ? (
               <div className="m3-panel p-4 text-sm opacity-65">
                 No matching effects
               </div>
             ) : (
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-1.5 @min-[28rem]:grid-cols-2 @min-[43rem]:grid-cols-3">
                 {filteredAvailableEffects.map((effectId) => {
                   const isSelected = effectId === newEffectId;
                   return (
@@ -774,24 +783,15 @@ export default function DuplicantStatsEditor({
                       key={effectId}
                       type="button"
                       aria-pressed={isSelected}
+                      aria-describedby={
+                        isSelected ? "selected-effect-description" : undefined
+                      }
                       onClick={() => setNewEffectId(effectId)}
-                      className={`min-h-16 rounded-xl border px-3 py-2.5 text-left opacity-100 transition-colors ${
-                        isSelected
-                          ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--on-accent)]"
-                          : "border-[var(--outline-faint)] bg-[var(--surface-container-high)] text-[var(--foreground)] hover:border-[var(--outline-strong)] hover:bg-[var(--state-hover)]"
+                      className={`m3-button px-2.5 py-2 text-left text-sm leading-snug ${
+                        isSelected ? "m3-button-tonal" : "m3-button-outlined"
                       }`}
-                      title={effectId}
                     >
-                      <span className="block text-sm font-semibold">
-                        {getEffectDefinition(effectId).name}
-                      </span>
-                      <span
-                        className={`mt-1 block text-xs leading-4 ${
-                          isSelected ? "opacity-75" : "opacity-60"
-                        }`}
-                      >
-                        {getEffectDefinition(effectId).summary}
-                      </span>
+                      {getEffectDefinition(effectId).name}
                     </button>
                   );
                 })}
@@ -799,24 +799,31 @@ export default function DuplicantStatsEditor({
             )}
           </div>
 
-          <div className="mt-4 shrink-0 border-t border-[var(--outline-faint)] pt-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs opacity-60">Selected effect</p>
-                <p className="mt-1 truncate text-sm font-semibold">
+          <div className="mt-3 shrink-0 border-t border-[var(--outline-faint)] pt-3">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-end">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
                   {newEffectId
                     ? getEffectDefinition(newEffectId).name
                     : "No effect selected"}
                 </p>
+                {newEffectId ? (
+                  <p
+                    id="selected-effect-description"
+                    className="mt-1 text-xs leading-relaxed text-[var(--muted)]"
+                  >
+                    {getEffectDefinition(newEffectId).summary}
+                  </p>
+                ) : null}
               </div>
               <label className="flex flex-col gap-1 text-xs">
-                <span className="opacity-65">Duration in cycles</span>
+                <span className="text-[var(--muted)]">Duration in cycles</span>
                 <input
                   type="number"
                   min="1"
                   value={newEffectCycles}
                   onChange={(event) => setNewEffectCycles(event.target.value)}
-                  className="w-28 m3-field px-3 py-2 text-right text-sm tabular-nums"
+                  className="m3-field min-h-11 w-full px-2 py-1.5 text-right text-sm tabular-nums sm:w-24 md:min-h-9"
                 />
               </label>
               <M3TonalButton

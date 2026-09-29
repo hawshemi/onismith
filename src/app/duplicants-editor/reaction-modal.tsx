@@ -41,39 +41,30 @@ type ReactionModalProps = {
 const ADD_TRAIT_CATEGORIES: Array<{
   id: TraitCategory;
   label: string;
-  tabClass: string;
-  activeTabClass: string;
-  itemClass: string;
+  outline: string;
+  surface: string;
+  activeSurface: string;
 }> = [
   {
     id: "positive",
     label: "Positive",
-    tabClass:
-      "border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)]",
-    activeTabClass:
-      "border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface-strong)]",
-    itemClass:
-      "border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)]",
+    outline: "var(--trait-positive-outline)",
+    surface: "var(--trait-positive-surface)",
+    activeSurface: "var(--trait-positive-surface-strong)",
   },
   {
     id: "universal",
     label: "General",
-    tabClass:
-      "border-[var(--trait-general-outline)] bg-[var(--trait-general-surface)]",
-    activeTabClass:
-      "border-[var(--trait-general-outline)] bg-[var(--trait-general-surface-strong)]",
-    itemClass:
-      "border-[var(--trait-general-outline)] bg-[var(--trait-general-surface)]",
+    outline: "var(--trait-general-outline)",
+    surface: "var(--trait-general-surface)",
+    activeSurface: "var(--trait-general-surface-strong)",
   },
   {
     id: "negative",
     label: "Negative",
-    tabClass:
-      "border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)]",
-    activeTabClass:
-      "border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface-strong)]",
-    itemClass:
-      "border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)]",
+    outline: "var(--trait-negative-outline)",
+    surface: "var(--trait-negative-surface)",
+    activeSurface: "var(--trait-negative-surface-strong)",
   },
 ];
 
@@ -175,6 +166,10 @@ export default function ReactionModal({
   const activeCategory =
     ADD_TRAIT_CATEGORIES.find((category) => category.id === addTraitCategory) ??
     ADD_TRAIT_CATEGORIES[0];
+  const activeCategoryStats = categoryStats[activeCategory.id];
+  const allCategoryTraitsOwned =
+    activeCategoryStats.traitIds.length > 0 &&
+    activeCategoryStats.ownedCount === activeCategoryStats.traitIds.length;
   const closeModal = () => {
     setTraitQuery("");
     onClose();
@@ -185,22 +180,22 @@ export default function ReactionModal({
       open
       onClose={closeModal}
       labelledBy="reaction-modal-title"
-      className={`flex w-full flex-col overflow-hidden p-5 ${
+      className={`flex w-full flex-col overflow-hidden p-4 ${
         kind === "add-traits"
-          ? "h-[90vh] max-h-[48rem] max-w-3xl"
-          : "max-h-[88vh] max-w-xl"
+          ? "h-[90vh] max-h-[48rem] max-w-4xl"
+          : "max-h-[88vh] max-w-2xl"
       }`}
     >
       <div className="flex shrink-0 items-center justify-between gap-3">
         <div className="min-w-0">
-          <h3 id="reaction-modal-title" className="text-xl font-semibold">
+          <h3 id="reaction-modal-title" className="text-base font-semibold">
             {kind === "overjoyed"
               ? "Choose overjoyed response"
               : kind === "stress"
                 ? "Choose stress reaction"
                 : "Add trait"}
           </h3>
-          <p className="mt-1 text-xs opacity-60">
+          <p className="mt-1 text-xs text-[var(--muted)]">
             {kind === "add-traits"
               ? "Browse traits by category or search by name"
               : kind === "overjoyed"
@@ -216,7 +211,7 @@ export default function ReactionModal({
         </M3OutlinedButton>
       </div>
       {kind === "add-traits" ? (
-        <div className="mt-4 shrink-0">
+        <div className="mt-3 shrink-0">
           <div
             role="group"
             aria-label="Trait category"
@@ -225,39 +220,29 @@ export default function ReactionModal({
             {ADD_TRAIT_CATEGORIES.map((category) => {
               const isActive = addTraitCategory === category.id;
               const stats = categoryStats[category.id];
-              const allOwned =
-                stats.traitIds.length > 0 &&
-                stats.ownedCount === stats.traitIds.length;
               return (
-                <div
+                <button
                   key={category.id}
-                  className={`rounded-xl border p-2 text-[var(--foreground)] transition-colors ${
-                    isActive ? category.activeTabClass : category.tabClass
-                  }`}
+                  type="button"
+                  aria-pressed={isActive}
+                  aria-label={`${category.label}, ${stats.ownedCount} of ${stats.traitIds.length} owned`}
+                  onClick={() => onCategoryChange(category.id)}
+                  className="m3-button-outlined flex min-h-11 flex-wrap items-center justify-center gap-x-2 rounded-lg px-2 py-2 text-sm font-semibold transition-colors"
+                  style={
+                    isActive
+                      ? {
+                          background: category.activeSurface,
+                          borderColor: category.outline,
+                          boxShadow: "inset 0 -2px var(--accent)",
+                        }
+                      : undefined
+                  }
                 >
-                  <button
-                    type="button"
-                    aria-pressed={isActive}
-                    onClick={() => onCategoryChange(category.id)}
-                    className="w-full rounded-lg px-1 py-0.5 text-sm font-semibold hover:bg-[var(--state-hover)]"
-                  >
-                    <span className="block">{category.label}</span>
-                    <span className="mt-0.5 block text-xs font-normal opacity-70">
-                      {stats.ownedCount} of {stats.traitIds.length} owned
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={stats.traitIds.length === 0}
-                    onClick={() =>
-                      onSetCategoryTraits(stats.traitIds, !allOwned)
-                    }
-                    className="mt-2 w-full rounded-lg border border-[var(--outline)] bg-[var(--surface-container-lowest)] px-2 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--state-hover)] disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label={`${allOwned ? "Remove" : "Add"} all ${category.label.toLocaleLowerCase()} traits`}
-                  >
-                    {allOwned ? "Remove all" : "Add all"}
-                  </button>
-                </div>
+                  <span>{category.label}</span>
+                  <span className="text-xs font-normal tabular-nums text-[var(--muted)]">
+                    {stats.ownedCount}/{stats.traitIds.length}
+                  </span>
+                </button>
               );
             })}
           </div>
@@ -271,24 +256,38 @@ export default function ReactionModal({
               value={traitQuery}
               onChange={(event) => setTraitQuery(event.target.value)}
               placeholder="Search traits"
-              className="min-w-0 flex-1 m3-field px-3 py-2 text-sm"
+              className="min-w-0 basis-40 flex-1 m3-field px-3 py-2 text-sm"
             />
-            <span className="text-xs tabular-nums opacity-60">
-              {options.length} results
-            </span>
+            <M3OutlinedButton
+              disabled={activeCategoryStats.traitIds.length === 0}
+              onClick={() =>
+                onSetCategoryTraits(
+                  activeCategoryStats.traitIds,
+                  !allCategoryTraitsOwned,
+                )
+              }
+              className="shrink-0 px-3 py-2 text-xs"
+              aria-label={`${allCategoryTraitsOwned ? "Remove" : "Add"} all ${activeCategory.label.toLocaleLowerCase()} traits`}
+            >
+              {allCategoryTraitsOwned ? "Remove all" : "Add all"}{" "}
+              {activeCategory.label.toLocaleLowerCase()}
+            </M3OutlinedButton>
           </div>
+          <p className="mt-2 text-xs tabular-nums text-[var(--muted)]">
+            {options.length} results
+          </p>
         </div>
       ) : null}
-      <div className="m3-scrollbar m3-vertical-scroll mt-4 min-h-0 flex-1 pr-2">
+      <div className="m3-scrollbar m3-vertical-scroll mt-3 min-h-0 flex-1 pr-1">
         <div
           className={
             kind === "add-traits"
-              ? "grid gap-2 md:grid-cols-2"
-              : "flex flex-col gap-2"
+              ? "grid items-start gap-2 sm:grid-cols-2 lg:grid-cols-3"
+              : "grid items-start gap-2 sm:grid-cols-2"
           }
         >
           {options.length === 0 ? (
-            <div className="m3-panel p-4 text-sm opacity-65 md:col-span-2">
+            <div className="m3-panel col-span-full p-3 text-sm text-[var(--muted)]">
               No matching traits
             </div>
           ) : null}
@@ -300,20 +299,27 @@ export default function ReactionModal({
                   type="button"
                   onClick={() => onAddTrait(trait.id)}
                   disabled={trait.isOwned}
-                  className={`min-h-24 w-full rounded-xl border px-4 py-3 text-left text-[var(--foreground)] transition-colors ${
-                    trait.isOwned
-                      ? "cursor-not-allowed border-[var(--outline)] bg-[var(--surface-container-high)] opacity-65"
-                      : `${activeCategory.itemClass} hover:bg-[var(--state-hover)]`
-                  }`}
+                  className="m3-button-outlined w-full rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed"
+                  style={{
+                    background: trait.isOwned
+                      ? "var(--surface-container-low)"
+                      : activeCategory.surface,
+                    borderColor: trait.isOwned
+                      ? "var(--outline)"
+                      : activeCategory.outline,
+                    opacity: 1,
+                  }}
                 >
                   <span className="flex items-center justify-between gap-2 text-sm font-semibold">
                     <span>{trait.name}</span>
                     {trait.isOwned ? (
-                      <span className="text-xs font-bold">Owned</span>
+                      <span className="shrink-0 text-xs font-medium">
+                        Owned
+                      </span>
                     ) : null}
                   </span>
                   {trait.description ? (
-                    <span className="mt-1.5 block text-xs leading-5 opacity-65">
+                    <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">
                       {trait.description}
                     </span>
                   ) : null}
@@ -331,20 +337,27 @@ export default function ReactionModal({
                 type="button"
                 disabled={isSelected}
                 onClick={() => onApplyReaction(kind, trait.id)}
-                className={`w-full rounded-xl border px-4 py-3 text-left text-[var(--foreground)] transition-colors disabled:opacity-100 ${
-                  isSelected
-                    ? "cursor-not-allowed border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface-strong)]"
-                    : "border-[var(--trait-general-outline)] bg-[var(--trait-general-surface)] hover:bg-[var(--state-hover)]"
-                }`}
+                className="m3-button-outlined w-full rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-not-allowed"
+                style={{
+                  ...(isSelected
+                    ? {
+                        background: "var(--trait-positive-surface-strong)",
+                        borderColor: "var(--trait-positive-outline)",
+                      }
+                    : {}),
+                  opacity: 1,
+                }}
               >
                 <span className="flex items-center justify-between gap-2 text-sm font-semibold">
                   <span>{trait.name}</span>
                   {isSelected ? (
-                    <span className="text-xs font-bold">Current</span>
+                    <span className="shrink-0 text-xs font-medium">
+                      Current
+                    </span>
                   ) : null}
                 </span>
                 {trait.description ? (
-                  <span className="mt-1.5 block text-xs leading-5 opacity-65">
+                  <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">
                     {trait.description}
                   </span>
                 ) : null}

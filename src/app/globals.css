@@ -2,22 +2,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0c0e12;
-  --foreground: #e7ecec;
-  --accent: #6ee7b7;
-  --accent-hover: #87eec7;
-  --on-accent: #06110d;
-  --muted: #a7b2b9;
-  --surface: #10131a;
-  --surface-container-low: #12161d;
-  --surface-container: #161b24;
-  --surface-container-high: #1e2530;
-  --surface-container-highest: #28323f;
+  --background: #11171b;
+  --foreground: #e4e9e9;
+  --accent: #96cbbb;
+  --accent-hover: #b0ddce;
+  --on-accent: #152b25;
+  --muted: #a5b2b8;
+  --surface: #151d23;
+  --surface-container-low: #172127;
+  --surface-container: #1c272e;
+  --surface-container-high: #26343c;
+  --surface-container-highest: #32434c;
   --outline: rgba(231, 236, 236, 0.16);
   --outline-strong: rgba(231, 236, 236, 0.42);
   --outline-faint: rgba(231, 236, 236, 0.09);
-  --state-hover: rgba(110, 231, 183, 0.1);
-  --state-pressed: rgba(110, 231, 183, 0.16);
+  --state-hover: rgba(150, 203, 187, 0.1);
+  --state-pressed: rgba(150, 203, 187, 0.16);
   --error: #fb7185;
   --error-surface: rgba(251, 113, 133, 0.13);
   --error-outline: rgba(251, 113, 133, 0.45);
@@ -40,7 +40,7 @@
   --scrim: rgba(0, 0, 0, 0.7);
   --scrim-medium: rgba(0, 0, 0, 0.6);
   --scrim-soft: rgba(0, 0, 0, 0.5);
-  --border: rgba(231, 236, 236, 0.42);
+  --border: rgba(231, 236, 236, 0.38);
 
   /* Motion: one shared timing language. --motion-fast for state changes
      (hover, focus, press), --motion-medium for larger moves (lift, expand). */
@@ -57,9 +57,9 @@
   --font-display:
     "Quicksand", "Nunito", "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: "Consolas", "SFMono-Regular", Menlo, Monaco, monospace;
-  --text-xs: 0.8125rem;
+  --text-xs: 0.75rem;
   --text-xs--line-height: 1.45;
-  --text-sm: 0.9375rem;
+  --text-sm: 0.875rem;
   --text-sm--line-height: 1.5;
 }
 
@@ -71,7 +71,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -113,7 +113,7 @@ textarea {
   color: var(--foreground);
   background-color: var(--surface-container);
   border-color: var(--border);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   transition:
     border-color var(--motion-fast) var(--ease-out),
     background-color var(--motion-fast) var(--ease-out);
@@ -128,7 +128,7 @@ button {
   color: var(--on-accent);
   background: var(--accent);
   border: 1px solid transparent;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   font-weight: 600;
   transition:
     background-color var(--motion-fast) var(--ease-out),
@@ -190,13 +190,13 @@ select option:focus,
 }
 
 .m3-navigation-drawer {
-  background: var(--surface-container-low);
+  background: var(--background);
 }
 
 .m3-navigation-drawer-item,
 .m3-nav-item {
   display: block;
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
   border: 1px solid transparent;
   color: var(--foreground);
   transition:
@@ -214,6 +214,7 @@ select option:focus,
 .m3-nav-item-active {
   background: var(--state-hover);
   color: var(--accent);
+  box-shadow: inset 2px 0 var(--accent);
 }
 
 .m3-navigation-drawer-item-disabled,
@@ -224,16 +225,16 @@ select option:focus,
 
 .m3-navigation-drawer-badge {
   margin-left: auto;
-  color: var(--foreground);
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
   line-height: 1.25;
   font-variant-numeric: tabular-nums;
 }
 
 .m3-button {
-  min-height: 2.5rem;
-  border-radius: 0.625rem;
+  min-height: 2.25rem;
+  border-radius: 0.5rem;
   font-weight: 600;
 }
 
@@ -284,6 +285,11 @@ select option:focus,
   color: var(--accent);
 }
 
+.m3-button-hollow.m3-navigation-drawer-item-active {
+  background: var(--state-hover);
+  color: var(--accent);
+}
+
 .m3-button-ghost {
   background: transparent;
   color: var(--foreground);
@@ -310,9 +316,9 @@ select option:focus,
 
 .m3-field {
   border: 1px solid var(--border);
-  background: var(--surface-container);
+  background: var(--surface-container-low);
   color: var(--foreground);
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
 }
 
 .m3-field:hover {
@@ -320,7 +326,7 @@ select option:focus,
 }
 
 .m3-select-wrap {
-  border-radius: 0.75rem;
+  border-radius: 0.5rem;
 }
 
 .m3-select-wrap:focus-within {
@@ -420,14 +426,14 @@ select option:focus,
    reintroducing different margins and vertical spacing on every route. */
 .m3-page {
   width: 100%;
-  max-width: 88rem;
+  max-width: 76rem;
   margin-inline: auto;
 }
 
 .m3-page-flow {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .m3-section-heading {
@@ -466,17 +472,17 @@ select option:focus,
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   border: 1px solid transparent;
   background: var(--surface-container-high);
   padding: 0.15rem 0.5rem;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   line-height: 1.1rem;
   font-variant-numeric: tabular-nums;
 }
 
 .m3-label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--muted);
 }
@@ -491,6 +497,12 @@ select option:focus,
   select,
   textarea {
     font-size: 1rem;
+  }
+
+  .m3-select-trigger,
+  .m3-toggle-field,
+  .m3-navigation-drawer-item {
+    min-height: 2.75rem;
   }
 }
 

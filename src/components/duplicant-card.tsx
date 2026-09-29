@@ -2,7 +2,8 @@
 
 import { memo } from "react";
 import Image from "next/image";
-import M3OutlinedButton from "@/components/ui/m3-outlined-button";
+import Link from "next/link";
+import { FaChevronRight } from "react-icons/fa6";
 import { getSafeAccessoryOrdinal } from "@/lib/oni/accessory-constraints";
 import { HAIR_OFFSET_BASES } from "@/lib/oni/hair-offsets";
 
@@ -118,65 +119,62 @@ function DuplicantCard({
   const genderLabel = formatGender(duplicant.gender);
 
   return (
-    <article
-      className="m3-card flex h-full w-full flex-col p-4"
-      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 172px" }}
+    <Link
+      href={`/duplicants-editor?id=${duplicant.id}`}
+      onClick={() => onSelect(duplicant.id)}
+      aria-label={`Edit ${duplicant.name}`}
+      className="m3-card m3-card-hover group flex h-full min-h-24 w-full items-center gap-3 p-3"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 96px" }}
     >
-      <div className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-3">
-        <div className="relative h-20 overflow-hidden rounded-2xl border border-[var(--outline)] bg-[var(--surface-container-high)]">
-          <Image
-            src={getAccessorySrc("head", headshapeOrdinal)}
-            alt=""
-            fill
-            className="absolute inset-0 h-full w-full object-contain"
-            style={{
-              transform: `translateY(${CARD_CONTENT_OFFSET_Y}px) scale(${CARD_CONTENT_SCALE})`,
-              transformOrigin: "50% 50%",
-            }}
-          />
-          <Image
-            src={getAccessorySrc("hair", hairOrdinal)}
-            alt=""
-            fill
-            className="absolute inset-0 h-full w-full object-contain"
-            style={{
-              transform: `translate(${hairOffsetX}px, ${hairOffsetY}px) scale(${hairScale})`,
-              transformOrigin: "50% 50%",
-            }}
-          />
-        </div>
-
-        <div className="flex min-w-0 flex-col justify-center gap-2">
-          <div>
-            <h2 className="break-words text-lg font-semibold leading-tight">
-              {duplicant.name}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              ID {duplicant.id}
-              {genderLabel ? `  ${genderLabel}` : ""}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 text-xs">
-            {duplicant.isBionic ? (
-              <span className="m3-tag text-[var(--accent)]">Bionic</span>
-            ) : null}
-            {!duplicant.isBionic ? (
-              <span className="m3-tag">{traitIds.length} traits</span>
-            ) : null}
-            <span className="m3-tag">{attributeCount} attributes</span>
-          </div>
-        </div>
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[var(--surface-container-high)]">
+        <Image
+          src={getAccessorySrc("head", headshapeOrdinal)}
+          alt=""
+          fill
+          className="absolute inset-0 h-full w-full object-contain"
+          style={{
+            transform: `translateY(${CARD_CONTENT_OFFSET_Y}px) scale(${CARD_CONTENT_SCALE})`,
+            transformOrigin: "50% 50%",
+          }}
+        />
+        <Image
+          src={getAccessorySrc("hair", hairOrdinal)}
+          alt=""
+          fill
+          className="absolute inset-0 h-full w-full object-contain"
+          style={{
+            transform: `translate(${hairOffsetX}px, ${hairOffsetY}px) scale(${hairScale})`,
+            transformOrigin: "50% 50%",
+          }}
+        />
       </div>
 
-      <M3OutlinedButton
-        href={`/duplicants-editor?id=${duplicant.id}`}
-        onClick={() => onSelect(duplicant.id)}
-        aria-label={`Edit ${duplicant.name}`}
-        className="mt-3 inline-flex min-h-11 w-full items-center justify-center px-4 py-2 text-sm font-semibold"
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5">
+        <div>
+          <h2 className="break-words text-sm font-semibold leading-snug group-hover:text-[var(--accent)]">
+            {duplicant.name}
+          </h2>
+          <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-[var(--muted)]">
+            <span>ID {duplicant.id}</span>
+            {genderLabel ? <span>{genderLabel}</span> : null}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-[var(--muted)]">
+          {duplicant.isBionic ? (
+            <span className="text-[var(--accent)]">Bionic</span>
+          ) : null}
+          {!duplicant.isBionic ? <span>{traitIds.length} traits</span> : null}
+          <span>{attributeCount} attributes</span>
+        </div>
+      </div>
+      <span
+        className="flex shrink-0 items-center gap-1 text-xs font-medium text-[var(--accent)]"
+        aria-hidden="true"
       >
-        Edit duplicant
-      </M3OutlinedButton>
-    </article>
+        Edit
+        <FaChevronRight className="h-2.5 w-2.5" />
+      </span>
+    </Link>
   );
 }
 

@@ -117,7 +117,6 @@ const SAVE_REQUIRED_PATH_PREFIXES = [
   "/buildings",
   "/objects",
 ];
-export const UI_VERSION_LABEL = "v1.0.0";
 export const SAVED_STATUS_DURATION_MS = 3000;
 
 export function normalizePathname(pathname: string | null | undefined): string {
