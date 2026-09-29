@@ -34,19 +34,10 @@ const SAVE_PATHS = {
   mac: "~/Library/Application Support/unity.Klei.Oxygen Not Included/save_files/",
   linux: "~/.config/unity3d/Klei/Oxygen Not Included/save_files/",
 };
-const TOGGLE_SETTING_NAMES = new Set([
-  "CarePackages",
-  "SandboxMode",
-  "FastWorkersMode",
-  "Teleporters",
-]);
-
 type GameInfo = {
   baseName?: string;
   numberOfCycles?: number;
   numberOfDuplicants?: number;
-  saveMajorVersion?: number;
-  saveMinorVersion?: number;
   clusterId?: string;
   isAutoSave?: boolean;
   dlcIds?: string[];
@@ -97,8 +88,6 @@ function makeOverviewSummary(session: OverviewSession) {
       ? (gameInfo.numberOfCycles as number)
       : 0,
     duplicants: gameInfo.numberOfDuplicants ?? "Unknown",
-    version: `${gameInfo.saveMajorVersion ?? "?"}.${gameInfo.saveMinorVersion ?? "?"}`,
-    buildVersion: session.saveGame?.header?.buildVersion ?? "Unknown",
     cluster: clusterId ? getClusterDisplayName(clusterId) : "Unknown",
     developerToolsUsed: Boolean(session.saveGame?.gameData?.debugWasUsed),
     autoSave: Boolean(gameInfo.isAutoSave),
@@ -122,7 +111,7 @@ type StatTileProps = {
 
 function StatTile({ label, value, mono }: StatTileProps) {
   return (
-    <div className="m3-panel px-3 py-2.5">
+    <div className="min-w-0">
       <p className="m3-label">{label}</p>
       <p
         className={`mt-1 truncate text-sm font-semibold tabular-nums ${
@@ -184,7 +173,7 @@ function ColonyNameField({ value, onCommit }: ColonyNameFieldProps) {
             event.currentTarget.blur();
           }
         }}
-        className="m3-field mt-1 w-full px-3 py-2 text-xl font-semibold"
+        className="m3-field mt-1.5 w-full px-3 py-2 text-base font-semibold"
       />
       {error ? (
         <span
@@ -222,45 +211,56 @@ function NoSaveState({
     { id: "linux", label: "Linux", path: SAVE_PATHS.linux },
   ].sort((a, b) => Number(b.id === platform) - Number(a.id === platform));
   return (
-    <section className="mx-auto w-full max-w-xl py-6 sm:py-12">
-      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--state-hover)] text-[var(--accent)]">
-        <FaFileArrowUp aria-hidden="true" className="h-6 w-6" />
-      </div>
-      <h2 className="text-2xl font-semibold sm:text-3xl">Open your colony</h2>
-      <p className="mt-3 max-w-md text-base text-[var(--muted)]">
-        Edit your Oxygen Not Included save. Adjust your colony, Duplicants, and
-        worlds in one place.
-      </p>
-      <div className="mt-7 rounded-xl border border-dashed border-[var(--outline-strong)] p-6 sm:p-8">
-        <M3TonalButton
-          onClick={onChooseSave}
-          disabled={isBusy}
-          className="w-full px-5 py-3 text-base sm:w-auto"
-        >
-          Choose save file
-        </M3TonalButton>
-        <p className="mt-3 text-sm text-[var(--muted)]">
-          Or drop a <code>.sav</code> file anywhere here.
-        </p>
-      </div>
-      <p className="mt-4 text-sm text-[var(--muted)]">
-        Your save stays on your device. Nothing is uploaded.
-      </p>
-      <details className="mt-7 border-t border-[var(--outline-faint)] pt-4">
-        <summary className="cursor-pointer py-1 text-sm font-semibold">
-          Where is my save?
-        </summary>
-        <div className="mt-3 space-y-4">
-          {locations.map((location) => (
-            <div key={location.id}>
-              <p className="text-sm font-medium">{location.label}</p>
-              <code className="mt-1 block break-all text-xs leading-relaxed">
-                {location.path}
-              </code>
+    <section className="mx-auto w-full max-w-xl py-4 sm:py-8">
+      <div className="m3-card overflow-hidden">
+        <div className="p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--state-hover)] text-[var(--accent)]">
+              <FaFileArrowUp aria-hidden="true" className="h-5 w-5" />
             </div>
-          ))}
+            <div>
+              <h2 className="text-xl font-semibold">Open your colony</h2>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
+                Edit your Oxygen Not Included save, from colony settings to
+                Duplicants and worlds.
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-col items-start gap-3 rounded-lg border border-dashed border-[var(--outline-strong)] bg-[var(--surface-container-low)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Start with a save file</p>
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                Choose a <code>.sav</code> file or drop one here.
+              </p>
+            </div>
+            <M3TonalButton
+              onClick={onChooseSave}
+              disabled={isBusy}
+              className="w-full shrink-0 px-4 py-2 text-sm sm:w-auto"
+            >
+              Choose save file
+            </M3TonalButton>
+          </div>
+          <p className="mt-3 text-xs text-[var(--muted)]">
+            Your save stays on your device. Nothing is uploaded.
+          </p>
         </div>
-      </details>
+        <details className="border-t border-[var(--outline-faint)] px-5 py-3 sm:px-6">
+          <summary className="cursor-pointer py-1 text-sm font-medium">
+            Where is my save?
+          </summary>
+          <div className="mt-3 space-y-3 pb-2">
+            {locations.map((location) => (
+              <div key={location.id}>
+                <p className="text-xs font-medium">{location.label}</p>
+                <code className="mt-1 block break-all text-xs leading-relaxed text-[var(--muted)]">
+                  {location.path}
+                </code>
+              </div>
+            ))}
+          </div>
+        </details>
+      </div>
     </section>
   );
 }
@@ -290,26 +290,22 @@ function ReadyState({
     Array.isArray(difficultyOrder) && difficultyOrder.length > 0
       ? difficultyOrder
       : Object.keys(difficultyOptions);
-  const displaySettingOrder = useMemo(() => {
-    const nonToggle = settingOrder.filter(
-      (name) => !TOGGLE_SETTING_NAMES.has(name),
-    );
-    const toggle = settingOrder.filter((name) =>
-      TOGGLE_SETTING_NAMES.has(name),
-    );
-    return [...nonToggle, ...toggle];
-  }, [settingOrder]);
-
   const isToggleOptions = (options: string[]) =>
     Array.isArray(options) &&
     options.length === 2 &&
     options.includes("Enabled") &&
     options.includes("Disabled");
+  const valueSettings = settingOrder.filter(
+    (name) => !isToggleOptions(difficultyOptions[name] ?? []),
+  );
+  const toggleSettings = settingOrder.filter((name) =>
+    isToggleOptions(difficultyOptions[name] ?? []),
+  );
 
   return (
-    <div className="space-y-6">
-      <section className="m3-card p-4 sm:p-5" aria-label="Colony summary">
-        <div className="grid gap-5 sm:grid-cols-2">
+    <div className="space-y-4">
+      <section className="m3-card p-4" aria-label="Colony summary">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <ColonyNameField
             value={summary.colonyName}
             onCommit={onUpdateColonyName}
@@ -323,47 +319,35 @@ function ReadyState({
                 step={1}
                 onCommit={onUpdateCycleCount}
                 aria-label="Cycle"
-                className="m3-field mt-1 w-full px-3 py-2 text-xl font-semibold tabular-nums"
+                className="m3-field mt-1.5 w-full px-3 py-2 text-base font-semibold tabular-nums"
               />
             </label>
             <div>
               <p className="m3-label">Duplicants</p>
-              <p className="mt-2 text-xl font-semibold tabular-nums">
+              <p className="mt-1.5 px-0 py-2 text-base font-semibold tabular-nums">
                 {summary.duplicants}
               </p>
             </div>
           </div>
         </div>
-        <p className="mt-4 text-sm text-[var(--muted)]">{summary.cluster}</p>
+        <p className="mt-3 text-xs text-[var(--muted)]">{summary.cluster}</p>
       </section>
-      <section className="m3-card p-4 sm:p-5">
-        <h2 className="text-lg font-semibold">Game settings</h2>
-        <p className="mt-1 text-xs opacity-70">
+      <section className="m3-card p-4">
+        <h2 className="text-base font-semibold">Game settings</h2>
+        <p className="mt-1 text-xs text-[var(--muted)]">
           Edits stay in this session until you save or download a copy.
         </p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-          {displaySettingOrder.map((settingName) => {
+        <div className="mt-4 grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {valueSettings.map((settingName) => {
             const options = difficultyOptions[settingName] || [];
             const selected = difficulty[settingName] ?? options[0] ?? "";
             const label = getDifficultySettingLabel(settingName);
-            if (isToggleOptions(options)) {
-              return (
-                <M3ToggleField
-                  key={settingName}
-                  label={label}
-                  checked={selected === "Enabled"}
-                  onChange={(event) =>
-                    onUpdateDifficulty(
-                      settingName,
-                      event.target.checked ? "Enabled" : "Disabled",
-                    )
-                  }
-                />
-              );
-            }
             return (
-              <label key={settingName} className="flex flex-col gap-1 text-sm">
-                <span id={`difficulty-${settingName}`} className="opacity-80">
+              <label
+                key={settingName}
+                className="flex min-w-0 flex-col gap-1.5 text-sm"
+              >
+                <span id={`difficulty-${settingName}`} className="m3-label">
                   {label}
                 </span>
                 {options.length > 0 ? (
@@ -395,26 +379,44 @@ function ReadyState({
             );
           })}
         </div>
+        {toggleSettings.length > 0 ? (
+          <div className="mt-4 grid gap-3 border-t border-[var(--outline-faint)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
+            {toggleSettings.map((settingName) => (
+              <M3ToggleField
+                key={settingName}
+                label={getDifficultySettingLabel(settingName)}
+                checked={
+                  (difficulty[settingName] ??
+                    difficultyOptions[settingName][0]) === "Enabled"
+                }
+                onChange={(event) =>
+                  onUpdateDifficulty(
+                    settingName,
+                    event.target.checked ? "Enabled" : "Disabled",
+                  )
+                }
+              />
+            ))}
+          </div>
+        ) : null}
       </section>
-      <details className="m3-card p-4 sm:p-5">
+      <details className="m3-card p-4">
         <summary className="cursor-pointer text-base font-semibold">
           Save details
         </summary>
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
-          <StatTile label="Save version" value={summary.version} />
-          <StatTile label="Game build" value={summary.buildVersion} />
+        <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatTile label="File" value={summary.fileName} mono />
+          <StatTile label="Last saved size" value={summary.lastWrittenBytes} />
+          <StatTile label="Autosave" value={summary.autoSave ? "Yes" : "No"} />
           <StatTile
             label="Developer tools used"
             value={summary.developerToolsUsed ? "Yes" : "No"}
           />
-          <StatTile label="File" value={summary.fileName} mono />
-          <StatTile label="Last saved size" value={summary.lastWrittenBytes} />
-          <StatTile label="Autosave" value={summary.autoSave ? "Yes" : "No"} />
         </div>
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
-          <section className="m3-panel p-3" aria-labelledby="overview-dlc">
+        <div className="mt-4 grid gap-4 border-t border-[var(--outline-faint)] pt-4 sm:grid-cols-2">
+          <section className="min-w-0" aria-labelledby="overview-dlc">
             <div className="flex items-center justify-between gap-3">
-              <h2 id="overview-dlc" className="m3-label">
+              <h2 id="overview-dlc" className="text-sm font-semibold">
                 Downloadable content
               </h2>
               <span className="m3-tag shrink-0">
@@ -423,12 +425,12 @@ function ReadyState({
             </div>
             <div className="mt-2 grid gap-1.5">
               {summary.dlcs.length === 0 ? (
-                <p className="m3-panel-inset px-3 py-2 text-xs opacity-70">
+                <p className="py-2 text-xs text-[var(--muted)]">
                   None detected
                 </p>
               ) : (
                 summary.dlcs.map((dlc) => (
-                  <div key={dlc.id} className="m3-panel-inset px-3 py-2">
+                  <div key={dlc.id} className="py-1.5">
                     <p
                       className="truncate text-sm font-medium"
                       title={dlc.name}
@@ -447,9 +449,9 @@ function ReadyState({
             </div>
           </section>
 
-          <section className="m3-panel p-3" aria-labelledby="overview-mods">
+          <section className="min-w-0" aria-labelledby="overview-mods">
             <div className="flex items-center justify-between gap-3">
-              <h2 id="overview-mods" className="m3-label">
+              <h2 id="overview-mods" className="text-sm font-semibold">
                 Active mods
               </h2>
               <span className="m3-tag shrink-0">
@@ -458,12 +460,12 @@ function ReadyState({
             </div>
             <div className="mt-2 grid gap-1.5">
               {summary.activeMods.length === 0 ? (
-                <p className="m3-panel-inset px-3 py-2 text-xs opacity-70">
+                <p className="py-2 text-xs text-[var(--muted)]">
                   None recorded
                 </p>
               ) : (
                 summary.activeMods.map((mod) => (
-                  <div key={mod.id} className="m3-panel-inset px-3 py-2">
+                  <div key={mod.id} className="py-1.5">
                     <p
                       className="truncate text-sm font-medium"
                       title={mod.title}
@@ -483,27 +485,30 @@ function ReadyState({
           </section>
         </div>
 
-        <section className="m3-panel mt-3 p-3" aria-labelledby="overview-fog">
+        <section
+          className="mt-4 border-t border-[var(--outline-faint)] pt-4"
+          aria-labelledby="overview-fog"
+        >
           <div className="flex items-center justify-between gap-3">
-            <h2 id="overview-fog" className="m3-label">
+            <h2 id="overview-fog" className="text-sm font-semibold">
               Fog and streamed grids
             </h2>
             <span className="m3-tag shrink-0">Read-only</span>
           </div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <div className="m3-panel-inset px-3 py-2">
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div>
               <p className="m3-label">World grid</p>
               <p className="mt-1 text-sm font-semibold tabular-nums">
                 {summary.fog.width} × {summary.fog.height}
               </p>
             </div>
-            <div className="m3-panel-inset px-3 py-2">
+            <div>
               <p className="m3-label">Streamed data</p>
               <p className="mt-1 text-sm font-semibold tabular-nums">
                 {formatBytes(summary.fog.totalBytes)}
               </p>
             </div>
-            <div className="m3-panel-inset col-span-2 px-3 py-2">
+            <div className="col-span-2 sm:col-span-1">
               <p className="m3-label">Stored visible entries</p>
               <p className="mt-1 text-sm font-semibold tabular-nums">
                 {summary.fog.visibleEntryCount === null
@@ -512,13 +517,13 @@ function ReadyState({
               </p>
             </div>
           </div>
-          <p className="mt-2 text-xs leading-relaxed opacity-65">
+          <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
             This is the non-zero entry count from ONI&apos;s opaque visibility
             stream, not a map-reveal percentage. Editing fog safely also
             requires synchronized grid, simulation, and object state.
           </p>
           {summary.fog.streams.length > 0 ? (
-            <details className="mt-2">
+            <details className="mt-3">
               <summary className="cursor-pointer text-xs font-medium">
                 Stream details ({summary.fog.streams.length})
               </summary>
@@ -526,7 +531,7 @@ function ReadyState({
                 {summary.fog.streams.map((stream) => (
                   <div
                     key={stream.name}
-                    className="m3-panel-inset flex items-center justify-between gap-3 px-3 py-2 text-xs"
+                    className="flex min-w-0 items-center justify-between gap-3 border-b border-[var(--outline-faint)] py-2 text-xs"
                   >
                     <code className="truncate" title={stream.name}>
                       {stream.name}
@@ -542,11 +547,11 @@ function ReadyState({
         </section>
 
         {summary.mixingSettings.length > 0 ? (
-          <details className="m3-panel mt-3 p-3">
+          <details className="mt-4 border-t border-[var(--outline-faint)] pt-4">
             <summary className="cursor-pointer text-sm font-semibold">
               Saved DLC mixing choices ({summary.mixingSettings.length})
             </summary>
-            <p className="mt-2 text-xs opacity-65">
+            <p className="mt-2 text-xs text-[var(--muted)]">
               Read-only world-generation settings. Changing them after the
               worlds exist would not regenerate the cluster.
             </p>
@@ -554,7 +559,7 @@ function ReadyState({
               {summary.mixingSettings.map((setting) => (
                 <div
                   key={setting.id}
-                  className="m3-panel-inset flex items-center justify-between gap-3 px-3 py-2"
+                  className="flex min-w-0 items-center justify-between gap-3 border-b border-[var(--outline-faint)] py-2"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm" title={setting.label}>

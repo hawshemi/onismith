@@ -38,7 +38,7 @@ import { getAccessorySrc, getHairAdjustments } from "./appearance";
 
 const MAX_NAME_LENGTH = 64;
 const OVERVIEW_PORTRAIT_SCALE = 0.65;
-const OVERVIEW_PORTRAIT_OFFSET_Y = 12;
+const OVERVIEW_PORTRAIT_OFFSET_Y = 10;
 
 type TraitGroupCardProps = {
   label: string;
@@ -48,18 +48,12 @@ type TraitGroupCardProps = {
 };
 
 const TRAIT_TONE_STYLES = {
-  positive: {
-    card: "border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)]",
-    item: "border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)]",
-  },
-  universal: {
-    card: "border-[var(--trait-general-outline)] bg-[var(--trait-general-surface)]",
-    item: "border-[var(--trait-general-outline)] bg-[var(--trait-general-surface)]",
-  },
-  negative: {
-    card: "border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)]",
-    item: "border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)]",
-  },
+  positive:
+    "border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)]",
+  universal:
+    "border-[var(--trait-general-outline)] bg-[var(--trait-general-surface)]",
+  negative:
+    "border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)]",
 } as const;
 
 function TraitGroupCard({
@@ -74,27 +68,23 @@ function TraitGroupCard({
   const toneStyles = TRAIT_TONE_STYLES[tone];
 
   return (
-    <section
-      className={`flex min-w-0 flex-col rounded-[0.875rem] border p-3 ${toneStyles.card}`}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{label}</h3>
-        <span className="text-xs tabular-nums opacity-70">
-          {sortedTraits.length}
+    <section className="min-w-0 border-t border-[var(--outline-faint)] pt-3 first:border-0 first:pt-0">
+      <div className="flex items-baseline gap-2">
+        <h3 className="text-xs font-semibold">{label}</h3>
+        <span className="text-xs tabular-nums text-[var(--muted)]">
+          {sortedTraits.length || "None"}
         </span>
       </div>
-      <div className="mt-3">
-        {sortedTraits.length === 0 ? (
-          <p className="py-1 text-xs opacity-70">No traits in this category.</p>
-        ) : (
-          <div className="flex flex-wrap items-start gap-2">
+      {sortedTraits.length > 0 ? (
+        <div className="mt-2 min-w-0">
+          <div className="flex flex-wrap items-start gap-1.5">
             {sortedTraits.map((trait) => {
               const displayName = getTraitDisplayName(trait);
               return (
                 <M3OutlinedButton
                   key={trait}
                   onClick={() => onRemove(trait)}
-                  className={`inline-flex max-w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${toneStyles.item}`}
+                  className={`inline-flex max-w-full items-center gap-2 px-2.5 py-1 text-left text-xs ${toneStyles}`}
                   title={`Remove ${displayName}`}
                   aria-label={`Remove ${displayName}`}
                 >
@@ -109,8 +99,8 @@ function TraitGroupCard({
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -232,7 +222,7 @@ function BionicSystemsPanel({
   return (
     <section className="m3-card p-4">
       <div>
-        <h2 className="text-lg font-semibold">Bionic systems</h2>
+        <h2 className="text-base font-semibold">Bionic systems</h2>
         <p className="mt-0.5 text-xs opacity-65">
           Edit stored resources and power bank charge. Installed equipment is
           preserved.
@@ -452,7 +442,7 @@ function BionicSystemsPanel({
 function DuplicantEditorFallback() {
   return (
     <section className="m3-card p-5">
-      <h2 className="text-2xl font-semibold">Duplicant editor</h2>
+      <h2 className="text-base font-semibold">Duplicant editor</h2>
       <p className="mt-2 text-sm opacity-80">Loading editor</p>
     </section>
   );
@@ -471,6 +461,7 @@ function DuplicantEditorPageContent() {
     removeDuplicantTrait,
     addDuplicantInterest,
     removeDuplicantInterest,
+    setAllDuplicantInterests,
     updateDuplicantAppearance,
     updateDuplicantGender,
   } = useSaveSession();
@@ -530,7 +521,6 @@ function DuplicantEditorPageContent() {
   const [nameDraft, setNameDraft] = useState("");
   const [nameError, setNameError] = useState("");
   const [addTraitCategory, setAddTraitCategory] = useState("positive");
-  const [interestToAdd, setInterestToAdd] = useState("");
   const [hairOffsets] = useState(readStoredHairOffsets);
   const [appearanceModalOpen, setAppearanceModalOpen] = useState(false);
   const [appearanceEditorTab, setAppearanceEditorTab] = useState("head");
@@ -539,11 +529,6 @@ function DuplicantEditorPageContent() {
   useSyncOnChange([model?.name, model?.id], () => {
     setNameDraft(model?.name || "");
     setNameError("");
-  });
-
-  useSyncOnChange([model?.availableInterests, model?.id], () => {
-    const firstAvailable = model?.availableInterests?.[0] || "";
-    setInterestToAdd(firstAvailable);
   });
 
   const genderOptions = useMemo(
@@ -673,7 +658,7 @@ function DuplicantEditorPageContent() {
   if (requestedIdParam !== null && !hasValidRequestedId) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Duplicant not found</h2>
+        <h2 className="text-base font-semibold">Duplicant not found</h2>
         <p className="mt-2 text-sm opacity-80">
           Invalid duplicant ID in route query: <code>{requestedIdParam}</code>
         </p>
@@ -691,7 +676,7 @@ function DuplicantEditorPageContent() {
   if (hasValidRequestedId && !requestedExists) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Duplicant not found</h2>
+        <h2 className="text-base font-semibold">Duplicant not found</h2>
         <p className="mt-2 text-sm opacity-80">
           No duplicant with game object ID <code>{requestedId}</code> exists in
           this save.
@@ -710,7 +695,7 @@ function DuplicantEditorPageContent() {
   if (!model) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Duplicant editor</h2>
+        <h2 className="text-base font-semibold">Duplicant editor</h2>
         <p className="mt-2 text-sm opacity-80">
           No duplicant data found in this save.
         </p>
@@ -747,15 +732,16 @@ function DuplicantEditorPageContent() {
   const genderDisplayName =
     genderOptions.find((option) => option.value === model.gender)?.label ||
     "Unknown gender";
+  const allInterestsSelected = model.availableInterests.length === 0;
 
   return (
     <section className="m3-page m3-page-flow">
       <section id="identity" className="m3-card scroll-mt-20 p-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div
             role="img"
             aria-label={`${model.name} portrait`}
-            className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-[var(--outline-faint)] bg-[var(--surface-container)]"
+            className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[var(--outline-faint)] bg-[var(--surface-container)]"
           >
             <Image
               fill
@@ -782,19 +768,18 @@ function DuplicantEditorPageContent() {
           </div>
           <div className="min-w-0">
             <h2 className="break-words text-xl font-semibold">{model.name}</h2>
-            <p className="mt-1 text-sm opacity-75">
+            <p className="mt-1 text-xs text-[var(--muted)]">
               {genderDisplayName}, ID {model.id}
               {model.isBionic ? ", bionic" : ""}
             </p>
-            <p className="mt-1 text-sm opacity-75">
-              Text and number fields apply when you leave a field or press
-              Enter. Save or download your changes when finished.
-            </p>
           </div>
         </div>
-        <div className="mt-4 grid items-end gap-4 md:grid-cols-3">
-          <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-            <span className="opacity-80">Name</span>
+        <p className="mt-3 text-xs text-[var(--muted)]">
+          Edits apply when you leave a field or press Enter.
+        </p>
+        <div className="mt-3 grid grid-cols-2 items-end gap-3 md:grid-cols-3">
+          <label className="col-span-2 flex min-w-0 flex-col gap-1.5 text-sm md:col-span-1">
+            <span className="m3-label">Name</span>
             <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
               <input
                 type="text"
@@ -813,7 +798,7 @@ function DuplicantEditorPageContent() {
                   nameError ? "duplicant-name-error" : undefined
                 }
                 maxLength={MAX_NAME_LENGTH}
-                className="m3-field min-w-0 flex-1 px-3 py-2.5 text-sm"
+                className="m3-field min-h-11 min-w-0 flex-1 px-3 py-2 text-sm"
               />
             </div>
             {nameError ? (
@@ -827,7 +812,7 @@ function DuplicantEditorPageContent() {
             ) : null}
           </label>
           <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-            <span id="duplicant-gender-label" className="opacity-80">
+            <span id="duplicant-gender-label" className="m3-label">
               Gender
             </span>
             <M3Select
@@ -836,7 +821,7 @@ function DuplicantEditorPageContent() {
               onChange={(event) =>
                 updateDuplicantGender(model.id, event.target.value)
               }
-              className="m3-field w-full px-3 py-2.5 text-sm"
+              className="m3-field min-h-11 w-full px-3 py-2 text-sm"
             >
               {genderOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -846,10 +831,10 @@ function DuplicantEditorPageContent() {
             </M3Select>
           </label>
           <div className="flex min-w-0 flex-col gap-1.5 text-sm">
-            <span className="opacity-80">Appearance</span>
+            <span className="m3-label">Appearance</span>
             <M3OutlinedButton
               onClick={openAppearanceModal}
-              className="w-full px-4 py-2.5 text-sm"
+              className="min-h-11 w-full px-3 py-2 text-sm"
             >
               Edit appearance
             </M3OutlinedButton>
@@ -859,7 +844,7 @@ function DuplicantEditorPageContent() {
 
       <nav
         aria-label="Duplicant sections"
-        className="flex flex-wrap gap-1 border-b border-[var(--outline-faint)] pb-3"
+        className="m3-scrollbar sticky top-0 z-20 flex gap-1 overflow-x-auto border-b border-[var(--outline-faint)] bg-[var(--background)] py-2"
       >
         {[
           ["attributes", "Attributes"],
@@ -873,7 +858,7 @@ function DuplicantEditorPageContent() {
           <a
             key={id}
             href={`#${id}`}
-            className="rounded-lg px-3 py-2 text-sm hover:bg-[var(--state-hover)]"
+            className="flex min-h-11 shrink-0 items-center rounded-lg px-3 py-2 text-sm hover:bg-[var(--state-hover)]"
           >
             {label}
           </a>
@@ -903,97 +888,48 @@ function DuplicantEditorPageContent() {
       ) : null}
 
       <section id="reactions" className="m3-card scroll-mt-20 p-4">
-        <div>
-          <h2 className="text-lg font-semibold">Reactions</h2>
-          <p className="mt-0.5 text-xs opacity-60">
-            Duplicant behaviors triggered by high morale or maximum stress
-          </p>
-        </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="flex min-w-0 flex-col rounded-xl border border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)] p-4">
-            <div>
-              <h3 className="text-base font-semibold">Overjoyed response</h3>
-              <p className="mt-1 text-xs opacity-60">
-                Triggered by high morale
-              </p>
-            </div>
-            <div className="mt-3 flex flex-1 flex-col rounded-xl bg-[var(--surface-container-low)] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold opacity-60">
-                  Current response
-                </span>
-                <M3OutlinedButton
-                  onClick={() => openReactionModal("overjoyed")}
-                  className="shrink-0 px-3 py-1.5 text-xs"
-                  aria-label="Change overjoyed response"
-                >
-                  Change
-                </M3OutlinedButton>
+        <h2 className="text-base font-semibold">Reactions</h2>
+        <div className="mt-3 grid gap-2 lg:grid-cols-2">
+          {[
+            {
+              kind: "overjoyed" as const,
+              label: "Overjoyed response",
+              reactions: overjoyedReactions,
+            },
+            {
+              kind: "stress" as const,
+              label: "Stress reaction",
+              reactions: stressReactions,
+            },
+          ].map(({ kind, label, reactions }) => (
+            <div
+              key={kind}
+              className="m3-panel flex min-w-0 items-center justify-between gap-3 px-3 py-2.5"
+            >
+              <div className="min-w-0">
+                <h3 className="text-xs text-[var(--muted)]">{label}</h3>
+                <p className="mt-1 break-words text-sm font-medium">
+                  {reactions.length
+                    ? reactions.map(getTraitDisplayName).join(", ")
+                    : "None selected"}
+                </p>
               </div>
-              <div className="mt-2">
-                {overjoyedReactions.length === 0 ? (
-                  <p className="text-sm opacity-70">No response selected</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {overjoyedReactions.map((reaction) => (
-                      <span
-                        key={reaction}
-                        className="shrink-0 rounded-lg border border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)] px-2.5 py-1.5 text-sm font-semibold"
-                      >
-                        {getTraitDisplayName(reaction)}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <M3OutlinedButton
+                onClick={() => openReactionModal(kind)}
+                className="shrink-0 px-3 py-1 text-xs"
+                aria-label={`Change ${label.toLowerCase()}`}
+              >
+                Change
+              </M3OutlinedButton>
             </div>
-          </div>
-
-          <div className="flex min-w-0 flex-col rounded-xl border border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)] p-4">
-            <div>
-              <h3 className="text-base font-semibold">Stress reaction</h3>
-              <p className="mt-1 text-xs opacity-60">
-                Triggered at maximum stress
-              </p>
-            </div>
-            <div className="mt-3 flex flex-1 flex-col rounded-xl bg-[var(--surface-container-low)] p-3">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold opacity-60">
-                  Current reaction
-                </span>
-                <M3OutlinedButton
-                  onClick={() => openReactionModal("stress")}
-                  className="shrink-0 px-3 py-1.5 text-xs"
-                  aria-label="Change stress reaction"
-                >
-                  Change
-                </M3OutlinedButton>
-              </div>
-              <div className="mt-2">
-                {stressReactions.length === 0 ? (
-                  <p className="text-sm opacity-70">No reaction selected</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {stressReactions.map((reaction) => (
-                      <span
-                        key={reaction}
-                        className="shrink-0 rounded-lg border border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)] px-2.5 py-1.5 text-sm font-semibold"
-                      >
-                        {getTraitDisplayName(reaction)}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
       <section id="traits" className="m3-card scroll-mt-20 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-base font-semibold">
               {model.isBionic ? "Bionic traits" : "Traits"}
             </h2>
             <p className="mt-0.5 text-xs opacity-65">
@@ -1009,7 +945,7 @@ function DuplicantEditorPageContent() {
           </M3TonalButton>
         </div>
 
-        <div className="mt-3 grid items-start gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-3 grid gap-3">
           {traitGroups.map((group) => (
             <TraitGroupCard
               key={`${model.id}-${group.id}`}
@@ -1036,25 +972,65 @@ function DuplicantEditorPageContent() {
 
       {!model.isBionic ? (
         <div id="interests" className="m3-card scroll-mt-20 p-4">
-          <h2 className="text-lg font-semibold">Interests</h2>
-          <div className="mt-3">
-            <div className="flex flex-wrap items-start gap-2">
-              {model.interests.length === 0 ? (
-                <span className="text-sm opacity-70">No interests</span>
-              ) : (
-                model.interests.map((interest) => (
-                  <M3OutlinedButton
-                    key={interest}
-                    onClick={() => removeDuplicantInterest(model.id, interest)}
-                    className="max-w-full px-3 py-1.5 text-sm"
-                    title="Remove interest"
-                  >
-                    {getSkillGroupDisplayName(interest)} x
-                  </M3OutlinedButton>
-                ))
-              )}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-base font-semibold">Interests</h2>
+              <span className="text-xs tabular-nums text-[var(--muted)]">
+                {model.interests.length} selected
+              </span>
             </div>
+            <M3OutlinedButton
+              onClick={() =>
+                setAllDuplicantInterests(model.id, !allInterestsSelected)
+              }
+              className="shrink-0 px-3 py-1 text-xs"
+              aria-label={
+                allInterestsSelected
+                  ? "Uncheck all interests"
+                  : "Check all interests"
+              }
+            >
+              {allInterestsSelected ? "Uncheck all" : "Check all"}
+            </M3OutlinedButton>
           </div>
+          <p id="interests-help" className="mt-1 text-xs text-[var(--muted)]">
+            Check to add an interest. Uncheck to remove it.
+          </p>
+          <fieldset
+            aria-describedby="interests-help"
+            className="mt-3 grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          >
+            <legend className="sr-only">Duplicant interests</legend>
+            {[...model.interests, ...model.availableInterests]
+              .sort((a, b) =>
+                getSkillGroupDisplayName(a).localeCompare(
+                  getSkillGroupDisplayName(b),
+                ),
+              )
+              .map((interest) => {
+                const selected = model.interests.includes(interest);
+                return (
+                  <label
+                    key={interest}
+                    className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-sm transition-colors sm:min-h-9 ${selected ? "border-[var(--trait-general-outline)] bg-[var(--state-hover)]" : "border-[var(--outline)] hover:bg-[var(--state-hover)]"}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={(event) =>
+                        event.target.checked
+                          ? addDuplicantInterest(model.id, interest)
+                          : removeDuplicantInterest(model.id, interest)
+                      }
+                      className="h-3.5 w-3.5 shrink-0 accent-[var(--accent)]"
+                    />
+                    <span className="min-w-0 break-words">
+                      {getSkillGroupDisplayName(interest)}
+                    </span>
+                  </label>
+                );
+              })}
+          </fieldset>
 
           {model.unknownInterestHashes.length > 0 ? (
             <p className="m3-scrollbar m3-vertical-scroll mt-2 max-h-24 break-words pr-2 text-xs opacity-70">
@@ -1062,37 +1038,6 @@ function DuplicantEditorPageContent() {
               {model.unknownInterestHashes.join(", ")}
             </p>
           ) : null}
-
-          {model.availableInterests.length > 0 ? (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <M3Select
-                aria-label="Interest to add"
-                value={interestToAdd}
-                onChange={(event) => setInterestToAdd(event.target.value)}
-                className="m3-field px-3 py-2 text-sm"
-              >
-                {model.availableInterests.map((interest) => (
-                  <option key={interest} value={interest}>
-                    {getSkillGroupDisplayName(interest)}
-                  </option>
-                ))}
-              </M3Select>
-              <M3OutlinedButton
-                onClick={() => {
-                  if (interestToAdd) {
-                    addDuplicantInterest(model.id, interestToAdd);
-                  }
-                }}
-                className="px-3 py-2 text-sm"
-              >
-                Add interest
-              </M3OutlinedButton>
-            </div>
-          ) : (
-            <p className="mt-3 text-xs opacity-70">
-              All known interests already selected.
-            </p>
-          )}
         </div>
       ) : null}
 

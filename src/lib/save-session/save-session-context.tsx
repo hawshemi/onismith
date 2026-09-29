@@ -66,6 +66,7 @@ export interface SaveSessionValue extends SaveSessionState {
   removeDuplicantTrait: (duplicantId: number, traitId: string) => void;
   addDuplicantInterest: (duplicantId: number, interestName: string) => void;
   removeDuplicantInterest: (duplicantId: number, interestName: string) => void;
+  setAllDuplicantInterests: (duplicantId: number, enabled: boolean) => void;
   updateDuplicantAttributeLevel: (
     duplicantId: number,
     attributeId: string,
@@ -297,6 +298,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
     removeDuplicantEffect,
     removeDuplicantInterest,
     removeDuplicantTrait,
+    setAllDuplicantInterests,
     setDuplicantAttributeLevels,
     setDuplicantSkillMastery,
     setDuplicantSkillsMastery,
@@ -360,6 +362,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
       removeDuplicantTrait,
       addDuplicantInterest,
       removeDuplicantInterest,
+      setAllDuplicantInterests,
       updateDuplicantAttributeLevel,
       setDuplicantAttributeLevels,
       updateDuplicantAppearance,
@@ -409,6 +412,7 @@ export function SaveSessionProvider({ children }: { children: ReactNode }) {
     pasteDuplicantBehaviors,
     saveCurrentFile,
     setParseStrictness,
+    setAllDuplicantInterests,
     setDuplicantAttributeLevels,
     setDuplicantSkillMastery,
     setDuplicantSkillsMastery,

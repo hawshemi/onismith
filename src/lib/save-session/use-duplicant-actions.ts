@@ -3,7 +3,12 @@
 import { useCallback } from "react";
 import type { GameObject, SaveGame } from "@/lib/save-parser/model";
 import { isAccessoryAssetAvailable } from "@/lib/oni/accessory-constraints";
-import { getSkillGroupHash } from "@/lib/oni/minion-interests";
+import {
+  DUPLICANT_INTEREST_NAMES,
+  getSkillGroupHash,
+  getSkillGroupNameByHash,
+} from "@/lib/oni/minion-interests";
+import { isBionicIdentityTraitId } from "@/lib/oni/trait-names";
 import {
   deepClone,
   findGameObjectLocation,
@@ -343,6 +348,77 @@ export function useDuplicantActions({
       setDuplicantInterest(duplicantId, interestName, false);
     },
     [setDuplicantInterest],
+  );
+
+  const setAllDuplicantInterests = useCallback(
+    (duplicantId: number, enabled: boolean) => {
+      if (
+        !saveGame ||
+        getGameObjectTypeById(saveGame, duplicantId) !== "Minion"
+      ) {
+        return;
+      }
+      const next = mutateDuplicant(saveGame, duplicantId, (gameObject) => {
+        const traits = (
+          getBehavior(gameObject, "Klei.AI.Traits") ||
+          getBehavior(gameObject, "MinionTraits")
+        )?.templateData?.TraitIds;
+        if (Array.isArray(traits) && traits.some(isBionicIdentityTraitId)) {
+          return gameObject;
+        }
+        return updateBehaviorTemplate(
+          gameObject,
+          "MinionResume",
+          (template) => {
+            if (!template || typeof template !== "object") {
+              return template;
+            }
+            const entries = Array.isArray(template.AptitudeBySkillGroup)
+              ? template.AptitudeBySkillGroup
+              : [];
+            if (!enabled) {
+              const nextEntries = entries.filter(
+                (entry: BehaviorTemplate) =>
+                  !Array.isArray(entry) ||
+                  entry.length < 2 ||
+                  !getSkillGroupNameByHash(entry[0]?.hash),
+              );
+              return nextEntries.length === entries.length
+                ? template
+                : { ...template, AptitudeBySkillGroup: nextEntries };
+            }
+            const missingHashes = new Set(
+              DUPLICANT_INTEREST_NAMES.map(getSkillGroupHash),
+            );
+            let changed = false;
+            const nextEntries = entries.map((entry: BehaviorTemplate) => {
+              if (
+                !Array.isArray(entry) ||
+                entry.length < 2 ||
+                !missingHashes.has(entry[0]?.hash)
+              ) {
+                return entry;
+              }
+              missingHashes.delete(entry[0].hash);
+              if (Number.isFinite(entry[1]) && entry[1] > 0) {
+                return entry;
+              }
+              changed = true;
+              return [entry[0], 1, ...entry.slice(2)];
+            });
+            for (const hash of missingHashes) {
+              changed = true;
+              nextEntries.push([{ hash }, 1]);
+            }
+            return changed
+              ? { ...template, AptitudeBySkillGroup: nextEntries }
+              : template;
+          },
+        );
+      });
+      setSaveGame(next, { isModified: next !== saveGame });
+    },
+    [setSaveGame, saveGame],
   );
 
   const updateDuplicantAppearance = useCallback(
@@ -1017,6 +1093,7 @@ export function useDuplicantActions({
     removeDuplicantEffect,
     removeDuplicantInterest,
     removeDuplicantTrait,
+    setAllDuplicantInterests,
     setDuplicantSkillMastery,
     setDuplicantSkillsMastery,
     setDuplicantAttributeLevels,

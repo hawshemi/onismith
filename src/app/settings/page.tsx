@@ -32,8 +32,8 @@ export default function SettingsPage() {
         title={null}
         description="Editor preferences and compatibility options."
       />
-      <section className="m3-card p-4 sm:p-5">
-        <h2 className="text-lg font-semibold">Language</h2>
+      <section className="m3-card p-4">
+        <h2 className="text-base font-semibold">Language</h2>
         {isSingleLocale ? (
           <p className="mt-2 text-sm text-[var(--muted)]">
             {currentLanguageLabel}
@@ -60,11 +60,11 @@ export default function SettingsPage() {
           </>
         )}
       </section>
-      <details className="m3-card p-4 sm:p-5">
-        <summary className="cursor-pointer text-lg font-semibold">
+      <details className="m3-card p-4">
+        <summary className="cursor-pointer text-base font-semibold">
           Advanced
         </summary>
-        <div className="mt-5">
+        <div className="mt-4">
           <label htmlFor="strictness-select" className="text-sm font-semibold">
             Save compatibility check
           </label>
@@ -85,8 +85,8 @@ export default function SettingsPage() {
             onChange={(event) => setParseStrictness(event.target.value)}
           >
             <option value="major">Recommended compatibility check</option>
-            <option value="minor">Exact save version</option>
-            <option value="none">Skip version checks</option>
+            <option value="minor">Strict compatibility check</option>
+            <option value="none">Skip compatibility checks</option>
           </M3Select>
           {parseStrictness === "none" ? (
             <p className="mt-2 text-sm text-[var(--warning)]">
@@ -94,7 +94,7 @@ export default function SettingsPage() {
             </p>
           ) : null}
         </div>
-        <div className="mt-6 border-t border-[var(--outline-faint)] pt-5">
+        <div className="mt-4 border-t border-[var(--outline-faint)] pt-4">
           <h3 className="font-semibold">Developer tools</h3>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Inspect parser diagnostics and preview interface components.
@@ -116,7 +116,7 @@ export default function SettingsPage() {
           </p>
         </div>
         {developerToolsVisible ? (
-          <div id="settings-developer-tools" className="mt-5">
+          <div id="settings-developer-tools" className="mt-4">
             <SettingsDevTools />
           </div>
         ) : null}

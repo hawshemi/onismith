@@ -20,6 +20,7 @@ import {
   FaEllipsisVertical,
   FaRotateLeft,
   FaRotateRight,
+  FaGear,
 } from "react-icons/fa6";
 import { useI18n } from "@/lib/i18n/i18n-context";
 import {
@@ -41,7 +42,6 @@ import {
   LoadingDialog,
   NAV_ITEMS,
   SAVED_STATUS_DURATION_MS,
-  UI_VERSION_LABEL,
   getErrorGuidance,
   getPageTitle,
   normalizePathname,
@@ -524,7 +524,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       </M3Dialog>
       <div
         inert={isBusy ? true : undefined}
-        className="mx-auto flex h-full w-full max-w-[1600px] flex-col sm:p-3"
+        className="mx-auto flex h-full w-full max-w-[1480px] flex-col sm:p-2"
       >
         <a
           href="#main-content"
@@ -532,7 +532,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         >
           Skip to content
         </a>
-        <div className="flex min-h-0 flex-1 gap-3">
+        <div className="flex min-h-0 flex-1 gap-2">
           <M3NavigationDrawer
             appName="Onismith"
             id="app-mobile-nav"
@@ -554,18 +554,22 @@ export default function AppShell({ children }: { children: ReactNode }) {
             pathname={pathname}
             hasSave={hasSave}
             bottomSlot={
-              <div className="mt-auto border-t border-[var(--outline-faint)] pt-3">
+              <div className="mt-auto border-t border-[var(--outline-faint)] pt-2">
                 <M3HollowButton
                   href="/settings"
                   onClick={() => setMobileNavOpen(false)}
                   aria-current={
                     normalizedPathname === "/settings" ? "page" : undefined
                   }
-                  className="block w-full px-3 py-2.5 text-sm"
+                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm ${normalizedPathname === "/settings" ? "m3-navigation-drawer-item-active" : ""}`}
                 >
+                  <FaGear
+                    aria-hidden="true"
+                    className="h-4 w-4 text-[var(--muted)]"
+                  />
                   Settings
                 </M3HollowButton>
-                <div className="mt-3 flex items-center justify-between px-3 text-xs text-[var(--muted)]">
+                <div className="mt-2 px-3 pb-1 text-xs text-[var(--muted)]">
                   <a
                     href="https://github.com/hawshemi"
                     target="_blank"
@@ -574,112 +578,111 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   >
                     By hawshemi
                   </a>
-                  <span>{UI_VERSION_LABEL}</span>
                 </div>
               </div>
             }
             t={t}
           />
           <div className="m3-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-none border-0 sm:rounded-xl sm:border">
-            <header className="shrink-0 border-b border-[var(--outline-faint)] bg-[var(--surface)] px-4 py-3 sm:px-6">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <M3HollowButton
-                  onClick={() => setMobileNavOpen(true)}
-                  aria-label="Open navigation"
-                  aria-expanded={mobileNavOpen}
-                  aria-controls="app-mobile-nav"
-                  className={
-                    editorBackLink ? "hidden" : "px-2.5 py-2 md:hidden"
-                  }
-                >
-                  <FaBars aria-hidden="true" className="h-4 w-4" />
-                </M3HollowButton>
-                {editorBackLink ? (
+            <header className="shrink-0 border-b border-[var(--outline-faint)] bg-[var(--surface-container-low)] px-3 py-2.5 sm:px-5">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 lg:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+                <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-1">
                   <M3HollowButton
-                    href={editorBackLink.href}
-                    aria-label={editorBackLink.label}
-                    className="px-2 py-2 text-sm"
+                    onClick={() => setMobileNavOpen(true)}
+                    aria-label="Open navigation"
+                    aria-expanded={mobileNavOpen}
+                    aria-controls="app-mobile-nav"
+                    className={
+                      editorBackLink ? "hidden" : "px-2.5 py-2 md:hidden"
+                    }
                   >
-                    <FaArrowLeft
-                      aria-hidden="true"
-                      className="h-4 w-4 sm:hidden"
-                    />
-                    <span className="hidden sm:inline">Back</span>
+                    <FaBars aria-hidden="true" className="h-4 w-4" />
                   </M3HollowButton>
-                ) : null}
-                <h1 className="mr-auto min-w-0 truncate text-lg font-semibold">
-                  {pageTitle}
-                </h1>
+                  {editorBackLink ? (
+                    <M3HollowButton
+                      href={editorBackLink.href}
+                      aria-label={editorBackLink.label}
+                      className="px-2 py-2 text-sm"
+                    >
+                      <FaArrowLeft
+                        aria-hidden="true"
+                        className="h-4 w-4 sm:hidden"
+                      />
+                      <span className="hidden sm:inline">Back</span>
+                    </M3HollowButton>
+                  ) : null}
+                  <h1 className="min-w-0 truncate text-base font-semibold">
+                    {pageTitle}
+                  </h1>
+                </div>
                 {hasSave ? (
                   <>
-                    <M3HollowButton
-                      onClick={() => {
-                        undo();
-                        announce("Change undone.");
-                      }}
-                      disabled={!canUndo || isBusy}
-                      aria-label="Undo"
-                      title="Undo (Ctrl+Z)"
-                      className="px-2.5 py-2"
+                    <div className="col-start-2 row-start-1 flex items-center gap-0.5 lg:col-start-3">
+                      <M3HollowButton
+                        onClick={() => {
+                          undo();
+                          announce("Change undone.");
+                        }}
+                        disabled={!canUndo || isBusy}
+                        aria-label="Undo"
+                        title="Undo (Ctrl+Z)"
+                        className="px-2.5 py-2"
+                      >
+                        <FaRotateLeft aria-hidden="true" className="h-4 w-4" />
+                      </M3HollowButton>
+                      <M3HollowButton
+                        onClick={() => {
+                          redo();
+                          announce("Change redone.");
+                        }}
+                        disabled={!canRedo || isBusy}
+                        aria-label="Redo"
+                        title="Redo (Ctrl+Shift+Z)"
+                        className="px-2.5 py-2"
+                      >
+                        <FaRotateRight aria-hidden="true" className="h-4 w-4" />
+                      </M3HollowButton>
+                      <M3HollowButton
+                        onClick={() => setMobileActionsOpen(true)}
+                        aria-label="Open file actions"
+                        aria-expanded={mobileActionsOpen}
+                        className="px-2.5 py-2"
+                      >
+                        <FaEllipsisVertical
+                          aria-hidden="true"
+                          className="h-4 w-4"
+                        />
+                      </M3HollowButton>
+                    </div>
+                    <div className="col-start-1 row-start-2 min-w-0 lg:col-start-2 lg:row-start-1 lg:ml-2 lg:border-l lg:border-[var(--outline-faint)] lg:pl-4">
+                      <p
+                        className="truncate text-xs font-medium"
+                        title={fileName || undefined}
+                      >
+                        {fileName}
+                      </p>
+                      <p
+                        role="status"
+                        aria-live="polite"
+                        className={
+                          isModified
+                            ? "text-xs text-[var(--accent)]"
+                            : "text-xs text-[var(--muted)]"
+                        }
+                      >
+                        {sessionLabel}
+                      </p>
+                    </div>
+                    <M3TonalButton
+                      onClick={onSaveButtonClick}
+                      disabled={isBusy}
+                      className="col-start-2 row-start-2 shrink-0 px-3 py-2 text-sm lg:col-start-4 lg:row-start-1"
                     >
-                      <FaRotateLeft aria-hidden="true" className="h-4 w-4" />
-                    </M3HollowButton>
-                    <M3HollowButton
-                      onClick={() => {
-                        redo();
-                        announce("Change redone.");
-                      }}
-                      disabled={!canRedo || isBusy}
-                      aria-label="Redo"
-                      title="Redo (Ctrl+Shift+Z)"
-                      className="px-2.5 py-2"
-                    >
-                      <FaRotateRight aria-hidden="true" className="h-4 w-4" />
-                    </M3HollowButton>
-                    <M3HollowButton
-                      onClick={() => setMobileActionsOpen(true)}
-                      aria-label="Open file actions"
-                      aria-expanded={mobileActionsOpen}
-                      className="px-2.5 py-2"
-                    >
-                      <FaEllipsisVertical
-                        aria-hidden="true"
-                        className="h-4 w-4"
-                      />
-                    </M3HollowButton>
+                      {fileHandle ? "Save changes" : "Download copy"}
+                    </M3TonalButton>
                   </>
                 ) : null}
               </div>
-              {hasSave ? (
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p
-                      className="truncate text-sm"
-                      title={fileName || undefined}
-                    >
-                      {fileName}
-                    </p>
-                    <p
-                      role="status"
-                      aria-live="polite"
-                      className={
-                        isModified
-                          ? "text-xs text-[var(--accent)]"
-                          : "text-xs text-[var(--muted)]"
-                      }
-                    >
-                      {sessionLabel}
-                    </p>
-                  </div>
-                  <M3TonalButton
-                    onClick={onSaveButtonClick}
-                    disabled={isBusy}
-                    className="shrink-0 px-4 py-2 text-sm"
-                  >
-                    {fileHandle ? "Save changes" : "Download copy"}
-                  </M3TonalButton>
-                </div>
-              ) : null}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -711,7 +714,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                   </div>
                 </div>
               ) : null}
-              <div className="min-h-full px-4 py-5 sm:px-6 sm:py-6">
+              <div className="min-h-full px-3 py-4 sm:px-5 sm:py-5">
                 {error?.message ? (
                   <div
                     ref={errorRef}

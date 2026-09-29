@@ -20,16 +20,16 @@ export default function M3PageHeader({
   const hasTitle = title !== null && title !== undefined;
 
   return (
-    <header className="flex flex-wrap items-end justify-between gap-x-5 gap-y-2">
+    <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
       <div className="min-w-0">
         {hasTitle ? (
-          <h2 className="text-2xl font-bold leading-tight text-balance sm:text-[1.65rem]">
+          <h2 className="text-xl font-semibold leading-tight text-balance sm:text-[1.375rem]">
             {title}
           </h2>
         ) : null}
         {description ? (
           <p
-            className={`${hasTitle ? "mt-1" : ""} max-w-3xl text-sm leading-relaxed opacity-70`}
+            className={`${hasTitle ? "mt-1" : ""} max-w-3xl text-sm leading-relaxed text-[var(--muted)]`}
           >
             {description}
           </p>

@@ -73,15 +73,17 @@ export default function DuplicantsPage() {
       noMatchLabel="duplicants"
       deferredQuery={deferredQuery}
     >
-      <div className="grid w-full items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-        {visibleDuplicants.map((duplicant) => (
-          <DuplicantCard
-            key={duplicant.id}
-            duplicant={duplicant}
-            onSelect={setSelectedDuplicantId}
-            hairOffsets={hairOffsets}
-          />
-        ))}
+      <div className="@container w-full">
+        <div className="grid items-stretch gap-3 @min-[34rem]:grid-cols-2 @min-[52rem]:grid-cols-3">
+          {visibleDuplicants.map((duplicant) => (
+            <DuplicantCard
+              key={duplicant.id}
+              duplicant={duplicant}
+              onSelect={setSelectedDuplicantId}
+              hairOffsets={hairOffsets}
+            />
+          ))}
+        </div>
       </div>
     </BrowseListShell>
   );

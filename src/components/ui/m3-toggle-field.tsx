@@ -17,9 +17,9 @@ export default function M3ToggleField({
 }: M3ToggleFieldProps) {
   return (
     <label
-      className={`m3-field flex w-full items-center justify-between gap-3 px-3 py-2 text-sm ${className}`.trim()}
+      className={`m3-toggle-field flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm hover:bg-[var(--state-hover)] ${className}`.trim()}
     >
-      <span className="min-w-0 truncate opacity-90">{label}</span>
+      <span className="min-w-0">{label}</span>
       <input
         type="checkbox"
         checked={Boolean(checked)}
