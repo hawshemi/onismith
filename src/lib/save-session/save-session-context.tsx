@@ -135,9 +135,10 @@ export interface SaveSessionValue extends SaveSessionState {
   importDuplicantBehaviors: (
     duplicantId: number,
     file: File | null | undefined,
+    behaviorNames?: string[] | null,
   ) => Promise<ImportResult>;
   confirmImportWarning: (shouldContinue: boolean) => void;
-  cloneDuplicant: (duplicantId: number) => void;
+  cloneDuplicant: (duplicantId: number) => boolean;
   updateGeyserType: (gameObjectId: number, geyserType: string) => void;
   updateGeyserParameter: (
     gameObjectId: number,

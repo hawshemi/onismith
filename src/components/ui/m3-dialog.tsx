@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useModalDialog } from "@/lib/use-modal-dialog";
 
 type M3DialogProps = {
@@ -28,13 +29,13 @@ export default function M3Dialog({
 }: M3DialogProps) {
   const dialogRef = useModalDialog<HTMLDivElement>(open, onClose);
 
-  if (!open) {
+  if (!open || typeof document === "undefined") {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--scrim)] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-[var(--scrim)] p-4"
       onClick={onClose}
     >
       <div
@@ -43,11 +44,16 @@ export default function M3Dialog({
         aria-modal="true"
         aria-labelledby={labelledBy}
         aria-describedby={describedBy}
-        className={`m3-surface-raised ${className}`.trim()}
+        className={`m3-surface-raised m3-scrollbar min-h-0 overscroll-contain ${className}`.trim()}
+        style={{
+          maxHeight: "min(48rem, calc(100dvh - 2rem))",
+          overflowY: "auto",
+        }}
         onClick={(event) => event.stopPropagation()}
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

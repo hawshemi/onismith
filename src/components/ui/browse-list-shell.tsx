@@ -12,6 +12,7 @@ type BrowseListShellProps = {
   title: string;
   description: ReactNode;
   headerActions?: ReactNode;
+  filters?: ReactNode;
   // Defaults to `title`; only needed when the "load a save" prompt uses a
   // different name than the page heading.
   saveRequiredTitle?: string;
@@ -46,6 +47,7 @@ export default function BrowseListShell({
   title,
   description,
   headerActions,
+  filters,
   saveRequiredTitle,
   saveRequiredDescription,
   emptyMessage,
@@ -88,10 +90,20 @@ export default function BrowseListShell({
             sortAriaLabel={sort.ariaLabel}
             resultCount={resultCount}
             totalCount={totalCount}
+            filters={filters}
           />
           {resultCount === 0 ? (
             <p className="m3-panel px-4 py-3 text-sm opacity-75">
-              No {noMatchLabel} match <code>{deferredQuery.trim()}</code>.
+              No {noMatchLabel} match
+              {deferredQuery.trim() ? (
+                <>
+                  {" "}
+                  <code>{deferredQuery.trim()}</code>
+                </>
+              ) : (
+                " these filters"
+              )}
+              .
             </p>
           ) : (
             children

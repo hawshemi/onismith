@@ -16,7 +16,7 @@ import {
 function CreatureEditorFallback() {
   return (
     <section className="m3-card p-5">
-      <h2 className="text-2xl font-semibold">Creature Editor</h2>
+      <h2 className="text-2xl font-semibold">Creature editor</h2>
       <p className="mt-2 text-sm opacity-80">Loading editor</p>
     </section>
   );
@@ -24,12 +24,15 @@ function CreatureEditorFallback() {
 
 type CreatureTraitsEditorProps = {
   traits: string[];
+  knownTraits: string[];
   onCommit: (nextTraitIds: string[]) => void;
 };
 
-// Creatures have no trait catalog to pick from (unlike duplicants), so traits
-// are shown by raw id: remove any, or add one by typing its trait id.
-function CreatureTraitsEditor({ traits, onCommit }: CreatureTraitsEditorProps) {
+function CreatureTraitsEditor({
+  traits,
+  knownTraits,
+  onCommit,
+}: CreatureTraitsEditorProps) {
   const [draft, setDraft] = useState("");
   const cleanDraft = draft.trim();
   const canAddTrait = Boolean(cleanDraft) && !traits.includes(cleanDraft);
@@ -55,7 +58,7 @@ function CreatureTraitsEditor({ traits, onCommit }: CreatureTraitsEditorProps) {
         <div>
           <h2 className="text-lg font-semibold">Traits</h2>
           <p className="mt-1 text-sm leading-relaxed opacity-70">
-            Raw trait identifiers attached to this creature.
+            Manage this creature&apos;s traits.
           </p>
         </div>
         <span className="m3-tag shrink-0">{orderedTraits.length} active</span>
@@ -75,7 +78,7 @@ function CreatureTraitsEditor({ traits, onCommit }: CreatureTraitsEditorProps) {
               key={traitId}
               className="flex max-w-full items-center gap-2 rounded-xl border border-[var(--outline-faint)] bg-[var(--surface-container-high)] py-1 pr-1 pl-3 text-sm"
             >
-              <span className="truncate font-mono text-xs" title={traitId}>
+              <span className="break-all font-mono text-sm" title={traitId}>
                 {traitId}
               </span>
               <button
@@ -93,14 +96,16 @@ function CreatureTraitsEditor({ traits, onCommit }: CreatureTraitsEditorProps) {
 
       <div className="m3-panel mt-4 p-3">
         <label htmlFor="creature-trait-id" className="m3-label">
-          Add trait identifier
+          Add trait
         </label>
         <div className="mt-2 flex flex-col gap-2 sm:flex-row">
           <input
             id="creature-trait-id"
+            list="creature-known-traits"
+            aria-describedby="creature-trait-help"
             type="text"
             value={draft}
-            placeholder="e.g. CritterMoodImprovement"
+            placeholder="Find a trait or enter its ID"
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -110,6 +115,13 @@ function CreatureTraitsEditor({ traits, onCommit }: CreatureTraitsEditorProps) {
             }}
             className="m3-field min-w-0 flex-1 px-3 py-2.5 text-sm"
           />
+          <datalist id="creature-known-traits">
+            {knownTraits
+              .filter((trait) => !traits.includes(trait))
+              .map((trait) => (
+                <option key={trait} value={trait} />
+              ))}
+          </datalist>
           <M3TonalButton
             className="inline-flex shrink-0 items-center justify-center px-5 py-2.5 text-sm"
             onClick={addTrait}
@@ -118,6 +130,10 @@ function CreatureTraitsEditor({ traits, onCommit }: CreatureTraitsEditorProps) {
             Add trait
           </M3TonalButton>
         </div>
+        <p id="creature-trait-help" className="mt-2 text-sm opacity-75">
+          Suggestions come from creatures in this save. Other traits require an
+          exact game ID.
+        </p>
       </div>
     </section>
   );
@@ -189,7 +205,7 @@ function CreatureEditorPageContent() {
   if (!hasSave) {
     return (
       <SaveRequiredPage
-        title="Creature Editor"
+        title="Creature editor"
         description="Load a save first to inspect a creature."
       />
     );
@@ -198,7 +214,7 @@ function CreatureEditorPageContent() {
   if (requestedIdParam !== null && !hasValidRequestedId) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Creature Not Found</h2>
+        <h2 className="text-2xl font-semibold">Creature not found</h2>
         <p className="mt-2 text-sm opacity-80">
           Invalid creature ID in route query: <code>{requestedIdParam}</code>
         </p>
@@ -216,7 +232,7 @@ function CreatureEditorPageContent() {
   if (hasValidRequestedId && !requestedExists) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Creature Not Found</h2>
+        <h2 className="text-2xl font-semibold">Creature not found</h2>
         <p className="mt-2 text-sm opacity-80">
           No creature with Game Object ID <code>{requestedId}</code> exists in
           this save.
@@ -235,7 +251,7 @@ function CreatureEditorPageContent() {
   if (!model) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Creature Editor</h2>
+        <h2 className="text-2xl font-semibold">Creature editor</h2>
         <p className="mt-2 text-sm opacity-80">
           No creature data found in this save.
         </p>
@@ -257,8 +273,7 @@ function CreatureEditorPageContent() {
             <FaPaw aria-hidden="true" className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="m3-label">Selected creature</p>
-            <h2 className="truncate text-xl font-semibold sm:text-2xl">
+            <h2 className="break-words text-xl font-semibold sm:text-2xl">
               {model.displayName}
             </h2>
             {model.displayName !== model.type ? (
@@ -267,39 +282,33 @@ function CreatureEditorPageContent() {
               </code>
             ) : null}
             <p className="mt-1 text-sm opacity-70">
-              Edit behavior traits and world coordinates.
+              ID {model.id}, {model.traits.length} active traits
             </p>
           </div>
-          <dl className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-72">
-            <div className="m3-panel-inset px-3 py-2.5">
-              <dt className="m3-label">Game object ID</dt>
-              <dd className="mt-1 font-mono text-sm font-semibold tabular-nums">
-                {model.id}
-              </dd>
-            </div>
-            <div className="m3-panel-inset px-3 py-2.5">
-              <dt className="m3-label">Active traits</dt>
-              <dd className="mt-1 text-sm font-semibold tabular-nums">
-                {model.traits.length}
-              </dd>
-            </div>
-          </dl>
         </div>
       </section>
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(21rem,0.65fr)]">
-        <CreatureTraitsEditor traits={model.traits} onCommit={commitTraits} />
+        <CreatureTraitsEditor
+          key={model.id}
+          traits={model.traits}
+          knownTraits={[
+            ...new Set(creatures.flatMap((creature) => creature.traits)),
+          ].sort()}
+          onCommit={commitTraits}
+        />
 
         <section className="m3-card p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Position</h2>
-              <p className="mt-1 text-sm opacity-70">World coordinates</p>
+              <p className="mt-1 text-sm opacity-70">
+                World coordinates apply when you leave a field or press Enter.
+              </p>
             </div>
-            <span className="m3-tag shrink-0">X · Y · Z</span>
           </div>
 
-          <div className="m3-panel mt-4 grid gap-3 p-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {(["x", "y", "z"] as const).map((axis) => (
               <label key={axis} className="flex flex-col gap-1.5">
                 <span className="m3-label">{axis} coordinate</span>

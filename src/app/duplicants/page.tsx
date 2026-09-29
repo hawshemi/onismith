@@ -6,6 +6,7 @@ import DuplicantCard from "@/components/duplicant-card";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
 import { selectDuplicants } from "@/lib/oni/save-selectors";
 import { readStoredHairOffsets } from "@/lib/oni/hair-offsets";
+import { useBrowseState } from "@/lib/use-browse-state";
 
 const SORT_OPTIONS = [
   { value: "name-asc", label: "Name A to Z" },
@@ -18,8 +19,10 @@ export default function DuplicantsPage() {
   const { saveGame, hasSave, setSelectedDuplicantId } = useSaveSession();
   const duplicants = useMemo(() => selectDuplicants(saveGame), [saveGame]);
   const [hairOffsets] = useState(readStoredHairOffsets);
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("name-asc");
+  const { query, setQuery, sort, setSort } = useBrowseState(
+    "duplicants",
+    "name-asc",
+  );
   // Defer the filter input so typing stays smooth even when the grid re-renders
   // hundreds of cards.
   const deferredQuery = useDeferredValue(query);
@@ -50,7 +53,7 @@ export default function DuplicantsPage() {
     <BrowseListShell
       hasSave={hasSave}
       title="Duplicants"
-      description="Browse identities, reactions, and trait balance. Open a Duplicant for detailed changes."
+      description="Find a duplicant to edit appearance, traits, skills, and health."
       saveRequiredDescription="Load a save to view and edit duplicants."
       emptyMessage="No duplicants found in this save."
       search={{

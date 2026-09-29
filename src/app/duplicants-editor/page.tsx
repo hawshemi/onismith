@@ -25,7 +25,6 @@ import {
   STRESS_REACTION_TRAIT_IDS,
   getTraitCategory,
   getTraitDisplayName,
-  isBionicIdentityTraitId,
   isBionicStarterBoosterTraitId,
   normalizeTraitId,
   splitTraitsByReaction,
@@ -39,7 +38,7 @@ import { getAccessorySrc, getHairAdjustments } from "./appearance";
 
 const MAX_NAME_LENGTH = 64;
 const OVERVIEW_PORTRAIT_SCALE = 0.65;
-const OVERVIEW_PORTRAIT_OFFSET_Y = 24;
+const OVERVIEW_PORTRAIT_OFFSET_Y = 12;
 
 type TraitGroupCardProps = {
   label: string;
@@ -84,18 +83,18 @@ function TraitGroupCard({
           {sortedTraits.length}
         </span>
       </div>
-      <div className="m3-scrollbar m3-horizontal-scroll mt-3 pb-2">
+      <div className="mt-3">
         {sortedTraits.length === 0 ? (
           <p className="py-1 text-xs opacity-70">No traits in this category.</p>
         ) : (
-          <div className="grid grid-flow-col grid-rows-4 items-start gap-2">
+          <div className="flex flex-wrap items-start gap-2">
             {sortedTraits.map((trait) => {
               const displayName = getTraitDisplayName(trait);
               return (
                 <M3OutlinedButton
                   key={trait}
                   onClick={() => onRemove(trait)}
-                  className={`inline-flex w-max max-w-56 items-center gap-2 px-3 py-1.5 text-left text-xs ${toneStyles.item}`}
+                  className={`inline-flex max-w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${toneStyles.item}`}
                   title={`Remove ${displayName}`}
                   aria-label={`Remove ${displayName}`}
                 >
@@ -173,7 +172,19 @@ function BionicSystemsPanel({
     }
     const max = vital.max;
     const parsed = Number(vitalDrafts[vital.id]);
-    if (!Number.isFinite(parsed) || parsed < 0 || parsed > max) {
+    if (
+      vitalDrafts[vital.id]?.trim() &&
+      parsed === Number(formatBionicDraftValue(vital.value))
+    ) {
+      setVitalErrors((previous) => ({ ...previous, [vital.id]: "" }));
+      return;
+    }
+    if (
+      !vitalDrafts[vital.id]?.trim() ||
+      !Number.isFinite(parsed) ||
+      parsed < 0 ||
+      parsed > max
+    ) {
       setVitalErrors((previous) => ({
         ...previous,
         [vital.id]: `Use a value from 0 to ${formatBionicValue(max)}.`,
@@ -195,7 +206,19 @@ function BionicSystemsPanel({
     const key = String(bank.id);
     const capacityKilojoules = bank.capacityKilojoules;
     const parsed = Number(bankDrafts[key]);
-    if (!Number.isFinite(parsed) || parsed < 0 || parsed > capacityKilojoules) {
+    if (
+      bankDrafts[key]?.trim() &&
+      parsed === Number(formatBionicDraftValue(bank.chargeKilojoules))
+    ) {
+      setBankErrors((previous) => ({ ...previous, [key]: "" }));
+      return;
+    }
+    if (
+      !bankDrafts[key]?.trim() ||
+      !Number.isFinite(parsed) ||
+      parsed < 0 ||
+      parsed > capacityKilojoules
+    ) {
       setBankErrors((previous) => ({
         ...previous,
         [key]: `Use a value from 0 to ${formatBionicValue(capacityKilojoules)} kJ.`,
@@ -209,7 +232,7 @@ function BionicSystemsPanel({
   return (
     <section className="m3-card p-4">
       <div>
-        <h2 className="text-lg font-semibold">Bionic Systems</h2>
+        <h2 className="text-lg font-semibold">Bionic systems</h2>
         <p className="mt-0.5 text-xs opacity-65">
           Edit stored resources and power bank charge. Installed equipment is
           preserved.
@@ -244,9 +267,21 @@ function BionicSystemsPanel({
                     onBlur={() => commitVital(vital)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter") {
-                        commitVital(vital);
+                        event.currentTarget.blur();
+                      } else if (event.key === "Escape") {
+                        setVitalDrafts((prev) => ({
+                          ...prev,
+                          [vital.id]: formatBionicDraftValue(vital.value),
+                        }));
+                        setVitalErrors((prev) => ({ ...prev, [vital.id]: "" }));
                       }
                     }}
+                    aria-invalid={vitalErrors[vital.id] ? true : undefined}
+                    aria-describedby={
+                      vitalErrors[vital.id]
+                        ? `bionic-vital-error-${vital.id}`
+                        : undefined
+                    }
                     className="min-w-0 flex-1 m3-field px-2 py-1.5 text-right text-sm tabular-nums"
                   />
                   <span className="shrink-0 text-xs opacity-65">
@@ -254,7 +289,11 @@ function BionicSystemsPanel({
                   </span>
                 </div>
                 {vitalErrors[vital.id] ? (
-                  <p role="alert" className="mt-1 text-xs m3-error-text">
+                  <p
+                    id={`bionic-vital-error-${vital.id}`}
+                    role="alert"
+                    className="mt-1 text-xs m3-error-text"
+                  >
                     {vitalErrors[vital.id]}
                   </p>
                 ) : null}
@@ -282,7 +321,7 @@ function BionicSystemsPanel({
       <div className="mt-3 grid items-start gap-3 md:grid-cols-2">
         <section className="m3-panel p-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold">Installed Boosters</h3>
+            <h3 className="text-sm font-semibold">Installed boosters</h3>
             <span className="m3-tag shrink-0">{systems.boosters.length}</span>
           </div>
           <div className="mt-2 grid gap-1.5">
@@ -313,7 +352,7 @@ function BionicSystemsPanel({
 
         <section className="m3-panel p-3">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold">Installed Power Banks</h3>
+            <h3 className="text-sm font-semibold">Installed power banks</h3>
             <span className="m3-tag shrink-0">{systems.powerBanks.length}</span>
           </div>
           <div className="mt-2 grid gap-1.5">
@@ -357,9 +396,28 @@ function BionicSystemsPanel({
                           onBlur={() => commitBank(bank)}
                           onKeyDown={(event) => {
                             if (event.key === "Enter") {
-                              commitBank(bank);
+                              event.currentTarget.blur();
+                            } else if (event.key === "Escape") {
+                              setBankDrafts((prev) => ({
+                                ...prev,
+                                [String(bank.id)]: formatBionicDraftValue(
+                                  bank.chargeKilojoules,
+                                ),
+                              }));
+                              setBankErrors((prev) => ({
+                                ...prev,
+                                [String(bank.id)]: "",
+                              }));
                             }
                           }}
+                          aria-invalid={
+                            bankErrors[String(bank.id)] ? true : undefined
+                          }
+                          aria-describedby={
+                            bankErrors[String(bank.id)]
+                              ? `bionic-bank-error-${bank.id}`
+                              : undefined
+                          }
                           className="w-20 m3-field px-2 py-1 text-right text-xs tabular-nums"
                         />
                         <span className="text-xs opacity-65">
@@ -374,6 +432,7 @@ function BionicSystemsPanel({
                   </div>
                   {bank.id !== null && bankErrors[String(bank.id)] ? (
                     <p
+                      id={`bionic-bank-error-${bank.id}`}
                       role="alert"
                       className="mt-1 text-right text-xs m3-error-text"
                     >
@@ -393,7 +452,7 @@ function BionicSystemsPanel({
 function DuplicantEditorFallback() {
   return (
     <section className="m3-card p-5">
-      <h2 className="text-2xl font-semibold">Duplicant Editor</h2>
+      <h2 className="text-2xl font-semibold">Duplicant editor</h2>
       <p className="mt-2 text-sm opacity-80">Loading editor</p>
     </section>
   );
@@ -505,7 +564,6 @@ function DuplicantEditorPageContent() {
   const editableNonReactionTraits = nonReactionTraits.filter(
     (trait) => !isBionicStarterBoosterTraitId(trait),
   );
-  const bionicBugCount = modelTraits.filter(isBionicIdentityTraitId).length;
   const traitGroups = [
     {
       id: "positive",
@@ -606,7 +664,7 @@ function DuplicantEditorPageContent() {
   if (!hasSave) {
     return (
       <SaveRequiredPage
-        title="Duplicant Editor"
+        title="Duplicant editor"
         description="Load a save first to edit duplicants."
       />
     );
@@ -615,7 +673,7 @@ function DuplicantEditorPageContent() {
   if (requestedIdParam !== null && !hasValidRequestedId) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Duplicant Not Found</h2>
+        <h2 className="text-2xl font-semibold">Duplicant not found</h2>
         <p className="mt-2 text-sm opacity-80">
           Invalid duplicant ID in route query: <code>{requestedIdParam}</code>
         </p>
@@ -633,9 +691,9 @@ function DuplicantEditorPageContent() {
   if (hasValidRequestedId && !requestedExists) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Duplicant Not Found</h2>
+        <h2 className="text-2xl font-semibold">Duplicant not found</h2>
         <p className="mt-2 text-sm opacity-80">
-          No duplicant with Game Object ID <code>{requestedId}</code> exists in
+          No duplicant with game object ID <code>{requestedId}</code> exists in
           this save.
         </p>
         <p className="mt-3 text-sm opacity-70">
@@ -652,7 +710,7 @@ function DuplicantEditorPageContent() {
   if (!model) {
     return (
       <section className="m3-card p-5">
-        <h2 className="text-2xl font-semibold">Duplicant Editor</h2>
+        <h2 className="text-2xl font-semibold">Duplicant editor</h2>
         <p className="mt-2 text-sm opacity-80">
           No duplicant data found in this save.
         </p>
@@ -670,7 +728,8 @@ function DuplicantEditorPageContent() {
       setNameError(`Name cannot exceed ${MAX_NAME_LENGTH} characters.`);
       return;
     }
-    updateDuplicantName(model.id, nextName);
+    if (nextName !== model.name) updateDuplicantName(model.id, nextName);
+    setNameDraft(nextName);
     setNameError("");
   };
 
@@ -691,140 +750,137 @@ function DuplicantEditorPageContent() {
 
   return (
     <section className="m3-page m3-page-flow">
-      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(260px,0.72fr)_minmax(0,1.5fr)]">
-        <section className="m3-card flex min-w-0 flex-col p-4">
-          <div className="flex flex-1 flex-col items-center justify-center rounded-xl bg-[var(--surface-container-low)] p-4 text-center">
-            <div
-              role="img"
-              aria-label={`${model.name} portrait`}
-              className="relative h-36 w-36 overflow-hidden rounded-2xl border border-[var(--outline-faint)] bg-[var(--surface-container)]"
-            >
-              <Image
-                fill
-                src={getAccessorySrc("head", headshapeOrdinal)}
-                alt=""
-                className="pointer-events-none absolute inset-0 h-full w-full object-contain"
-                style={{
-                  transform: `translateY(${OVERVIEW_PORTRAIT_OFFSET_Y}px) scale(${OVERVIEW_PORTRAIT_SCALE})`,
-                  transformOrigin: "center",
-                }}
-                draggable={false}
-              />
-              <Image
-                fill
-                src={getAccessorySrc("hair", hairOrdinal)}
-                alt=""
-                className="pointer-events-none absolute left-1/2 top-1/2 h-full w-full object-contain"
-                style={{
-                  transform: `translate(calc(-50% + ${overviewHairOffsetX}px), calc(-50% + ${overviewHairOffsetY}px)) scale(${overviewHairScale})`,
-                  transformOrigin: "center",
-                }}
-                draggable={false}
-              />
-            </div>
-            <h2 className="mt-3 max-w-full truncate text-xl font-semibold">
-              {model.name}
-            </h2>
-            {model.isBionic ? (
-              <span className="m3-tag mt-1.5 text-[var(--accent)]">
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full bg-current"
-                />
-                Bionic
-              </span>
-            ) : null}
-            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs opacity-60">
-              <span>{genderDisplayName}</span>
-              <span className="tabular-nums">ID {model.id}</span>
-            </div>
+      <section id="identity" className="m3-card scroll-mt-20 p-4">
+        <div className="flex items-center gap-4">
+          <div
+            role="img"
+            aria-label={`${model.name} portrait`}
+            className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border border-[var(--outline-faint)] bg-[var(--surface-container)]"
+          >
+            <Image
+              fill
+              src={getAccessorySrc("head", headshapeOrdinal)}
+              alt=""
+              className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+              style={{
+                transform: `translateY(${OVERVIEW_PORTRAIT_OFFSET_Y}px) scale(${OVERVIEW_PORTRAIT_SCALE})`,
+                transformOrigin: "center",
+              }}
+              draggable={false}
+            />
+            <Image
+              fill
+              src={getAccessorySrc("hair", hairOrdinal)}
+              alt=""
+              className="pointer-events-none absolute left-1/2 top-1/2 h-full w-full object-contain"
+              style={{
+                transform: `translate(calc(-50% + ${overviewHairOffsetX}px), calc(-50% + ${overviewHairOffsetY}px)) scale(${overviewHairScale})`,
+                transformOrigin: "center",
+              }}
+              draggable={false}
+            />
           </div>
-
-          <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-xl bg-[var(--surface-container-low)] px-2 py-2.5">
-              <dt className="text-xs opacity-70">
-                {model.isBionic ? "Bionic Bugs" : "Traits"}
-              </dt>
-              <dd className="mt-0.5 font-semibold tabular-nums">
-                {model.isBionic ? bionicBugCount : modelTraits.length}
-              </dd>
-            </div>
-            <div className="rounded-xl bg-[var(--surface-container-low)] px-2 py-2.5">
-              <dt className="text-xs opacity-70">
-                {model.isBionic ? "Boosters" : "Interests"}
-              </dt>
-              <dd className="mt-0.5 font-semibold tabular-nums">
-                {model.isBionic
-                  ? (model.bionicSystems?.boosters.length ?? 0)
-                  : model.interests.length}
-              </dd>
-            </div>
-            <div className="rounded-xl bg-[var(--surface-container-low)] px-2 py-2.5">
-              <dt className="text-xs opacity-70">Attributes</dt>
-              <dd className="mt-0.5 font-semibold tabular-nums">
-                {model.attributes.length}
-              </dd>
-            </div>
-          </dl>
-        </section>
-
-        <section className="m3-card min-w-0 p-4">
-          <h2 className="text-lg font-semibold">Identity</h2>
-          <div className="mt-4 grid items-end gap-4 sm:grid-cols-2">
-            <label className="flex min-w-0 flex-col gap-1.5 text-sm sm:col-span-2">
-              <span className="opacity-80">Name</span>
-              <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-                <input
-                  type="text"
-                  value={nameDraft}
-                  onChange={(event) => setNameDraft(event.target.value)}
-                  maxLength={MAX_NAME_LENGTH}
-                  className="m3-field min-w-0 flex-1 px-3 py-2.5 text-sm"
-                />
-                <M3TonalButton
-                  onClick={onApplyName}
-                  className="shrink-0 px-4 py-2.5 text-sm"
-                >
-                  Apply Name
-                </M3TonalButton>
-              </div>
-              {nameError ? (
-                <p role="alert" className="mt-1 text-xs m3-error-text">
-                  {nameError}
-                </p>
-              ) : null}
-            </label>
-            <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-              <span id="duplicant-gender-label" className="opacity-80">
-                Gender
-              </span>
-              <M3Select
-                aria-labelledby="duplicant-gender-label"
-                value={model.gender || "FEMALE"}
-                onChange={(event) =>
-                  updateDuplicantGender(model.id, event.target.value)
+          <div className="min-w-0">
+            <h2 className="break-words text-xl font-semibold">{model.name}</h2>
+            <p className="mt-1 text-sm opacity-75">
+              {genderDisplayName}, ID {model.id}
+              {model.isBionic ? ", bionic" : ""}
+            </p>
+            <p className="mt-1 text-sm opacity-75">
+              Text and number fields apply when you leave a field or press
+              Enter. Save or download your changes when finished.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid items-end gap-4 md:grid-cols-3">
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm">
+            <span className="opacity-80">Name</span>
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
+              <input
+                type="text"
+                value={nameDraft}
+                onChange={(event) => setNameDraft(event.target.value)}
+                onBlur={onApplyName}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                  if (event.key === "Escape") {
+                    setNameDraft(model.name);
+                    setNameError("");
+                  }
+                }}
+                aria-invalid={nameError ? true : undefined}
+                aria-describedby={
+                  nameError ? "duplicant-name-error" : undefined
                 }
-                className="m3-field w-full px-3 py-2.5 text-sm"
-              >
-                {genderOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </M3Select>
-            </label>
-            <div className="flex min-w-0 flex-col gap-1.5 text-sm">
-              <span className="opacity-80">Appearance</span>
-              <M3TonalButton
-                onClick={openAppearanceModal}
-                className="w-full px-4 py-2.5 text-sm"
-              >
-                Edit Appearance
-              </M3TonalButton>
+                maxLength={MAX_NAME_LENGTH}
+                className="m3-field min-w-0 flex-1 px-3 py-2.5 text-sm"
+              />
             </div>
+            {nameError ? (
+              <p
+                id="duplicant-name-error"
+                role="alert"
+                className="mt-1 text-xs m3-error-text"
+              >
+                {nameError}
+              </p>
+            ) : null}
+          </label>
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm">
+            <span id="duplicant-gender-label" className="opacity-80">
+              Gender
+            </span>
+            <M3Select
+              aria-labelledby="duplicant-gender-label"
+              value={model.gender || "FEMALE"}
+              onChange={(event) =>
+                updateDuplicantGender(model.id, event.target.value)
+              }
+              className="m3-field w-full px-3 py-2.5 text-sm"
+            >
+              {genderOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </M3Select>
+          </label>
+          <div className="flex min-w-0 flex-col gap-1.5 text-sm">
+            <span className="opacity-80">Appearance</span>
+            <M3OutlinedButton
+              onClick={openAppearanceModal}
+              className="w-full px-4 py-2.5 text-sm"
+            >
+              Edit appearance
+            </M3OutlinedButton>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      <nav
+        aria-label="Duplicant sections"
+        className="flex flex-wrap gap-1 border-b border-[var(--outline-faint)] pb-3"
+      >
+        {[
+          ["attributes", "Attributes"],
+          ["health", "Health"],
+          ["skills", "Skills"],
+          ["effects", "Effects"],
+          ["traits", "Traits"],
+          ["reactions", "Reactions"],
+          ...(!model.isBionic ? [["interests", "Interests"]] : []),
+        ].map(([id, label]) => (
+          <a
+            key={id}
+            href={`#${id}`}
+            className="rounded-lg px-3 py-2 text-sm hover:bg-[var(--state-hover)]"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <DuplicantStatsEditor model={model} />
 
       <AppearanceModal
         open={appearanceModalOpen}
@@ -846,7 +902,7 @@ function DuplicantEditorPageContent() {
         />
       ) : null}
 
-      <section className="m3-card p-4">
+      <section id="reactions" className="m3-card scroll-mt-20 p-4">
         <div>
           <h2 className="text-lg font-semibold">Reactions</h2>
           <p className="mt-0.5 text-xs opacity-60">
@@ -856,7 +912,7 @@ function DuplicantEditorPageContent() {
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <div className="flex min-w-0 flex-col rounded-xl border border-[var(--trait-positive-outline)] bg-[var(--trait-positive-surface)] p-4">
             <div>
-              <h3 className="text-base font-semibold">Overjoyed Response</h3>
+              <h3 className="text-base font-semibold">Overjoyed response</h3>
               <p className="mt-1 text-xs opacity-60">
                 Triggered by high morale
               </p>
@@ -874,11 +930,11 @@ function DuplicantEditorPageContent() {
                   Change
                 </M3OutlinedButton>
               </div>
-              <div className="m3-scrollbar m3-horizontal-scroll mt-2 pb-2">
+              <div className="mt-2">
                 {overjoyedReactions.length === 0 ? (
                   <p className="text-sm opacity-70">No response selected</p>
                 ) : (
-                  <div className="flex flex-nowrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {overjoyedReactions.map((reaction) => (
                       <span
                         key={reaction}
@@ -895,7 +951,7 @@ function DuplicantEditorPageContent() {
 
           <div className="flex min-w-0 flex-col rounded-xl border border-[var(--trait-negative-outline)] bg-[var(--trait-negative-surface)] p-4">
             <div>
-              <h3 className="text-base font-semibold">Stress Reaction</h3>
+              <h3 className="text-base font-semibold">Stress reaction</h3>
               <p className="mt-1 text-xs opacity-60">
                 Triggered at maximum stress
               </p>
@@ -913,11 +969,11 @@ function DuplicantEditorPageContent() {
                   Change
                 </M3OutlinedButton>
               </div>
-              <div className="m3-scrollbar m3-horizontal-scroll mt-2 pb-2">
+              <div className="mt-2">
                 {stressReactions.length === 0 ? (
                   <p className="text-sm opacity-70">No reaction selected</p>
                 ) : (
-                  <div className="flex flex-nowrap gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {stressReactions.map((reaction) => (
                       <span
                         key={reaction}
@@ -934,11 +990,11 @@ function DuplicantEditorPageContent() {
         </div>
       </section>
 
-      <section className="m3-card p-4">
+      <section id="traits" className="m3-card scroll-mt-20 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">
-              {model.isBionic ? "Bionic Traits" : "Traits"}
+              {model.isBionic ? "Bionic traits" : "Traits"}
             </h2>
             <p className="mt-0.5 text-xs opacity-65">
               {editableNonReactionTraits.length} active trait
@@ -979,10 +1035,10 @@ function DuplicantEditorPageContent() {
       />
 
       {!model.isBionic ? (
-        <div className="m3-card p-4">
+        <div id="interests" className="m3-card scroll-mt-20 p-4">
           <h2 className="text-lg font-semibold">Interests</h2>
-          <div className="m3-scrollbar m3-horizontal-scroll mt-3 pb-2">
-            <div className="grid grid-flow-col grid-rows-4 items-start gap-2">
+          <div className="mt-3">
+            <div className="flex flex-wrap items-start gap-2">
               {model.interests.length === 0 ? (
                 <span className="text-sm opacity-70">No interests</span>
               ) : (
@@ -990,7 +1046,7 @@ function DuplicantEditorPageContent() {
                   <M3OutlinedButton
                     key={interest}
                     onClick={() => removeDuplicantInterest(model.id, interest)}
-                    className="w-max max-w-56 px-2 py-1 text-xs"
+                    className="max-w-full px-3 py-1.5 text-sm"
                     title="Remove interest"
                   >
                     {getSkillGroupDisplayName(interest)} x
@@ -1029,7 +1085,7 @@ function DuplicantEditorPageContent() {
                 }}
                 className="px-3 py-2 text-sm"
               >
-                Add Interest
+                Add interest
               </M3OutlinedButton>
             </div>
           ) : (
@@ -1046,8 +1102,6 @@ function DuplicantEditorPageContent() {
         duplicantName={model.name}
         canClone={!model.isBionic}
       />
-
-      <DuplicantStatsEditor model={model} />
     </section>
   );
 }

@@ -3,29 +3,29 @@
     "noun_titlecase_plural": "Duplicants",
     "noun_titlecase": "Duplicant",
     "verbs": {
-      "edit_titlecase": "Edit Duplicant"
+      "edit_titlecase": "Edit duplicant"
     },
     "conditions": {
-      "missing_titlecase": "Duplicant Not Found"
+      "missing_titlecase": "Duplicant not found"
     }
   },
   "duplicant_effect": {
     "noun_titlecase": "Effect",
     "verbs": {
-      "add_titlecase": "Add Effect"
+      "add_titlecase": "Add effect"
     }
   },
   "duplicant_trait": {
     "noun_titlecase": "Trait",
     "noun_titlecase_plural": "Traits",
     "verbs": {
-      "add_titlecase": "Add Trait"
+      "add_titlecase": "Add trait"
     }
   },
   "duplicant_interest": {
     "noun_titlecase": "Interest",
     "verbs": {
-      "add_titlecase": "Add Interest"
+      "add_titlecase": "Add interest"
     }
   },
   "duplicant_attribute": {
@@ -48,10 +48,10 @@
   "creature": {
     "noun_titlecase_plural": "Creatures",
     "verbs": {
-      "edit_titlecase": "Edit Creature"
+      "edit_titlecase": "Edit creature"
     },
     "conditions": {
-      "missing_titlecase": "Creature Not Found"
+      "missing_titlecase": "Creature not found"
     }
   },
   "geyser": {
@@ -142,7 +142,7 @@
     }
   },
   "raw-editor-page": {
-    "title": "Raw Editor"
+    "title": "Raw editor"
   },
   "view-github": "View project on GitHub"
 }

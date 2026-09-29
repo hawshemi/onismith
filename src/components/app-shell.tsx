@@ -16,6 +16,7 @@ import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import { useModalDialog } from "@/lib/use-modal-dialog";
 import {
   FaBars,
+  FaArrowLeft,
   FaEllipsisVertical,
   FaRotateLeft,
   FaRotateRight,
@@ -28,7 +29,6 @@ import {
   selectGeysers,
 } from "@/lib/oni/save-selectors";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
-import M3Breadcrumbs from "@/components/ui/m3-breadcrumbs";
 import M3NavigationDrawer from "@/components/ui/m3-navigation-drawer";
 import M3TonalButton from "@/components/ui/m3-tonal-button";
 import M3HollowButton from "@/components/ui/m3-hollow-button";
@@ -59,13 +59,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const editorBackLink = normalizedPathname.startsWith("/duplicants-editor")
     ? {
         href: "/duplicants",
-        label: "Back to Duplicant Management",
+        label: "Back to duplicants",
         buttonLabel: "Back",
       }
     : normalizedPathname.startsWith("/creatures-editor")
       ? {
           href: "/creatures",
-          label: "Back to Creatures",
+          label: "Back to creatures",
           buttonLabel: "Back",
         }
       : null;
@@ -97,7 +97,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
     discardChanges,
     canForceLoad,
     pendingFile,
-    lastLoadAttemptStrictness,
     parseStrictness,
     loadSaveFile,
     loadSaveWithPicker,
@@ -108,9 +107,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
     importWarning,
     confirmImportWarning,
     fileName,
+    lastSaveOutcome,
   } = useSaveSession();
   const previousStatusRef = useRef<string>(status);
   const mainRef = useRef<HTMLElement | null>(null);
+  const errorRef = useRef<HTMLDivElement | null>(null);
   const hasNavigatedRef = useRef(false);
   // Polite announcements for actions that change page content without moving
   // focus (undo/redo/discard), for screen-reader users.
@@ -124,6 +125,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }, []);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const closeDrawer = () => {
+      if (desktop.matches) setMobileNavOpen(false);
+    };
+    desktop.addEventListener("change", closeDrawer);
+    return () => desktop.removeEventListener("change", closeDrawer);
+  }, []);
+  useEffect(() => {
+    if (error && !isBusy) errorRef.current?.focus();
+  }, [error, isBusy]);
   // The drawer element doubles as the mobile off-canvas panel; the trap only
   // activates while it's open, which on >=md never happens (the toggle is
   // md:hidden), so the desktop sidebar keeps its normal behavior.
@@ -210,19 +222,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setShowBackupPrompt(false);
   };
 
-  // Two-step confirm: discarding clears the undo history, so it is not
-  // recoverable. First click arms, second commits, blur cancels.
   const onDiscardClick = () => {
     if (!canDiscard || isBusy) {
       return;
     }
-    if (discardArmed) {
-      discardChanges();
-      setDiscardArmed(false);
-      announce("Unsaved changes discarded.");
-    } else {
-      setDiscardArmed(true);
-    }
+    setMobileActionsOpen(false);
+    setDiscardArmed(true);
   };
 
   const onFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -324,11 +329,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
         return;
       }
       const key = event.key.toLowerCase();
-      if (key === "z" && !event.shiftKey) {
+      if (key === "z" && !event.shiftKey && canUndo) {
         event.preventDefault();
         undo();
         announce("Change undone.");
-      } else if ((key === "z" && event.shiftKey) || key === "y") {
+      } else if (((key === "z" && event.shiftKey) || key === "y") && canRedo) {
         event.preventDefault();
         redo();
         announce("Change redone.");
@@ -336,7 +341,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [announce, hasSave, isBusy, redo, undo]);
+  }, [announce, canUndo, canRedo, hasSave, isBusy, redo, undo]);
 
   // Move focus to the content region on navigation so keyboard and screen-reader
   // users land on the new page instead of falling back to <body>. Skipped on the
@@ -346,7 +351,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       hasNavigatedRef.current = true;
       return;
     }
-    mainRef.current?.focus();
+    mainRef.current?.focus({ preventScroll: true });
   }, [pathname]);
 
   useEffect(() => {
@@ -398,70 +403,15 @@ export default function AppShell({ children }: { children: ReactNode }) {
     [],
   );
 
-  // Single session-status indicator merging the operation lifecycle
-  // (loading/saving/error) with the save-file dirty state. While busy or
-  // errored, that takes precedence; otherwise it reports the save-file state.
-  const sessionStatus = useMemo(() => {
-    if (status === "loading") {
-      return {
-        label: t("save-file.conditions.loading", { fallback: "Loading" }),
-        chipClass: "border-[var(--outline-strong)] bg-[var(--state-hover)]",
-        valueClass: "",
-        dotClass: "bg-[var(--accent)]",
-      };
-    }
-    if (status === "saving") {
-      return {
-        label: t("save-file.conditions.saving", { fallback: "Saving" }),
-        chipClass: "border-[var(--outline-strong)] bg-[var(--state-hover)]",
-        valueClass: "",
-        dotClass: "bg-[var(--accent)]",
-      };
-    }
-    if (status === "error") {
-      return {
-        label: t("app.status.error", { fallback: "Error" }),
-        chipClass: "border-[var(--error-outline)] bg-[var(--error-surface)]",
-        valueClass: "font-bold text-[var(--error)]",
-        dotClass: "bg-[var(--error)]",
-      };
-    }
-    if (!hasSave) {
-      return {
-        label: t("app.save-file.not-loaded", { fallback: "Not Loaded" }),
-        chipClass:
-          "border-[var(--outline-faint)] bg-[var(--surface-container-high)]",
-        valueClass: "",
-        dotClass: "bg-[var(--muted)]",
-      };
-    }
-    if (isModified) {
-      return {
-        label: t("save-file.conditions.modified", { fallback: "Modified" }),
-        chipClass: "border-[var(--outline-strong)] bg-[var(--state-hover)]",
-        valueClass: "font-bold text-[var(--accent)]",
-        dotClass: "bg-[var(--accent)]",
-      };
-    }
-    if (showSavedState) {
-      return {
-        label: t("app.save-file.saved", { fallback: "Saved" }),
-        chipClass:
-          "border-[var(--success-outline)] bg-[var(--success-surface)]",
-        valueClass: "font-bold text-[var(--success)]",
-        dotClass: "bg-[var(--success)]",
-      };
-    }
-    return {
-      label: t("app.save-file.clean", { fallback: "Loaded" }),
-      chipClass: "border-[var(--success-outline)] bg-[var(--success-surface)]",
-      valueClass: "text-[var(--success)]",
-      dotClass: "bg-[var(--success)]",
-    };
-  }, [hasSave, isModified, showSavedState, status, t]);
-  const loadButtonClassName = hasSave
-    ? "m3-button m3-button-hollow px-3 py-2 text-sm"
-    : "m3-button m3-button-tonal px-3 py-2 text-sm";
+  const sessionLabel = isModified
+    ? "Unsaved changes"
+    : lastSaveOutcome === "download-fallback"
+      ? "Copy download started"
+      : showSavedState && lastSaveOutcome === "original-updated"
+        ? "Original file updated"
+        : showSavedState && lastSaveOutcome === "download-started"
+          ? "Download started"
+          : "No unsaved changes";
 
   return (
     <div className="h-dvh overflow-hidden bg-background text-foreground">
@@ -485,88 +435,103 @@ export default function AppShell({ children }: { children: ReactNode }) {
         t={t}
       />
       <M3Dialog
+        open={discardArmed}
+        onClose={() => setDiscardArmed(false)}
+        labelledBy="discard-title"
+        describedBy="discard-description"
+        role="alertdialog"
+        className="w-full max-w-md p-5"
+      >
+        <h2 id="discard-title" className="text-xl font-semibold">
+          Discard unsaved changes?
+        </h2>
+        <p
+          id="discard-description"
+          className="mt-2 text-sm text-[var(--muted)]"
+        >
+          All edits to {fileName || "this save"} since the last save will be
+          removed. This also clears undo history.
+        </p>
+        <div className="mt-5 flex flex-wrap justify-end gap-2">
+          <M3OutlinedButton
+            onClick={() => setDiscardArmed(false)}
+            className="px-4 py-2 text-sm"
+          >
+            Keep editing
+          </M3OutlinedButton>
+          <M3OutlinedButton
+            onClick={() => {
+              discardChanges();
+              setDiscardArmed(false);
+              announce("Unsaved changes discarded.");
+            }}
+            className="border-[var(--error-outline)] px-4 py-2 text-sm text-[var(--error)]"
+          >
+            Discard changes
+          </M3OutlinedButton>
+        </div>
+      </M3Dialog>
+      <M3Dialog
         open={mobileActionsOpen}
         onClose={() => setMobileActionsOpen(false)}
-        labelledBy="mobile-actions-title"
+        labelledBy="file-actions-title"
         className="w-full max-w-sm p-5"
       >
-        <h2 id="mobile-actions-title" className="text-xl font-semibold">
-          Page actions
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="file-actions-title" className="text-xl font-semibold">
+            File actions
+          </h2>
+          <M3HollowButton
+            onClick={() => setMobileActionsOpen(false)}
+            className="px-3 py-2 text-sm"
+          >
+            Close
+          </M3HollowButton>
+        </div>
         <div className="mt-4 grid gap-2">
-          {hasSave ? (
-            <>
-              <M3OutlinedButton
-                onClick={() => {
-                  undo();
-                  announce("Change undone.");
-                }}
-                disabled={!canUndo || isBusy}
-                className="w-full px-4 py-2.5 text-sm"
-              >
-                Undo
-              </M3OutlinedButton>
-              <M3OutlinedButton
-                onClick={() => {
-                  redo();
-                  announce("Change redone.");
-                }}
-                disabled={!canRedo || isBusy}
-                className="w-full px-4 py-2.5 text-sm"
-              >
-                Redo
-              </M3OutlinedButton>
-              <button
-                type="button"
-                onClick={() => {
-                  const wasArmed = discardArmed;
-                  onDiscardClick();
-                  if (wasArmed) {
-                    setMobileActionsOpen(false);
-                  }
-                }}
-                onBlur={() => setDiscardArmed(false)}
-                disabled={!canDiscard || isBusy}
-                className={`m3-button w-full px-4 py-2.5 text-sm ${
-                  discardArmed
-                    ? "m3-button-outlined text-[var(--error)]"
-                    : "m3-button-hollow"
-                }`}
-              >
-                {discardArmed
-                  ? t("app.discard.confirm", {
-                      fallback: "Confirm discard?",
-                    })
-                  : t("app.discard.label", { fallback: "Discard changes" })}
-              </button>
-              <M3OutlinedButton
-                onClick={() => {
-                  setMobileActionsOpen(false);
-                  void onLoadButtonClick();
-                }}
-                disabled={isBusy}
-                className="w-full px-4 py-2.5 text-sm"
-              >
-                Load another save
-              </M3OutlinedButton>
-            </>
+          {hasSave && fileHandle ? (
+            <M3OutlinedButton
+              onClick={() => {
+                setMobileActionsOpen(false);
+                void saveCurrentFile({ inPlace: false });
+              }}
+              disabled={isBusy}
+              className="px-4 py-2.5 text-sm"
+            >
+              Download copy
+            </M3OutlinedButton>
           ) : null}
           <M3OutlinedButton
-            href="/settings"
-            onClick={() => setMobileActionsOpen(false)}
-            className="w-full px-4 py-2.5 text-center text-sm"
+            onClick={() => {
+              setMobileActionsOpen(false);
+              void onLoadButtonClick();
+            }}
+            disabled={isBusy}
+            className="px-4 py-2.5 text-sm"
           >
-            {t("app.page-title.settings", { fallback: "Settings" })}
+            {hasSave ? "Load another save" : "Choose save file"}
           </M3OutlinedButton>
+          {hasSave ? (
+            <M3HollowButton
+              onClick={onDiscardClick}
+              disabled={!canDiscard || isBusy}
+              className="px-4 py-2.5 text-sm text-[var(--error)]"
+            >
+              Discard changes
+            </M3HollowButton>
+          ) : null}
         </div>
       </M3Dialog>
       <div
         inert={isBusy ? true : undefined}
-        className="mx-auto flex h-full w-full max-w-[1720px] flex-col p-2.5 sm:p-3"
+        className="mx-auto flex h-full w-full max-w-[1600px] flex-col sm:p-3"
       >
-        <div role="status" aria-live="polite" className="sr-only">
-          {liveMessage}
-        </div>
+        <a
+          href="#main-content"
+          className="sr-only z-[60] rounded-md bg-[var(--accent)] p-3 text-[var(--on-accent)] focus:not-sr-only focus:absolute"
+        >
+          Skip to content
+        </a>
         <div className="flex min-h-0 flex-1 gap-3">
           <M3NavigationDrawer
             appName="Onismith"
@@ -589,233 +554,130 @@ export default function AppShell({ children }: { children: ReactNode }) {
             pathname={pathname}
             hasSave={hasSave}
             bottomSlot={
-              <div className="mt-auto border-t border-[var(--outline-faint)] pt-4">
-                <div
-                  className={`w-full rounded-xl border px-3 py-2.5 ${sessionStatus.chipClass}`}
-                  role="status"
-                  aria-live="polite"
+              <div className="mt-auto border-t border-[var(--outline-faint)] pt-3">
+                <M3HollowButton
+                  href="/settings"
+                  onClick={() => setMobileNavOpen(false)}
+                  aria-current={
+                    normalizedPathname === "/settings" ? "page" : undefined
+                  }
+                  className="block w-full px-3 py-2.5 text-sm"
                 >
-                  <p className="text-[0.6875rem] font-medium uppercase tracking-[0.08em] opacity-60">
-                    {t("app.status-label", { fallback: "Save status" })}
-                  </p>
-                  <div className="mt-1 flex items-center gap-2 text-sm">
-                    <span
-                      aria-hidden="true"
-                      className={`h-2 w-2 shrink-0 rounded-full ${sessionStatus.dotClass}`}
-                    />
-                    <span className={sessionStatus.valueClass}>
-                      {sessionStatus.label}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center justify-between gap-3 px-1 text-xs opacity-65">
-                  <span>Editor version</span>
-                  <span className="font-medium tracking-wide tabular-nums">
-                    {UI_VERSION_LABEL}
-                  </span>
+                  Settings
+                </M3HollowButton>
+                <div className="mt-3 flex items-center justify-between px-3 text-xs text-[var(--muted)]">
+                  <a
+                    href="https://github.com/hawshemi"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-[var(--foreground)]"
+                  >
+                    By hawshemi
+                  </a>
+                  <span>{UI_VERSION_LABEL}</span>
                 </div>
               </div>
             }
             t={t}
           />
-
-          <div className="m3-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            <header className="border-b border-[var(--outline)] bg-[var(--surface)] px-4 py-2.5 sm:px-5">
-              <div className="hidden sm:block">
-                <M3Breadcrumbs normalizedPathname={normalizedPathname} t={t} />
-              </div>
-              <div className="flex items-center gap-2 sm:mt-2.5">
-                <div className="mr-auto flex min-w-0 items-center gap-2">
-                  <M3HollowButton
-                    onClick={() => setMobileNavOpen(true)}
-                    aria-label={t("app.nav.open", {
-                      fallback: "Open navigation",
-                    })}
-                    aria-expanded={mobileNavOpen}
-                    aria-controls="app-mobile-nav"
-                    className="px-2.5 py-2 text-sm md:hidden"
-                  >
-                    <FaBars aria-hidden="true" className="h-3.5 w-3.5" />
-                  </M3HollowButton>
-                  {editorBackLink ? (
-                    <M3HollowButton
-                      href={editorBackLink.href}
-                      aria-label={editorBackLink.label}
-                      title={editorBackLink.label}
-                      className="px-3 py-2 text-sm"
-                    >
-                      {editorBackLink.buttonLabel}
-                    </M3HollowButton>
-                  ) : null}
-                  <h1 className="truncate text-lg font-semibold">
-                    {pageTitle}
-                  </h1>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 md:hidden">
-                  {hasSave ? (
-                    <M3TonalButton
-                      onClick={onSaveButtonClick}
-                      disabled={isBusy}
-                      className="px-3 py-2 text-sm"
-                    >
-                      {t("save-file.verbs.save_titlecase", {
-                        fallback: "Save",
-                      })}
-                    </M3TonalButton>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={onLoadButtonClick}
-                      disabled={isBusy}
-                      className="m3-button m3-button-tonal px-3 py-2 text-sm"
-                    >
-                      {t("save-file.verbs.load_titlecase", {
-                        fallback: "Load",
-                      })}
-                    </button>
-                  )}
-                  <M3HollowButton
-                    onClick={() => setMobileActionsOpen(true)}
-                    aria-label="Open page actions"
-                    aria-expanded={mobileActionsOpen}
-                    className="px-2.5 py-2 text-sm"
-                  >
-                    <FaEllipsisVertical
-                      aria-hidden="true"
-                      className="h-3.5 w-3.5"
-                    />
-                  </M3HollowButton>
-                </div>
-                <div className="hidden flex-wrap items-center gap-2 md:flex">
-                  {hasSave ? (
-                    <>
-                      <M3HollowButton
-                        onClick={() => {
-                          undo();
-                          announce("Change undone.");
-                        }}
-                        disabled={!canUndo || isBusy}
-                        aria-label="Undo"
-                        title="Undo (Ctrl+Z)"
-                        className="px-2.5 py-2 text-sm"
-                      >
-                        <FaRotateLeft
-                          aria-hidden="true"
-                          className="h-3.5 w-3.5"
-                        />
-                      </M3HollowButton>
-                      <M3HollowButton
-                        onClick={() => {
-                          redo();
-                          announce("Change redone.");
-                        }}
-                        disabled={!canRedo || isBusy}
-                        aria-label="Redo"
-                        title="Redo (Ctrl+Shift+Z)"
-                        className="px-2.5 py-2 text-sm"
-                      >
-                        <FaRotateRight
-                          aria-hidden="true"
-                          className="h-3.5 w-3.5"
-                        />
-                      </M3HollowButton>
-                      <button
-                        type="button"
-                        onClick={onDiscardClick}
-                        onBlur={() => setDiscardArmed(false)}
-                        disabled={!canDiscard || isBusy}
-                        title="Discard all unsaved changes"
-                        className={`m3-button px-3 py-2 text-sm ${
-                          discardArmed
-                            ? "m3-button-outlined text-[var(--error)]"
-                            : "m3-button-hollow"
-                        }`}
-                      >
-                        {discardArmed
-                          ? t("app.discard.confirm", {
-                              fallback: "Confirm discard?",
-                            })
-                          : t("app.discard.label", { fallback: "Discard" })}
-                      </button>
-                    </>
-                  ) : null}
-                  <M3HollowButton
-                    href="/settings"
-                    className="px-3 py-2 text-sm"
-                  >
-                    {t("app.page-title.settings", { fallback: "Settings" })}
-                  </M3HollowButton>
-                  <button
-                    type="button"
-                    onClick={onLoadButtonClick}
-                    disabled={isBusy}
-                    className={loadButtonClassName}
-                  >
-                    {t("save-file.verbs.load_titlecase", {
-                      fallback: "Load",
-                    })}
-                  </button>
-                  {hasSave ? (
-                    <M3TonalButton
-                      onClick={onSaveButtonClick}
-                      disabled={isBusy}
-                      className="px-3 py-2 text-sm"
-                    >
-                      {t("save-file.verbs.save_titlecase", {
-                        fallback: "Save",
-                      })}
-                    </M3TonalButton>
-                  ) : null}
-                </div>
-              </div>
-              {error?.message ? (
-                <div
-                  role="alert"
-                  className="mt-3 rounded-lg border border-[var(--error-outline)] bg-[var(--error-surface)] p-3 text-sm"
+          <div className="m3-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-none border-0 sm:rounded-xl sm:border">
+            <header className="shrink-0 border-b border-[var(--outline-faint)] bg-[var(--surface)] px-4 py-3 sm:px-6">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <M3HollowButton
+                  onClick={() => setMobileNavOpen(true)}
+                  aria-label="Open navigation"
+                  aria-expanded={mobileNavOpen}
+                  aria-controls="app-mobile-nav"
+                  className={
+                    editorBackLink ? "hidden" : "px-2.5 py-2 md:hidden"
+                  }
                 >
-                  <p className="font-semibold text-[var(--error)]">
-                    {errorGuidance.title}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--error)]/90">
-                    {errorGuidance.detail}
-                  </p>
-                  <p className="mt-1 text-xs text-[var(--error)]/90">
-                    {error.message}
-                    {error.code ? (
-                      <>
-                        {" "}
-                        (<code>{error.code}</code>)
-                      </>
-                    ) : null}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {pendingFile ? (
-                      <M3OutlinedButton
-                        onClick={retryLoadPendingFile}
-                        disabled={isBusy}
-                        className="border-[var(--error-outline)] px-2 py-1 text-xs text-[var(--error)]"
-                      >
-                        Retry ({lastLoadAttemptStrictness})
-                      </M3OutlinedButton>
-                    ) : null}
-                    {canForceLoad ? (
-                      <M3OutlinedButton
-                        onClick={forceLoadPendingFile}
-                        disabled={isBusy}
-                        className="border-[var(--error-outline)] px-2 py-1 text-xs text-[var(--error)]"
-                      >
-                        {t("app.error.force-load-major", {
-                          fallback: "Force Load (major)",
-                        })}
-                      </M3OutlinedButton>
-                    ) : null}
-                    <M3OutlinedButton
-                      onClick={clearError}
-                      className="border-[var(--error-outline)] px-2 py-1 text-xs text-[var(--error)]"
+                  <FaBars aria-hidden="true" className="h-4 w-4" />
+                </M3HollowButton>
+                {editorBackLink ? (
+                  <M3HollowButton
+                    href={editorBackLink.href}
+                    aria-label={editorBackLink.label}
+                    className="px-2 py-2 text-sm"
+                  >
+                    <FaArrowLeft
+                      aria-hidden="true"
+                      className="h-4 w-4 sm:hidden"
+                    />
+                    <span className="hidden sm:inline">Back</span>
+                  </M3HollowButton>
+                ) : null}
+                <h1 className="mr-auto min-w-0 truncate text-lg font-semibold">
+                  {pageTitle}
+                </h1>
+                {hasSave ? (
+                  <>
+                    <M3HollowButton
+                      onClick={() => {
+                        undo();
+                        announce("Change undone.");
+                      }}
+                      disabled={!canUndo || isBusy}
+                      aria-label="Undo"
+                      title="Undo (Ctrl+Z)"
+                      className="px-2.5 py-2"
                     >
-                      {t("app.error.dismiss", { fallback: "Dismiss" })}
-                    </M3OutlinedButton>
+                      <FaRotateLeft aria-hidden="true" className="h-4 w-4" />
+                    </M3HollowButton>
+                    <M3HollowButton
+                      onClick={() => {
+                        redo();
+                        announce("Change redone.");
+                      }}
+                      disabled={!canRedo || isBusy}
+                      aria-label="Redo"
+                      title="Redo (Ctrl+Shift+Z)"
+                      className="px-2.5 py-2"
+                    >
+                      <FaRotateRight aria-hidden="true" className="h-4 w-4" />
+                    </M3HollowButton>
+                    <M3HollowButton
+                      onClick={() => setMobileActionsOpen(true)}
+                      aria-label="Open file actions"
+                      aria-expanded={mobileActionsOpen}
+                      className="px-2.5 py-2"
+                    >
+                      <FaEllipsisVertical
+                        aria-hidden="true"
+                        className="h-4 w-4"
+                      />
+                    </M3HollowButton>
+                  </>
+                ) : null}
+              </div>
+              {hasSave ? (
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p
+                      className="truncate text-sm"
+                      title={fileName || undefined}
+                    >
+                      {fileName}
+                    </p>
+                    <p
+                      role="status"
+                      aria-live="polite"
+                      className={
+                        isModified
+                          ? "text-xs text-[var(--accent)]"
+                          : "text-xs text-[var(--muted)]"
+                      }
+                    >
+                      {sessionLabel}
+                    </p>
                   </div>
+                  <M3TonalButton
+                    onClick={onSaveButtonClick}
+                    disabled={isBusy}
+                    className="shrink-0 px-4 py-2 text-sm"
+                  >
+                    {fileHandle ? "Save changes" : "Download copy"}
+                  </M3TonalButton>
                 </div>
               ) : null}
               <input
@@ -827,10 +689,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
               />
             </header>
             <main
+              id="main-content"
               key={normalizedPathname}
               ref={mainRef}
               tabIndex={-1}
-              className="m3-page-enter m3-scrollbar m3-vertical-scroll relative flex-1 bg-[var(--surface-container)] focus:outline-none"
+              className="m3-page-enter m3-scrollbar m3-vertical-scroll relative flex-1 bg-[var(--surface)] focus:outline-none"
               onDragEnter={onMainDragEnter}
               onDragOver={onMainDragOver}
               onDragLeave={onMainDragLeave}
@@ -840,35 +703,81 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-[var(--scrim-medium)] p-4">
                   <div className="m3-surface-raised border-2 border-dashed border-[var(--accent)] px-6 py-5 text-center">
                     <p className="text-lg font-semibold">
-                      {t("app.drop.title", {
-                        fallback: "Drop your save to load it",
-                      })}
+                      Drop your save to load it
                     </p>
-                    <p className="mt-1 text-sm opacity-75">
-                      {t("app.drop.hint", {
-                        fallback: "Release a .sav file anywhere here",
-                      })}
+                    <p className="mt-1 text-sm text-[var(--muted)]">
+                      Release a .sav file here
                     </p>
                   </div>
                 </div>
               ) : null}
-              <div className="min-h-full px-4 py-4 sm:px-5 sm:py-5">
+              <div className="min-h-full px-4 py-5 sm:px-6 sm:py-6">
+                {error?.message ? (
+                  <div
+                    ref={errorRef}
+                    tabIndex={-1}
+                    role="alert"
+                    className="mx-auto mb-5 max-w-[88rem] rounded-lg border border-[var(--error-outline)] bg-[var(--error-surface)] p-4 text-sm"
+                  >
+                    <p className="font-semibold">{errorGuidance.title}</p>
+                    <p className="mt-1">{errorGuidance.detail}</p>
+                    <details className="mt-2 text-xs text-[var(--muted)]">
+                      <summary className="cursor-pointer py-1">
+                        Technical details
+                      </summary>
+                      <p className="mt-1 break-words">
+                        {error.message}
+                        {error.code ? " (" + error.code + ")" : ""}
+                      </p>
+                    </details>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {pendingFile ? (
+                        <M3OutlinedButton
+                          onClick={() => {
+                            if (confirmDiscardIfModified())
+                              void retryLoadPendingFile();
+                          }}
+                          disabled={isBusy}
+                          className="px-3 py-2 text-sm"
+                        >
+                          Try again
+                        </M3OutlinedButton>
+                      ) : null}
+                      {canForceLoad ? (
+                        <M3OutlinedButton
+                          onClick={() => {
+                            if (confirmDiscardIfModified())
+                              void forceLoadPendingFile();
+                          }}
+                          disabled={isBusy}
+                          className="px-3 py-2 text-sm"
+                        >
+                          Use recommended check
+                        </M3OutlinedButton>
+                      ) : null}
+                      <M3HollowButton
+                        onClick={clearError}
+                        className="px-3 py-2 text-sm"
+                      >
+                        Dismiss
+                      </M3HollowButton>
+                    </div>
+                  </div>
+                ) : null}
                 {children}
               </div>
             </main>
+            {liveMessage ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="border-t border-[var(--outline-faint)] px-4 py-2 text-xs text-[var(--muted)] sm:px-6"
+              >
+                {liveMessage}
+              </div>
+            ) : null}
           </div>
         </div>
-        <footer className="mt-2 px-4 py-2 text-center text-xs text-[var(--muted)] sm:px-6">
-          Crafted by{" "}
-          <a
-            href="https://github.com/hawshemi"
-            target="_blank"
-            rel="noreferrer"
-            className="underline decoration-[var(--outline)] transition-colors hover:text-[var(--accent)] hover:decoration-[var(--accent)]"
-          >
-            hawshemi
-          </a>
-        </footer>
       </div>
     </div>
   );

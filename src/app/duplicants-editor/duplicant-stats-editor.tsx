@@ -146,26 +146,27 @@ export default function DuplicantStatsEditor({
 
   const commitAttribute = (attributeId: string) => {
     const parsed = Number(attributeDrafts[attributeId]);
-    if (!Number.isInteger(parsed)) {
+    if (
+      attributeDrafts[attributeId]?.trim() &&
+      parsed ===
+        model.attributes.find(
+          (attribute) => attribute.attributeId === attributeId,
+        )?.level
+    ) {
+      setAttributeErrors((previous) => ({ ...previous, [attributeId]: "" }));
+      return;
+    }
+    if (!attributeDrafts[attributeId]?.trim() || !Number.isInteger(parsed)) {
       setAttributeErrors((previous) => ({
         ...previous,
         [attributeId]: "Use a whole number.",
       }));
       return;
     }
-    if (parsed > ATTRIBUTE_MAX_LEVEL) {
-      setAttributeDrafts((previous) => ({
-        ...previous,
-        [attributeId]: String(ATTRIBUTE_MAX_LEVEL),
-      }));
-      updateDuplicantAttributeLevel(model.id, attributeId, ATTRIBUTE_MAX_LEVEL);
-      setAttributeErrors((previous) => ({ ...previous, [attributeId]: "" }));
-      return;
-    }
-    if (parsed < ATTRIBUTE_MIN_LEVEL) {
+    if (parsed < ATTRIBUTE_MIN_LEVEL || parsed > ATTRIBUTE_MAX_LEVEL) {
       setAttributeErrors((previous) => ({
         ...previous,
-        [attributeId]: `Level cannot be less than ${ATTRIBUTE_MIN_LEVEL}.`,
+        [attributeId]: `Use a level from ${ATTRIBUTE_MIN_LEVEL} to ${ATTRIBUTE_MAX_LEVEL}.`,
       }));
       return;
     }
@@ -175,12 +176,19 @@ export default function DuplicantStatsEditor({
 
   const commitHealth = (modifier: string) => {
     const parsed = Number(healthDrafts[modifier]);
-    if (!Number.isFinite(parsed) || parsed < HEALTH_MIN) {
+    const current = model.health.find((item) => item.modifier === modifier);
+    if (healthDrafts[modifier]?.trim() && parsed === current?.value) {
+      setHealthErrors((previous) => ({ ...previous, [modifier]: "" }));
+      return;
+    }
+    if (
+      !healthDrafts[modifier]?.trim() ||
+      !Number.isFinite(parsed) ||
+      parsed < HEALTH_MIN
+    ) {
       setHealthErrors((previous) => ({
         ...previous,
-        [modifier]: Number.isFinite(parsed)
-          ? "Value cannot be negative."
-          : "Use a valid number.",
+        [modifier]: "Use a number of zero or greater.",
       }));
       return;
     }
@@ -190,7 +198,18 @@ export default function DuplicantStatsEditor({
 
   const commitExperience = () => {
     const parsed = Number(experienceDraft);
-    if (!Number.isFinite(parsed) || parsed < EXPERIENCE_MIN) {
+    if (
+      experienceDraft.trim() &&
+      parsed === (model.skills.totalExperienceGained ?? 0)
+    ) {
+      setExperienceError("");
+      return;
+    }
+    if (
+      !experienceDraft.trim() ||
+      !Number.isFinite(parsed) ||
+      parsed < EXPERIENCE_MIN
+    ) {
       setExperienceError("Experience must be a non-negative number.");
       return;
     }
@@ -200,7 +219,19 @@ export default function DuplicantStatsEditor({
 
   const commitEffectCycles = (effectId: string) => {
     const parsed = Number(effectCycleDrafts[effectId]);
-    if (!Number.isFinite(parsed) || parsed < 0) {
+    if (
+      effectCycleDrafts[effectId]?.trim() &&
+      parsed ===
+        model.effects.find((effect) => effect.id === effectId)?.cyclesRemaining
+    ) {
+      setEffectErrors((previous) => ({ ...previous, [effectId]: "" }));
+      return;
+    }
+    if (
+      !effectCycleDrafts[effectId]?.trim() ||
+      !Number.isFinite(parsed) ||
+      parsed < 0
+    ) {
       setEffectErrors((previous) => ({
         ...previous,
         [effectId]: "Cycles must be zero or greater.",
@@ -244,7 +275,7 @@ export default function DuplicantStatsEditor({
 
   return (
     <div className="grid items-start gap-4 xl:grid-cols-2">
-      <div className="m3-card p-4">
+      <div id="attributes" className="m3-card scroll-mt-20 p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">Attributes</h2>
@@ -277,7 +308,7 @@ export default function DuplicantStatsEditor({
             </M3OutlinedButton>
           </div>
         </div>
-        <div className="m3-scrollbar m3-vertical-scroll mt-3 grid max-h-96 gap-2 pr-2 sm:grid-cols-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
           {model.attributes.map((attribute) => (
             <div
               key={attribute.attributeId}
@@ -298,27 +329,44 @@ export default function DuplicantStatsEditor({
                   max={ATTRIBUTE_MAX_LEVEL}
                   value={attributeDrafts[attribute.attributeId] ?? ""}
                   onChange={(event) => {
-                    const nextDraft = event.target.value;
-                    const parsed = Number(nextDraft);
                     setAttributeDrafts((prev) => ({
                       ...prev,
-                      [attribute.attributeId]:
-                        Number.isFinite(parsed) && parsed > ATTRIBUTE_MAX_LEVEL
-                          ? String(ATTRIBUTE_MAX_LEVEL)
-                          : nextDraft,
+                      [attribute.attributeId]: event.target.value,
+                    }));
+                    setAttributeErrors((prev) => ({
+                      ...prev,
+                      [attribute.attributeId]: "",
                     }));
                   }}
                   onBlur={() => commitAttribute(attribute.attributeId)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
-                      commitAttribute(attribute.attributeId);
+                      event.currentTarget.blur();
+                    } else if (event.key === "Escape") {
+                      setAttributeDrafts((prev) => ({
+                        ...prev,
+                        [attribute.attributeId]: String(attribute.level),
+                      }));
+                      setAttributeErrors((prev) => ({
+                        ...prev,
+                        [attribute.attributeId]: "",
+                      }));
                     }
                   }}
+                  aria-invalid={
+                    attributeErrors[attribute.attributeId] ? true : undefined
+                  }
+                  aria-describedby={
+                    attributeErrors[attribute.attributeId]
+                      ? `attribute-error-${attribute.attributeId}`
+                      : undefined
+                  }
                   className="w-full m3-field px-2 py-1.5 text-right text-sm tabular-nums"
                 />
               </div>
               {attributeErrors[attribute.attributeId] ? (
                 <p
+                  id={`attribute-error-${attribute.attributeId}`}
                   role="alert"
                   className="col-span-2 text-right text-xs m3-error-text"
                 >
@@ -330,13 +378,13 @@ export default function DuplicantStatsEditor({
         </div>
       </div>
 
-      <div className="m3-card p-4">
+      <div id="health" className="m3-card scroll-mt-20 p-4">
         <h2 className="text-lg font-semibold">Health</h2>
-        <div className="m3-scrollbar m3-horizontal-scroll mt-3 grid snap-x grid-flow-col grid-rows-4 items-start gap-2 pb-2">
+        <div className="mt-3 grid items-start gap-2 sm:grid-cols-2">
           {orderedHealth.map((entry) => (
             <div
               key={entry.modifier}
-              className="m3-panel w-60 shrink-0 snap-start px-3 py-2"
+              className="min-w-0 rounded-lg bg-[var(--surface-container-low)] px-3 py-2"
             >
               <label
                 htmlFor={`health-${entry.modifier}`}
@@ -344,12 +392,11 @@ export default function DuplicantStatsEditor({
               >
                 {entry.modifier}
               </label>
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2">
                 <input
                   id={`health-${entry.modifier}`}
                   type="number"
                   min={HEALTH_MIN}
-                  max={entry.max}
                   value={healthDrafts[entry.modifier] ?? ""}
                   onChange={(event) =>
                     setHealthDrafts((prev) => ({
@@ -360,15 +407,36 @@ export default function DuplicantStatsEditor({
                   onBlur={() => commitHealth(entry.modifier)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
-                      commitHealth(entry.modifier);
+                      event.currentTarget.blur();
+                    } else if (event.key === "Escape") {
+                      setHealthDrafts((prev) => ({
+                        ...prev,
+                        [entry.modifier]: String(entry.value),
+                      }));
+                      setHealthErrors((prev) => ({
+                        ...prev,
+                        [entry.modifier]: "",
+                      }));
                     }
                   }}
-                  className="w-28 m3-field px-2 py-1 text-sm"
+                  aria-invalid={healthErrors[entry.modifier] ? true : undefined}
+                  aria-describedby={
+                    healthErrors[entry.modifier]
+                      ? `health-error-${entry.modifier}`
+                      : undefined
+                  }
+                  className="m3-field w-full min-w-0 px-2 py-1.5 text-sm tabular-nums"
                 />
-                <span className="text-xs opacity-70">max {entry.max}</span>
+                <p className="mt-1 text-xs opacity-70">
+                  Reference maximum {entry.max}
+                </p>
               </div>
               {healthErrors[entry.modifier] ? (
-                <p role="alert" className="mt-1 text-xs m3-error-text">
+                <p
+                  id={`health-error-${entry.modifier}`}
+                  role="alert"
+                  className="mt-1 text-xs m3-error-text"
+                >
                   {healthErrors[entry.modifier]}
                 </p>
               ) : null}
@@ -377,7 +445,7 @@ export default function DuplicantStatsEditor({
         </div>
       </div>
 
-      <div className="m3-card p-4 xl:col-span-2">
+      <div id="skills" className="m3-card scroll-mt-20 p-4 xl:col-span-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">Skills</h2>
@@ -393,7 +461,7 @@ export default function DuplicantStatsEditor({
               disabled={allSkillsSelected}
               className="px-3 py-1.5 text-sm"
             >
-              Select all
+              Master all skills
             </M3OutlinedButton>
             <M3OutlinedButton
               onClick={() =>
@@ -402,7 +470,7 @@ export default function DuplicantStatsEditor({
               disabled={noSkillsSelected}
               className="px-3 py-1.5 text-sm"
             >
-              Deselect all
+              Remove all mastery
             </M3OutlinedButton>
           </div>
         </div>
@@ -423,7 +491,12 @@ export default function DuplicantStatsEditor({
               onBlur={commitExperience}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  commitExperience();
+                  event.currentTarget.blur();
+                } else if (event.key === "Escape") {
+                  setExperienceDraft(
+                    String(model.skills.totalExperienceGained ?? 0),
+                  );
+                  setExperienceError("");
                 }
               }}
               aria-invalid={experienceError ? true : undefined}
@@ -433,12 +506,6 @@ export default function DuplicantStatsEditor({
               className="mt-1 w-48 max-w-full m3-field px-3 py-2 text-sm"
             />
           </div>
-          <M3OutlinedButton
-            onClick={commitExperience}
-            className="px-3 py-2 text-sm"
-          >
-            Apply
-          </M3OutlinedButton>
           {experienceError ? (
             <p
               id="duplicant-experience-error"
@@ -452,7 +519,7 @@ export default function DuplicantStatsEditor({
         <p className="mt-3 text-xs opacity-60">
           Only skills compatible with this save&apos;s game mode are shown.
         </p>
-        <div className="m3-scrollbar m3-horizontal-scroll mt-3 grid grid-flow-col grid-rows-3 items-start gap-3 pb-2">
+        <div className="mt-3 grid items-start gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {skillGroups.map((group) => {
             const groupSkillIds = group.skills.map((skill) => skill.skillId);
             const selectedInGroup = group.skills.filter(
@@ -464,9 +531,9 @@ export default function DuplicantStatsEditor({
             return (
               <section
                 key={group.groupId}
-                className="w-80 min-w-0 m3-panel p-3"
+                className="min-w-0 rounded-lg border border-[var(--outline-faint)] p-3"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="text-sm font-semibold">
@@ -488,9 +555,9 @@ export default function DuplicantStatsEditor({
                       onClick={() =>
                         setDuplicantSkillsMastery(model.id, groupSkillIds, true)
                       }
-                      className="min-w-12 px-2.5 py-1 text-xs leading-4"
+                      className="px-2.5 py-1 text-xs leading-4"
                     >
-                      All
+                      Master all
                     </M3OutlinedButton>
                     <M3OutlinedButton
                       disabled={groupIsEmpty}
@@ -503,7 +570,7 @@ export default function DuplicantStatsEditor({
                       }
                       className="min-w-12 px-2.5 py-1 text-xs leading-4"
                     >
-                      None
+                      Clear
                     </M3OutlinedButton>
                   </div>
                 </div>
@@ -542,7 +609,7 @@ export default function DuplicantStatsEditor({
         </div>
       </div>
 
-      <div className="m3-card p-4 xl:col-span-2">
+      <div id="effects" className="m3-card scroll-mt-20 p-4 xl:col-span-2">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">Effects</h2>
           <div className="flex items-center gap-3">
@@ -563,7 +630,7 @@ export default function DuplicantStatsEditor({
         {orderedEffects.length === 0 ? (
           <p className="mt-3 text-sm opacity-70">No active effects</p>
         ) : (
-          <div className="m3-scrollbar m3-horizontal-scroll mt-3 grid grid-flow-col grid-rows-4 auto-cols-[minmax(22rem,1fr)] items-stretch gap-2 pb-2">
+          <div className="mt-3 grid items-stretch gap-3 md:grid-cols-2">
             {orderedEffects.map((effect) => (
               <div
                 key={effect.id}
@@ -571,7 +638,7 @@ export default function DuplicantStatsEditor({
               >
                 <div className="flex min-w-0 items-start justify-between gap-3">
                   <div className="min-w-0" title={effect.id}>
-                    <p className="truncate text-sm font-semibold opacity-90">
+                    <p className="break-words text-sm font-semibold">
                       {getEffectDefinition(effect.id).name}
                     </p>
                     <p className="mt-1 text-xs leading-4 opacity-60">
@@ -602,16 +669,35 @@ export default function DuplicantStatsEditor({
                       onBlur={() => commitEffectCycles(effect.id)}
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
-                          commitEffectCycles(effect.id);
+                          event.currentTarget.blur();
+                        } else if (event.key === "Escape") {
+                          setEffectCycleDrafts((prev) => ({
+                            ...prev,
+                            [effect.id]: String(effect.cyclesRemaining),
+                          }));
+                          setEffectErrors((prev) => ({
+                            ...prev,
+                            [effect.id]: "",
+                          }));
                         }
                       }}
+                      aria-invalid={effectErrors[effect.id] ? true : undefined}
+                      aria-describedby={
+                        effectErrors[effect.id]
+                          ? `effect-error-${effect.id}`
+                          : undefined
+                      }
                       className="w-24 m3-field px-2 py-1 text-right text-sm tabular-nums"
                     />
                     <span className="opacity-65">cycles</span>
                   </span>
                 </label>
                 {effectErrors[effect.id] ? (
-                  <p role="alert" className="mt-1 text-xs m3-error-text">
+                  <p
+                    id={`effect-error-${effect.id}`}
+                    role="alert"
+                    className="mt-1 text-xs m3-error-text"
+                  >
                     {effectErrors[effect.id]}
                   </p>
                 ) : null}
@@ -713,7 +799,7 @@ export default function DuplicantStatsEditor({
             )}
           </div>
 
-          <div className="mt-4 border-t border-[var(--outline-faint)] pt-4">
+          <div className="mt-4 shrink-0 border-t border-[var(--outline-faint)] pt-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-xs opacity-60">Selected effect</p>

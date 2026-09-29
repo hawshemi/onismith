@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import Image from "next/image";
-import M3TonalButton from "@/components/ui/m3-tonal-button";
+import M3OutlinedButton from "@/components/ui/m3-outlined-button";
 import { getSafeAccessoryOrdinal } from "@/lib/oni/accessory-constraints";
 import { HAIR_OFFSET_BASES } from "@/lib/oni/hair-offsets";
 
@@ -118,7 +118,10 @@ function DuplicantCard({
   const genderLabel = formatGender(duplicant.gender);
 
   return (
-    <article className="m3-card m3-card-hover flex h-full w-full flex-col p-4">
+    <article
+      className="m3-card flex h-full w-full flex-col p-4"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 172px" }}
+    >
       <div className="grid grid-cols-[5rem_minmax(0,1fr)] items-center gap-3">
         <div className="relative h-20 overflow-hidden rounded-2xl border border-[var(--outline)] bg-[var(--surface-container-high)]">
           <Image
@@ -145,10 +148,10 @@ function DuplicantCard({
 
         <div className="flex min-w-0 flex-col justify-center gap-2">
           <div>
-            <h2 className="truncate text-lg font-semibold leading-tight">
+            <h2 className="break-words text-lg font-semibold leading-tight">
               {duplicant.name}
             </h2>
-            <p className="mt-1 text-xs opacity-60">
+            <p className="mt-1 text-sm text-[var(--muted)]">
               ID {duplicant.id}
               {genderLabel ? `  ${genderLabel}` : ""}
             </p>
@@ -165,13 +168,14 @@ function DuplicantCard({
         </div>
       </div>
 
-      <M3TonalButton
+      <M3OutlinedButton
         href={`/duplicants-editor?id=${duplicant.id}`}
         onClick={() => onSelect(duplicant.id)}
-        className="mt-3 inline-flex w-full items-center justify-center px-4 py-2 text-sm font-semibold"
+        aria-label={`Edit ${duplicant.name}`}
+        className="mt-3 inline-flex min-h-11 w-full items-center justify-center px-4 py-2 text-sm font-semibold"
       >
-        Edit Duplicant
-      </M3TonalButton>
+        Edit duplicant
+      </M3OutlinedButton>
     </article>
   );
 }

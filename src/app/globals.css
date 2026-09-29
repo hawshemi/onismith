@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&family=Nunito:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -7,15 +7,15 @@
   --accent: #6ee7b7;
   --accent-hover: #87eec7;
   --on-accent: #06110d;
-  --muted: #93a09a;
+  --muted: #a7b2b9;
   --surface: #10131a;
   --surface-container-low: #12161d;
   --surface-container: #161b24;
   --surface-container-high: #1e2530;
   --surface-container-highest: #28323f;
-  --outline: rgba(110, 231, 183, 0.3);
-  --outline-strong: rgba(110, 231, 183, 0.55);
-  --outline-faint: rgba(110, 231, 183, 0.14);
+  --outline: rgba(231, 236, 236, 0.16);
+  --outline-strong: rgba(231, 236, 236, 0.42);
+  --outline-faint: rgba(231, 236, 236, 0.09);
   --state-hover: rgba(110, 231, 183, 0.1);
   --state-pressed: rgba(110, 231, 183, 0.16);
   --error: #fb7185;
@@ -40,10 +40,7 @@
   --scrim: rgba(0, 0, 0, 0.7);
   --scrim-medium: rgba(0, 0, 0, 0.6);
   --scrim-soft: rgba(0, 0, 0, 0.5);
-  /* Form-field border. Kept at 0.45 (~3.3:1 on the field fill) so the field
-     boundary meets WCAG 1.4.11 non-text contrast; cards use the fainter
-     --outline since they sit on darker surfaces. */
-  --border: rgba(110, 231, 183, 0.45);
+  --border: rgba(231, 236, 236, 0.42);
 
   /* Motion: one shared timing language. --motion-fast for state changes
      (hover, focus, press), --motion-medium for larger moves (lift, expand). */
@@ -60,34 +57,42 @@
   --font-display:
     "Quicksand", "Nunito", "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: "Consolas", "SFMono-Regular", Menlo, Monaco, monospace;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.45;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
-  color-scheme: dark;
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
-  background-image:
-    radial-gradient(
-      1200px 600px at 110% -10%,
-      rgba(110, 231, 183, 0.09),
-      transparent 55%
-    ),
-    radial-gradient(
-      900px 500px at -10% 120%,
-      rgba(110, 231, 183, 0.05),
-      transparent 55%
-    );
-  background-attachment: fixed;
+  font-size: 1rem;
+  line-height: 1.5;
 }
 
-/* Display face (Quicksand) carries headings and the wordmark; body stays Nunito
-   for dense, legible data. */
-h1,
-h2,
-h3,
 .m3-brand {
   font-family: var(--font-display);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+[id] {
+  scroll-margin-top: 5rem;
+}
+
+button,
+a,
+summary {
+  touch-action: manipulation;
 }
 
 a {
@@ -174,16 +179,14 @@ select option:focus,
 .m3-surface {
   background: var(--surface);
   border: 1px solid var(--outline);
-  border-radius: 1rem;
+  border-radius: 0.75rem;
 }
 
 .m3-surface-raised {
   background: var(--surface-container);
   border: 1px solid var(--outline);
-  border-radius: 1rem;
-  box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.5),
-    0 8px 24px rgba(0, 0, 0, 0.28);
+  border-radius: 0.75rem;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
 }
 
 .m3-navigation-drawer {
@@ -209,9 +212,8 @@ select option:focus,
 
 .m3-navigation-drawer-item-active,
 .m3-nav-item-active {
-  background: var(--surface-container-high);
-  border-color: var(--outline-strong);
-  color: var(--foreground);
+  background: var(--state-hover);
+  color: var(--accent);
 }
 
 .m3-navigation-drawer-item-disabled,
@@ -230,8 +232,8 @@ select option:focus,
 }
 
 .m3-button {
-  min-height: 2.25rem;
-  border-radius: 9999px;
+  min-height: 2.5rem;
+  border-radius: 0.625rem;
   font-weight: 600;
 }
 
@@ -273,7 +275,7 @@ select option:focus,
 .m3-button-hollow {
   background: transparent;
   color: var(--foreground);
-  border: 1px solid var(--outline);
+  border: 1px solid transparent;
 }
 
 .m3-button-hollow:hover {
@@ -407,14 +409,11 @@ select option:focus,
   display: none;
 }
 
-/* Cozy card system: cards lift off the main surface, nested panels recede. */
+/* Keep the frame quiet so editable values stand out. */
 .m3-card {
-  background: var(--surface-container-high);
-  border: 1px solid var(--outline);
-  border-radius: 1.25rem;
-  box-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.4),
-    0 12px 32px -16px rgba(0, 0, 0, 0.65);
+  background: var(--surface-container);
+  border: 1px solid var(--outline-faint);
+  border-radius: 0.75rem;
 }
 
 /* Shared page rhythm. Feature pages can opt into the wide canvas without
@@ -428,7 +427,7 @@ select option:focus,
 .m3-page-flow {
   display: flex;
   flex-direction: column;
-  gap: 0.875rem;
+  gap: 1.25rem;
 }
 
 .m3-section-heading {
@@ -451,15 +450,15 @@ select option:focus,
 
 /* Recessed panel nested inside a card (rows, sub-sections, previews). */
 .m3-panel {
-  background: var(--surface-container);
-  border: 1px solid var(--outline-faint);
-  border-radius: 0.875rem;
+  background: var(--surface-container-low);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
 }
 
 .m3-panel-inset {
-  background: var(--surface-container-low);
-  border: 1px solid var(--outline-faint);
-  border-radius: 0.75rem;
+  background: transparent;
+  border-bottom: 1px solid var(--outline-faint);
+  border-radius: 0;
 }
 
 /* Small inline data tag (traits, ids, counts). Not interactive by itself. */
@@ -468,21 +467,31 @@ select option:focus,
   align-items: center;
   gap: 0.35rem;
   border-radius: 0.5rem;
-  border: 1px solid var(--outline-faint);
+  border: 1px solid transparent;
   background: var(--surface-container-high);
   padding: 0.15rem 0.5rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.1rem;
   font-variant-numeric: tabular-nums;
 }
 
-/* Uppercase eyebrow / field label. */
 .m3-label {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--muted);
+}
+
+@media (max-width: 767px) {
+  .m3-button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+
+  input:not([type="checkbox"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 1rem;
+  }
 }
 
 .m3-error-text {

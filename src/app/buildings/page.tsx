@@ -5,8 +5,10 @@ import { FaBuilding } from "react-icons/fa6";
 import BrowseListShell from "@/components/ui/browse-list-shell";
 import M3Dialog from "@/components/ui/m3-dialog";
 import M3OutlinedButton from "@/components/ui/m3-outlined-button";
+import M3TonalButton from "@/components/ui/m3-tonal-button";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
 import { selectBuildings, type Building } from "@/lib/oni/save-selectors";
+import { useBrowseState } from "@/lib/use-browse-state";
 
 const SORT_OPTIONS = [
   { value: "name-asc", label: "Name A to Z" },
@@ -32,71 +34,59 @@ const BuildingCard = memo(function BuildingCard({
     ? readableSavedName(building.customName)
     : null;
   return (
-    <article className="m3-card m3-card-hover flex h-full flex-col p-4 sm:p-5">
-      <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--outline-faint)] bg-[var(--surface-container)] text-[var(--accent)]">
+    <article
+      className="min-w-0 border-b border-[var(--outline-faint)] px-4 py-3 last:border-b-0 sm:px-5"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 112px" }}
+    >
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-container)] text-[var(--muted)]">
           <FaBuilding aria-hidden="true" className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="m3-label">Building</p>
-          <h2
-            className="truncate text-lg font-semibold leading-tight"
-            title={savedName ?? building.displayName}
-          >
+          <h2 className="break-words text-base font-semibold leading-snug">
             {savedName ?? building.displayName}
           </h2>
           {savedName && savedName !== building.displayName ? (
-            <p
-              className="truncate text-xs opacity-70"
-              title={building.displayName}
-            >
+            <p className="mt-1 break-words text-sm text-[var(--muted)]">
               {building.displayName}
             </p>
           ) : null}
-          <code
-            className="mt-1 block truncate text-xs opacity-60"
-            title={building.type}
+          <p className="mt-1 text-sm text-[var(--muted)] tabular-nums">
+            X {building.position.x.toFixed(1)}, Y{" "}
+            {building.position.y.toFixed(1)}
+          </p>
+        </div>
+        {canEdit ? (
+          <M3OutlinedButton
+            className="min-h-11 shrink-0 px-4 py-2 text-sm"
+            onClick={() => onEdit(building.id)}
+            aria-label={`Rename ${savedName ?? building.displayName}`}
           >
-            {building.type}
-          </code>
-        </div>
-        <span className="m3-tag shrink-0">
-          {canEdit ? "Name editable" : "Read-only"}
-        </span>
+            Rename
+          </M3OutlinedButton>
+        ) : (
+          <span className="shrink-0 text-sm text-[var(--muted)]">
+            Read-only
+          </span>
+        )}
       </div>
-
-      <dl className="mt-4 grid grid-cols-2 gap-2">
-        <div className="m3-panel-inset min-w-0 px-3 py-2.5">
-          <dt className="m3-label">Game object ID</dt>
-          <dd className="mt-1 truncate font-mono text-sm font-semibold tabular-nums">
-            {building.id}
-          </dd>
-        </div>
-        <div className="m3-panel-inset min-w-0 px-3 py-2.5">
-          <dt className="m3-label">World position</dt>
-          <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
-            X {building.position.x.toFixed(1)} · Y{" "}
-            {building.position.y.toFixed(1)} · Z{" "}
-            {building.position.z.toFixed(1)}
-          </dd>
-        </div>
-      </dl>
-
-      {building.opaqueStateBytes > 0 ? (
-        <p className="mt-3 text-xs opacity-65">
-          {building.opaqueStateBytes.toLocaleString()} bytes of runtime state
-          are preserved without editing.
+      <details className="mt-1 sm:ml-[3.25rem]">
+        <summary className="w-fit cursor-pointer py-2 text-sm text-[var(--muted)]">
+          Technical details
+        </summary>
+        <p className="mt-1 break-all text-sm text-[var(--muted)]">
+          ID {building.id} <code>{building.type}</code>
         </p>
-      ) : null}
-
-      {canEdit ? (
-        <M3OutlinedButton
-          className="mt-4 self-start px-4 py-2 text-sm"
-          onClick={() => onEdit(building.id)}
-        >
-          Edit name
-        </M3OutlinedButton>
-      ) : null}
+        <p className="mt-2 text-sm text-[var(--muted)] tabular-nums">
+          Z position {building.position.z.toFixed(1)}
+        </p>
+        {building.opaqueStateBytes > 0 ? (
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            {building.opaqueStateBytes.toLocaleString()} bytes of runtime state
+            are preserved without editing.
+          </p>
+        ) : null}
+      </details>
     </article>
   );
 });
@@ -137,8 +127,7 @@ function BuildingEditorDialog({
         id="building-editor-description"
         className="mt-2 text-sm leading-relaxed opacity-70"
       >
-        This building carries ONI&apos;s independent custom-name value. All
-        other building data stays read-only.
+        Change this building&apos;s name in your save.
       </p>
 
       <div className="mt-5">
@@ -149,6 +138,7 @@ function BuildingEditorDialog({
               event.preventDefault();
               if (nextName && nextName !== currentName) {
                 onNameChange(building.id, nextName);
+                onClose();
               }
             }}
           >
@@ -158,33 +148,30 @@ function BuildingEditorDialog({
             >
               Custom name
             </label>
-            <span className="text-xs opacity-65">
-              Available only when this building already supports naming.
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                id="building-custom-name"
-                value={nameDraft}
-                maxLength={64}
-                onChange={(event) => setNameDraft(event.target.value)}
-                className="m3-field min-w-0 flex-1 px-3 py-2 text-sm"
-              />
+            <input
+              id="building-custom-name"
+              value={nameDraft}
+              maxLength={64}
+              onChange={(event) => setNameDraft(event.target.value)}
+              className="m3-field min-h-11 w-full min-w-0 px-3 py-2 text-base"
+            />
+            <div className="sticky bottom-0 mt-4 flex flex-wrap justify-end gap-2 bg-[var(--surface-container)] py-2">
               <M3OutlinedButton
+                className="min-h-11 px-4 py-2 text-sm"
+                onClick={onClose}
+              >
+                Cancel
+              </M3OutlinedButton>
+              <M3TonalButton
                 type="submit"
                 disabled={!nextName || nextName === currentName}
-                className="px-4 py-2 text-sm"
+                className="min-h-11 px-4 py-2 text-sm"
               >
                 Apply name
-              </M3OutlinedButton>
+              </M3TonalButton>
             </div>
           </form>
         ) : null}
-      </div>
-
-      <div className="mt-6 flex justify-end">
-        <M3OutlinedButton className="px-4 py-2 text-sm" onClick={onClose}>
-          Close
-        </M3OutlinedButton>
       </div>
     </M3Dialog>
   );
@@ -193,8 +180,10 @@ function BuildingEditorDialog({
 export default function BuildingsPage() {
   const { saveGame, hasSave, updateBuildingName } = useSaveSession();
   const buildings = useMemo(() => selectBuildings(saveGame), [saveGame]);
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("name-asc");
+  const { query, setQuery, sort, setSort, filter, setFilter } = useBrowseState(
+    "buildings",
+    "name-asc",
+  );
   const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(
     null,
   );
@@ -210,15 +199,15 @@ export default function BuildingsPage() {
 
   const visibleBuildings = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
-    const filtered = needle
-      ? buildings.filter(
-          (building) =>
-            building.type.toLowerCase().includes(needle) ||
-            building.displayName.toLowerCase().includes(needle) ||
-            building.customName?.toLowerCase().includes(needle) ||
-            String(building.id).includes(needle),
-        )
-      : buildings;
+    const filtered = buildings.filter(
+      (building) =>
+        (filter !== "editable" || building.customName !== null) &&
+        (!needle ||
+          building.type.toLowerCase().includes(needle) ||
+          building.displayName.toLowerCase().includes(needle) ||
+          building.customName?.toLowerCase().includes(needle) ||
+          String(building.id).includes(needle)),
+    );
     return [...filtered].sort((a, b) => {
       switch (sort) {
         case "name-desc":
@@ -232,13 +221,26 @@ export default function BuildingsPage() {
           return a.displayName.localeCompare(b.displayName) || a.id - b.id;
       }
     });
-  }, [buildings, deferredQuery, sort]);
+  }, [buildings, deferredQuery, sort, filter]);
 
   return (
     <BrowseListShell
       hasSave={hasSave}
       title="Buildings"
-      description="Rename supported buildings and inspect the linked runtime state of completed buildings."
+      description="Find completed buildings and rename those that support custom names."
+      filters={
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={filter === "editable"}
+            onChange={(event) =>
+              setFilter(event.target.checked ? "editable" : "")
+            }
+            className="h-4 w-4 accent-[var(--accent)]"
+          />
+          Editable only
+        </label>
+      }
       saveRequiredDescription="Load a save first to inspect completed buildings."
       emptyMessage="No completed buildings found in this save."
       search={{
@@ -258,7 +260,7 @@ export default function BuildingsPage() {
       noMatchLabel="buildings"
       deferredQuery={deferredQuery}
     >
-      <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="m3-card overflow-hidden">
         {visibleBuildings.map((building) => (
           <BuildingCard
             key={building.id}

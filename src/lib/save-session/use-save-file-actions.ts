@@ -18,6 +18,7 @@ import {
   type LoadPickerOptions,
   type LoadSaveOptions,
   type SaveCurrentFileOptions,
+  type SaveOutcome,
   type SaveSessionAction,
   type SaveSessionState,
   type SetSaveGameOptions,
@@ -138,6 +139,7 @@ export function useSaveFileActions(
         });
         const preferInPlaceSave = options.inPlace !== false;
         let inPlaceFallbackError: unknown = null;
+        let outcome: SaveOutcome = "download-started";
 
         if (preferInPlaceSave && state.fileHandle) {
           try {
@@ -155,8 +157,10 @@ export function useSaveFileActions(
               }
             }
             await writeToFileHandle(state.fileHandle, data);
+            outcome = "original-updated";
           } catch (writeError) {
             inPlaceFallbackError = writeError;
+            outcome = "download-fallback";
             downloadArrayBuffer(
               data,
               deriveOutputName(
@@ -175,16 +179,16 @@ export function useSaveFileActions(
           );
         }
 
-        dispatch({ type: "SAVE_SUCCESS", bytes: data.byteLength });
+        dispatch({ type: "SAVE_SUCCESS", bytes: data.byteLength, outcome });
         if (inPlaceFallbackError) {
           console.error(
-            "In-place save failed; downloaded a copy instead.",
+            "In-place save failed. A copy download was started instead.",
             inPlaceFallbackError,
           );
           dispatch({
             type: "SET_ERROR",
             error: withErrorCode(
-              "Couldn't save to the original file, so a copy was downloaded instead. The file on disk was not updated.",
+              "Couldn't update the original file. A copy download was started instead. Check your browser downloads before leaving.",
               "E_SAVE_FALLBACK",
             ),
           });

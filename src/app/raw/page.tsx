@@ -219,7 +219,7 @@ function PrimitiveValueEditor({
 
   const commitNumber = () => {
     const parsed = Number(draft);
-    if (!Number.isFinite(parsed)) {
+    if (!draft.trim() || !Number.isFinite(parsed)) {
       setError("Enter a valid number.");
       return;
     }
@@ -239,7 +239,7 @@ function PrimitiveValueEditor({
           className="h-4 w-4 accent-[var(--accent)] disabled:opacity-50"
         />
         {readOnlyReason ? (
-          <span className="text-xs opacity-60">Read-only</span>
+          <span className="text-sm text-[var(--muted)]">Read-only</span>
         ) : null}
       </label>
     );
@@ -257,14 +257,28 @@ function PrimitiveValueEditor({
           value={draft}
           disabled={Boolean(readOnlyReason)}
           onChange={(event) => setDraft(event.target.value)}
-          className="m3-field min-w-[240px] px-3 py-2 text-sm disabled:opacity-60"
+          aria-invalid={Boolean(error)}
+          aria-describedby={
+            error
+              ? `${fieldId}-error`
+              : readOnlyReason
+                ? `${fieldId}-reason`
+                : undefined
+          }
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !isLongString && !readOnlyReason) {
+              if (type === "number") commitNumber();
+              else onCommit(fieldPath, draft);
+            }
+          }}
+          className="m3-field min-h-11 w-full min-w-0 flex-1 basis-40 px-3 py-2 text-base disabled:opacity-60"
         />
         <M3OutlinedButton
           disabled={isLongString || Boolean(readOnlyReason)}
           onClick={
             type === "number" ? commitNumber : () => onCommit(fieldPath, draft)
           }
-          className="px-3 py-2 text-sm disabled:opacity-50"
+          className="min-h-11 px-3 py-2 text-sm disabled:opacity-50"
         >
           Apply
         </M3OutlinedButton>
@@ -276,10 +290,19 @@ function PrimitiveValueEditor({
         </p>
       ) : null}
       {readOnlyReason ? (
-        <p className="mt-2 text-xs opacity-65">{readOnlyReason}</p>
+        <p
+          id={`${fieldId}-reason`}
+          className="mt-2 text-sm text-[var(--muted)]"
+        >
+          {readOnlyReason}
+        </p>
       ) : null}
       {error ? (
-        <p role="alert" className="m3-error-text mt-2 text-xs">
+        <p
+          id={`${fieldId}-error`}
+          role="alert"
+          className="m3-error-text mt-2 text-sm"
+        >
           {error}
         </p>
       ) : null}
@@ -312,6 +335,7 @@ function RawTreeNode({
     TREE_CHILD_INITIAL_RENDER,
   );
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const childrenId = useId();
   const selected = samePath(path, selectedPath);
   const label = path.length === 0 ? "root" : getRawSegmentName(saveGame, path);
   const renderedChildren = useMemo(
@@ -360,12 +384,14 @@ function RawTreeNode({
 
   return (
     <div className="pl-2">
-      <div className="grid grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-1">
+      <div className="grid grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-1">
         {children.length > 0 ? (
           <M3GhostButton
             onClick={() => setExpanded((prev) => !prev)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full p-0 text-xs opacity-75 hover:opacity-100"
-            aria-label={expanded ? "Collapse" : "Expand"}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full p-0 text-xs opacity-75 hover:opacity-100"
+            aria-label={`${expanded ? "Collapse" : "Expand"} ${label}`}
+            aria-expanded={expanded}
+            aria-controls={childrenId}
           >
             {expanded ? (
               <FaChevronDown aria-hidden="true" className="h-2.5 w-2.5" />
@@ -374,21 +400,25 @@ function RawTreeNode({
             )}
           </M3GhostButton>
         ) : (
-          <span className="h-9 w-9" aria-hidden="true" />
+          <span className="h-11 w-11" aria-hidden="true" />
         )}
         <M3GhostButton
           onClick={() => onSelect(path)}
-          className={`min-h-9 justify-self-start px-2 py-1 text-left text-xs ${
+          className={`min-h-11 max-w-full justify-self-start break-all px-2 py-2 text-left text-sm ${
             selected ? "m3-button-ghost-selected" : ""
           }`}
           title={pathId(path)}
+          aria-current={selected ? "true" : undefined}
         >
           {label}
         </M3GhostButton>
       </div>
 
       {expanded && children.length > 0 ? (
-        <div className="ml-[0.625rem] border-l border-[var(--outline-faint)] pl-[0.625rem]">
+        <div
+          id={childrenId}
+          className="ml-[0.625rem] border-l border-[var(--outline-faint)] pl-[0.625rem]"
+        >
           {renderedChildren.map((key) => (
             <RawTreeNode
               key={`${pathId(path)}.${key}`}
@@ -423,6 +453,8 @@ function RawTreeNode({
 export default function RawEditorPage() {
   const { hasSave, saveGame, updateRawValue } = useSaveSession();
   const [selectedPath, setSelectedPath] = useState<string[]>(["header"]);
+  const [showTree, setShowTree] = useState(false);
+  const fieldsHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const treeScrollRef = useRef<HTMLDivElement | null>(null);
   const primitiveScrollRef = useRef<HTMLDivElement | null>(null);
   const primitiveLoadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -496,10 +528,13 @@ export default function RawEditorPage() {
       <div className="shrink-0">
         <M3PageHeader
           title={null}
-          description="Browse and edit primitive fields anywhere in the save tree. Advanced: values are written without validation."
+          description="Browse and edit raw save data. Advanced edits can affect save compatibility."
         />
       </div>
-      <nav className="m3-card shrink-0 p-3 text-xs">
+      <nav
+        aria-label="Selected object path"
+        className="min-w-0 shrink-0 break-all text-sm"
+      >
         <M3GhostButton
           onClick={() => setSelectedPath([])}
           className="px-2 py-1"
@@ -523,23 +558,44 @@ export default function RawEditorPage() {
         })}
       </nav>
 
+      <M3OutlinedButton
+        onClick={() => setShowTree((visible) => !visible)}
+        aria-expanded={showTree}
+        aria-controls="raw-tree-panel"
+        className="min-h-11 self-start px-4 py-2 text-sm lg:hidden"
+      >
+        {showTree ? "Hide save tree" : "Browse save tree"}
+      </M3OutlinedButton>
+
       <div className="grid min-h-0 grid-cols-1 gap-3 lg:flex-1 lg:grid-cols-[320px_minmax(0,1fr)]">
         <aside
+          id="raw-tree-panel"
+          aria-label="Save tree"
           ref={treeScrollRef}
-          className="m3-card m3-scrollbar max-h-96 overflow-auto p-3 lg:h-full lg:max-h-none lg:min-h-0"
+          className={`m3-card m3-scrollbar max-h-80 overflow-auto p-3 lg:block lg:h-full lg:max-h-none lg:min-h-0 ${showTree ? "block" : "hidden"}`}
         >
           <RawTreeNode
             saveGame={saveGame}
             path={[]}
             selectedPath={selectedPath}
-            onSelect={setSelectedPath}
+            onSelect={(path) => {
+              setSelectedPath(path);
+              setShowTree(false);
+              fieldsHeadingRef.current?.focus({ preventScroll: true });
+            }}
             scrollRootRef={treeScrollRef}
             defaultExpanded
           />
         </aside>
 
-        <section className="m3-card flex min-h-96 flex-col p-4 lg:h-full lg:min-h-0">
-          <h2 className="text-lg font-semibold">Primitive Fields</h2>
+        <section className="m3-card flex min-h-96 min-w-0 flex-col p-3 sm:p-4 lg:h-full lg:min-h-0">
+          <h2
+            ref={fieldsHeadingRef}
+            tabIndex={-1}
+            className="break-words text-lg font-semibold"
+          >
+            {getRawSegmentName(saveGame, selectedPath) || "Root"} fields
+          </h2>
           <div
             ref={primitiveScrollRef}
             className="m3-scrollbar mt-3 min-h-0 flex-1 overflow-auto pr-1"

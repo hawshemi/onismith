@@ -27,30 +27,29 @@ export default function SettingsPage() {
     [languages],
   );
   return (
-    <div className="m3-page m3-page-flow">
+    <div className="m3-page m3-page-flow max-w-3xl">
       <M3PageHeader
         title={null}
-        description="App language, save-parsing strictness, and developer tools."
+        description="Editor preferences and compatibility options."
       />
-
       <section className="m3-card p-4 sm:p-5">
-        <div className="grid gap-5 lg:grid-cols-2">
-          <div>
-            <label
-              id="language-select-label"
-              className="text-sm font-semibold"
-              htmlFor="language-select"
-            >
-              {t("settings.language.title", { fallback: "Language" })}
+        <h2 className="text-lg font-semibold">Language</h2>
+        {isSingleLocale ? (
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            {currentLanguageLabel}
+          </p>
+        ) : (
+          <>
+            <label htmlFor="language-select" className="sr-only">
+              Language
             </label>
             <M3Select
               id="language-select"
-              aria-labelledby="language-select-label"
+              aria-label="Language"
               containerClassName="mt-2"
               className="m3-field w-full px-3 py-2 text-sm"
               value={locale}
               onChange={(event) => setLocale(event.target.value)}
-              disabled={isSingleLocale}
             >
               {orderedLanguages.map((entry: LanguageOption) => (
                 <option key={entry.code} value={entry.code}>
@@ -58,85 +57,70 @@ export default function SettingsPage() {
                 </option>
               ))}
             </M3Select>
-            <p className="mt-2 text-xs opacity-70">
-              {t("settings.language.current", {
-                fallback: "Current language: {language}",
-                params: { language: currentLanguageLabel },
-              })}
-            </p>
-          </div>
-
-          <div>
-            <label
-              id="strictness-select-label"
-              className="text-sm font-semibold"
-              htmlFor="strictness-select"
-            >
-              {t("settings.strictness.title", {
-                fallback: "Save Parse Strictness",
-              })}
-            </label>
-            <p className="mt-1 text-xs opacity-75">
-              {t("settings.strictness.description", {
-                fallback:
-                  "Controls how strictly the parser enforces save version checks when loading.",
-              })}
-            </p>
-            <M3Select
-              id="strictness-select"
-              aria-labelledby="strictness-select-label"
-              containerClassName="mt-2"
-              className="m3-field w-full px-3 py-2 text-sm"
-              value={parseStrictness}
-              onChange={(event) => setParseStrictness(event.target.value)}
-            >
-              <option value="major">major (recommended)</option>
-              <option value="minor">minor</option>
-              <option value="none">none</option>
-            </M3Select>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t border-[var(--outline-faint)] pt-3 text-xs opacity-65">
-          <p>
-            {t("settings.i18n.namespaces", {
-              fallback: "Loaded namespaces: common, oni",
-            })}
-          </p>
-          <p>
-            {t("settings.i18n.languages", {
-              fallback: "Supported language packs: English only (for now).",
-            })}
-          </p>
-        </div>
+          </>
+        )}
       </section>
-
-      <section className="m3-card p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold">Advanced</h2>
-            <p className="mt-1 text-sm opacity-70">
-              Diagnostics and interface calibration tools for development.
+      <details className="m3-card p-4 sm:p-5">
+        <summary className="cursor-pointer text-lg font-semibold">
+          Advanced
+        </summary>
+        <div className="mt-5">
+          <label htmlFor="strictness-select" className="text-sm font-semibold">
+            Save compatibility check
+          </label>
+          <p
+            id="strictness-description"
+            className="mt-1 text-sm text-[var(--muted)]"
+          >
+            The recommended check supports compatible game updates. Change this
+            only when troubleshooting a save that will not load.
+          </p>
+          <M3Select
+            id="strictness-select"
+            aria-label="Save compatibility check"
+            aria-describedby="strictness-description"
+            containerClassName="mt-3"
+            className="m3-field w-full px-3 py-2 text-sm"
+            value={parseStrictness}
+            onChange={(event) => setParseStrictness(event.target.value)}
+          >
+            <option value="major">Recommended compatibility check</option>
+            <option value="minor">Exact save version</option>
+            <option value="none">Skip version checks</option>
+          </M3Select>
+          {parseStrictness === "none" ? (
+            <p className="mt-2 text-sm text-[var(--warning)]">
+              Unsupported save formats may lose data. Keep an original backup.
             </p>
-          </div>
+          ) : null}
+        </div>
+        <div className="mt-6 border-t border-[var(--outline-faint)] pt-5">
+          <h3 className="font-semibold">Developer tools</h3>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Inspect parser diagnostics and preview interface components.
+          </p>
           <M3OutlinedButton
             onClick={() => setDeveloperToolsVisible((visible) => !visible)}
             aria-expanded={developerToolsVisible}
             aria-controls="settings-developer-tools"
-            className="px-4 py-2 text-sm"
+            className="mt-3 px-4 py-2 text-sm"
           >
             {developerToolsVisible
               ? "Hide developer tools"
               : "Show developer tools"}
           </M3OutlinedButton>
+          <p className="mt-4 text-xs text-[var(--muted)]">
+            {t("settings.i18n.namespaces", {
+              fallback: "Loaded namespaces: common, oni",
+            })}
+          </p>
         </div>
-      </section>
-
-      {developerToolsVisible ? (
-        <div id="settings-developer-tools">
-          <SettingsDevTools />
-        </div>
-      ) : null}
+        {developerToolsVisible ? (
+          <div id="settings-developer-tools" className="mt-5">
+            <SettingsDevTools />
+          </div>
+        ) : null}
+      </details>
     </div>
   );
 }

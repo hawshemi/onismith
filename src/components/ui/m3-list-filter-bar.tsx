@@ -1,6 +1,7 @@
 "use client";
 
 import M3Select from "@/components/ui/m3-select";
+import type { ReactNode } from "react";
 
 type SortOption = {
   value: string;
@@ -20,6 +21,7 @@ type M3ListFilterBarProps = {
   // entries. Callers compute both.
   resultCount: number;
   totalCount: number;
+  filters?: ReactNode;
 };
 
 // Presentational filter/sort row for the browse-grid pages. The owning page
@@ -36,24 +38,27 @@ export default function M3ListFilterBar({
   sortAriaLabel,
   resultCount,
   totalCount,
+  filters,
 }: M3ListFilterBarProps) {
   return (
-    <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center gap-2.5 border-b border-[var(--outline-faint)] bg-[var(--surface-container)] px-4 py-2.5 sm:-mx-5 sm:px-5">
+    <div className="sticky top-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-b border-[var(--outline-faint)] bg-[var(--surface-container)] px-4 py-3 sm:-mx-5 sm:px-5">
       <input
         type="search"
         value={searchValue}
         onChange={(event) => onSearchChange(event.target.value)}
         placeholder={searchPlaceholder}
         aria-label={searchAriaLabel}
-        className="m3-field min-w-48 flex-1 px-3 py-2 text-sm lg:max-w-2xl"
+        className="m3-field min-h-11 min-w-0 basis-full px-3 py-2 text-base sm:min-w-48 sm:flex-1"
       />
-      <label className="flex items-center gap-2 text-xs">
+      {filters}
+      <label className="flex min-w-0 flex-1 items-center gap-2 text-sm sm:flex-none">
         <span className="opacity-75">Sort</span>
         <M3Select
           aria-label={sortAriaLabel}
           value={sortValue}
           onChange={(event) => onSortChange(event.target.value)}
-          className="px-3 py-2 text-sm"
+          containerClassName="min-w-0 flex-1"
+          className="min-h-11 px-3 py-2 text-sm"
         >
           {sortOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -62,8 +67,11 @@ export default function M3ListFilterBar({
           ))}
         </M3Select>
       </label>
-      <span className="m3-tag ml-auto" aria-live="polite">
-        {resultCount} of {totalCount}
+      <span
+        className="ml-auto whitespace-nowrap text-sm tabular-nums text-[var(--muted)]"
+        role="status"
+      >
+        {resultCount.toLocaleString()} of {totalCount.toLocaleString()}
       </span>
     </div>
   );
