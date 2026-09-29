@@ -45,6 +45,7 @@ export const NAV_ITEMS = [
     fallback: "Duplicants",
     saveRequired: true,
     icon: FaUsers,
+    group: "Colony",
   },
   {
     href: "/creatures",
@@ -52,6 +53,7 @@ export const NAV_ITEMS = [
     fallback: "Creatures",
     saveRequired: true,
     icon: FaPaw,
+    group: "Colony",
   },
   {
     href: "/geysers",
@@ -59,6 +61,7 @@ export const NAV_ITEMS = [
     fallback: "Geysers",
     saveRequired: true,
     icon: FaWater,
+    group: "World",
   },
   {
     href: "/planets",
@@ -66,6 +69,7 @@ export const NAV_ITEMS = [
     fallback: "Planets",
     saveRequired: true,
     icon: FaEarthAmericas,
+    group: "World",
   },
   {
     href: "/materials",
@@ -73,6 +77,7 @@ export const NAV_ITEMS = [
     fallback: "Materials",
     saveRequired: true,
     icon: FaCubes,
+    group: "World",
   },
   {
     href: "/buildings",
@@ -80,6 +85,7 @@ export const NAV_ITEMS = [
     fallback: "Buildings",
     saveRequired: true,
     icon: FaBuilding,
+    group: "World",
   },
   {
     href: "/objects",
@@ -87,13 +93,15 @@ export const NAV_ITEMS = [
     fallback: "Objects",
     saveRequired: true,
     icon: FaCubes,
+    group: "Advanced",
   },
   {
     href: "/raw",
     i18nKey: "raw-editor-page.title",
-    fallback: "Raw Editor",
+    fallback: "Raw editor",
     saveRequired: true,
     icon: FaCode,
+    group: "Advanced",
   },
 ];
 
@@ -130,7 +138,7 @@ export function getPageTitle(
   }
   if (normalizedPathname.startsWith("/duplicants-editor")) {
     return t("app.page-title.duplicant-editor", {
-      fallback: "Duplicant Editor",
+      fallback: "Duplicant editor",
     });
   }
   if (normalizedPathname.startsWith("/duplicants")) {
@@ -138,7 +146,7 @@ export function getPageTitle(
   }
   if (normalizedPathname.startsWith("/creatures-editor")) {
     return t("app.page-title.creature-editor", {
-      fallback: "Creature Editor",
+      fallback: "Creature editor",
     });
   }
   if (normalizedPathname.startsWith("/creatures")) {
@@ -157,7 +165,10 @@ export function getPageTitle(
     return t("building.noun_titlecase_plural", { fallback: "Buildings" });
   }
   if (normalizedPathname.startsWith("/raw")) {
-    return t("raw-editor-page.title", { fallback: "Raw Editor" });
+    return t("raw-editor-page.title", { fallback: "Raw editor" });
+  }
+  if (normalizedPathname.startsWith("/objects")) {
+    return "Objects";
   }
   if (normalizedPathname.startsWith("/settings")) {
     return t("app.page-title.settings", { fallback: "Settings" });
@@ -179,26 +190,24 @@ export function getErrorGuidance(
   t: Translate,
 ): { title: string; detail: string } {
   const code = error?.code;
+  if (code === "E_SAVE_FALLBACK") {
+    return {
+      title: "Copy download started",
+      detail:
+        "The original file could not be updated. Use the downloaded copy to keep your changes.",
+    };
+  }
   if (code === "E_VERSION_MINOR") {
     return {
-      title: t("app.error.minor-version.title", {
-        fallback: "Minor version mismatch",
-      }),
-      detail: t("app.error.minor-version.detail", {
-        fallback:
-          "The save minor version is newer than expected. You can retry with the same strictness or force-load with major strictness.",
-      }),
+      title: "This save uses a newer format",
+      detail: "Try the recommended compatibility check to load this save.",
     };
   }
   if (code === "E_VERSION_MAJOR") {
     return {
-      title: t("app.error.major-version.title", {
-        fallback: "Major version mismatch",
-      }),
-      detail: t("app.error.major-version.detail", {
-        fallback:
-          "The parser does not support this major save format yet. Usually this needs parser updates before loading safely.",
-      }),
+      title: "This save format is not supported",
+      detail:
+        "Choose a different save or wait for an editor update that supports this game version.",
     };
   }
   return {
@@ -282,7 +291,7 @@ export function LoadingDialog({
           <M3ExpressiveLoadingIndicator size={64} aria-hidden="true" />
           <p
             id="loading-dialog-progress"
-            className="min-w-0 truncate text-sm opacity-85"
+            className="min-w-0 break-words text-sm"
           >
             {progressText}
           </p>
@@ -317,7 +326,7 @@ export function ImportWarningDialog({
       {warning ? (
         <>
           <h3 id="import-warning-title" className="text-xl font-semibold">
-            {t("app.import-warning.title", { fallback: "Checksum Warning" })}
+            {t("app.import-warning.title", { fallback: "Checksum warning" })}
           </h3>
           <p id="import-warning-desc" className="mt-2 text-sm opacity-85">
             {t("app.import-warning.detail", {
@@ -343,7 +352,7 @@ export function ImportWarningDialog({
             </M3OutlinedButton>
             <M3TonalButton onClick={onConfirm} className="px-3 py-2 text-sm">
               {t("app.import-warning.import-anyway", {
-                fallback: "Import Anyway",
+                fallback: "Import anyway",
               })}
             </M3TonalButton>
           </div>
@@ -378,7 +387,7 @@ export function BackupPromptDialog({
       className="w-full max-w-lg p-5"
     >
       <h3 id="backup-prompt-title" className="text-xl font-semibold">
-        {t("app.backup.title", { fallback: "Download Backup Save File?" })}
+        Update the original save?
       </h3>
       <p id="backup-prompt-desc" className="mt-2 text-sm opacity-85">
         {t("app.backup.detail", {
@@ -391,10 +400,10 @@ export function BackupPromptDialog({
           {t("dialog.verbs.cancel_titlecase", { fallback: "Cancel" })}
         </M3OutlinedButton>
         <M3OutlinedButton onClick={onSkip} className="px-3 py-2 text-sm">
-          {t("app.backup.skip", { fallback: "Skip Backup" })}
+          Save without backup
         </M3OutlinedButton>
         <M3TonalButton onClick={onConfirm} className="px-3 py-2 text-sm">
-          {t("app.backup.confirm", { fallback: "Download Backup & Save" })}
+          Back up and save
         </M3TonalButton>
       </div>
     </M3Dialog>

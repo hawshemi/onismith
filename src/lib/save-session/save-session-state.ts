@@ -9,6 +9,8 @@ import {
 import type { BehaviorPayload } from "./save-mutations";
 
 type SaveStatus = "idle" | "loading" | "ready" | "saving" | "error";
+export type SaveOutcome =
+  "original-updated" | "download-started" | "download-fallback";
 
 export interface AppError {
   message: string;
@@ -37,6 +39,7 @@ export interface ImportWarningData {
   expectedHash: string | null;
   actualHash: string | null;
   payload: ImportPayload;
+  behaviorNames?: string[] | null;
 }
 
 export type ImportResult = "applied" | "warning" | "error" | "ignored";
@@ -50,6 +53,7 @@ export interface SaveSessionState {
   fileHandle: FileSystemFileHandle | null;
   parseTimeMs: number | null;
   lastWrittenBytes: number | null;
+  lastSaveOutcome: SaveOutcome | null;
   isModified: boolean;
   selectedDuplicantId: number | null;
   selectedCreatureId: number | null;
@@ -76,7 +80,7 @@ export type SaveSessionAction =
   | { type: "LOAD_ERROR"; error: AppError }
   | { type: "SAVE_BEGIN" }
   | { type: "SAVE_PROGRESS"; message?: string }
-  | { type: "SAVE_SUCCESS"; bytes: number }
+  | { type: "SAVE_SUCCESS"; bytes: number; outcome: SaveOutcome }
   | { type: "SAVE_ERROR"; error: AppError }
   | { type: "SET_SAVE_GAME"; saveGame: SaveGame | null; isModified?: boolean }
   | { type: "SET_COPY_PASTE_DATA"; copyPasteData?: CopyPasteData | null }
@@ -136,6 +140,7 @@ export const INITIAL_STATE: SaveSessionState = {
   fileHandle: null,
   parseTimeMs: null,
   lastWrittenBytes: null,
+  lastSaveOutcome: null,
   isModified: false,
   selectedDuplicantId: null,
   selectedCreatureId: null,
@@ -162,6 +167,7 @@ export function saveSessionReducer(
       return {
         ...state,
         status: "loading",
+        lastSaveOutcome: null,
         progressMessage: "",
         error: null,
         pendingFile: action.file,
@@ -182,6 +188,7 @@ export function saveSessionReducer(
         fileHandle: action.fileHandle || null,
         parseTimeMs: action.parseTimeMs,
         lastWrittenBytes: null,
+        lastSaveOutcome: null,
         isModified: false,
         selectedDuplicantId: null,
         selectedCreatureId: null,
@@ -202,6 +209,7 @@ export function saveSessionReducer(
       return {
         ...state,
         status: "saving",
+        lastSaveOutcome: null,
         progressMessage: "",
         error: null,
       };
@@ -214,6 +222,7 @@ export function saveSessionReducer(
         progressMessage: "",
         error: null,
         lastWrittenBytes: action.bytes,
+        lastSaveOutcome: action.outcome,
         isModified: false,
         savedSaveGame: state.saveGame,
       };
@@ -233,6 +242,9 @@ export function saveSessionReducer(
           history: EMPTY_HISTORY,
           savedSaveGame: null,
         };
+      }
+      if (action.saveGame === state.saveGame) {
+        return state;
       }
       const isEdit =
         state.saveGame !== null && action.saveGame !== state.saveGame;

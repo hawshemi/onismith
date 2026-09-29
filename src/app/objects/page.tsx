@@ -1,8 +1,10 @@
 "use client";
 
-import { memo, useDeferredValue, useMemo, useState } from "react";
+import { memo, useDeferredValue, useMemo } from "react";
 import BrowseListShell from "@/components/ui/browse-list-shell";
+import M3Select from "@/components/ui/m3-select";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
+import { useBrowseState } from "@/lib/use-browse-state";
 import {
   selectWorldObjectGroups,
   type WorldObjectGroupSummary,
@@ -26,56 +28,42 @@ const ObjectGroupCard = memo(function ObjectGroupCard({
 }: {
   group: WorldObjectGroupSummary;
 }) {
-  const visibleBehaviors = group.behaviorNames.slice(0, 6);
-  const remainingBehaviors =
-    group.behaviorNames.length - visibleBehaviors.length;
-
   return (
-    <article className="m3-card m3-card-hover flex h-full flex-col p-4 sm:p-5">
-      <div className="flex items-start justify-between gap-3">
+    <article
+      className="min-w-0 border-b border-[var(--outline-faint)] px-4 py-3 last:border-b-0 sm:px-5"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 112px" }}
+    >
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="m3-label">{group.category}</p>
-          <h2
-            className="truncate text-lg font-semibold"
-            title={group.displayName}
-          >
+          <h2 className="break-words text-base font-semibold leading-snug">
             {group.displayName}
           </h2>
-          <code
-            className="mt-1 block truncate text-xs opacity-60"
-            title={group.type}
-          >
-            {group.type}
-          </code>
+          <p className="mt-1 text-sm text-[var(--muted)]">{group.category}</p>
         </div>
-        <span className="m3-tag shrink-0">Read-only</span>
+        <p className="shrink-0 text-sm tabular-nums">
+          {group.count.toLocaleString()}{" "}
+          <span className="text-[var(--muted)]">objects</span>
+        </p>
       </div>
-
-      <dl className="mt-4 grid grid-cols-2 gap-2">
-        <div className="m3-panel-inset px-3 py-2.5">
-          <dt className="m3-label">Objects</dt>
-          <dd className="mt-1 text-sm font-semibold tabular-nums">
-            {group.count.toLocaleString()}
-          </dd>
+      <details className="mt-1">
+        <summary className="w-fit cursor-pointer py-2 text-sm text-[var(--muted)]">
+          Technical details
+        </summary>
+        <p className="mt-1 break-all text-sm">
+          <code>{group.type}</code>
+        </p>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          {formatBytes(group.opaqueStateBytes)} of runtime state preserved
+          without editing.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {group.behaviorNames.map((behavior) => (
+            <code key={behavior} className="m3-tag max-w-full break-all">
+              {behavior}
+            </code>
+          ))}
         </div>
-        <div className="m3-panel-inset px-3 py-2.5">
-          <dt className="m3-label">Opaque state</dt>
-          <dd className="mt-1 text-sm font-semibold tabular-nums">
-            {formatBytes(group.opaqueStateBytes)}
-          </dd>
-        </div>
-      </dl>
-
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {visibleBehaviors.map((behavior) => (
-          <code key={behavior} className="m3-tag max-w-full truncate text-xs">
-            {behavior}
-          </code>
-        ))}
-        {remainingBehaviors > 0 ? (
-          <span className="m3-tag text-xs">+{remainingBehaviors} more</span>
-        ) : null}
-      </div>
+      </details>
     </article>
   );
 });
@@ -83,23 +71,29 @@ const ObjectGroupCard = memo(function ObjectGroupCard({
 export default function ObjectsPage() {
   const { saveGame, hasSave } = useSaveSession();
   const groups = useMemo(() => selectWorldObjectGroups(saveGame), [saveGame]);
-  const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("category-asc");
+  const { query, setQuery, sort, setSort, filter, setFilter } = useBrowseState(
+    "objects",
+    "category-asc",
+  );
+  const categories = useMemo(
+    () => [...new Set(groups.map((group) => group.category))].sort(),
+    [groups],
+  );
   const deferredQuery = useDeferredValue(query);
 
   const visibleGroups = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
-    const filtered = needle
-      ? groups.filter(
-          (group) =>
-            group.type.toLowerCase().includes(needle) ||
-            group.displayName.toLowerCase().includes(needle) ||
-            group.category.toLowerCase().includes(needle) ||
-            group.behaviorNames.some((name) =>
-              name.toLowerCase().includes(needle),
-            ),
-        )
-      : groups;
+    const filtered = groups.filter(
+      (group) =>
+        (!filter || group.category === filter) &&
+        (!needle ||
+          group.type.toLowerCase().includes(needle) ||
+          group.displayName.toLowerCase().includes(needle) ||
+          group.category.toLowerCase().includes(needle) ||
+          group.behaviorNames.some((name) =>
+            name.toLowerCase().includes(needle),
+          )),
+    );
 
     return [...filtered].sort((a, b) => {
       switch (sort) {
@@ -119,13 +113,29 @@ export default function ObjectsPage() {
           );
       }
     });
-  }, [deferredQuery, groups, sort]);
+  }, [deferredQuery, groups, sort, filter]);
 
   return (
     <BrowseListShell
       hasSave={hasSave}
       title="Objects"
-      description="Inspect serialized object groups, including plants, world features, meteor showers, and DLC points of interest."
+      description="Browse plants, world features, and other saved objects. This section is read-only."
+      filters={
+        <M3Select
+          aria-label="Filter object category"
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+          containerClassName="min-w-0 max-w-full"
+          className="min-h-11 px-3 py-2 text-sm"
+        >
+          <option value="">All categories</option>
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </M3Select>
+      }
       saveRequiredDescription="Load a save first to inspect serialized world objects."
       emptyMessage="No serialized object groups found in this save."
       search={{
@@ -145,7 +155,7 @@ export default function ObjectsPage() {
       noMatchLabel="object groups"
       deferredQuery={deferredQuery}
     >
-      <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="m3-card overflow-hidden">
         {visibleGroups.map((group) => (
           <ObjectGroupCard key={group.type} group={group} />
         ))}

@@ -832,8 +832,9 @@ export function useDuplicantActions({
     async (
       duplicantId: number,
       file: File | null | undefined,
+      behaviorNames: string[] | null = null,
     ): Promise<ImportResult> => {
-      if (!saveGame || !file) {
+      if (!saveGame || !file || behaviorNames?.length === 0) {
         return "ignored";
       }
       const targetType = getGameObjectTypeById(saveGame, duplicantId);
@@ -883,13 +884,19 @@ export function useDuplicantActions({
           expectedHash,
           actualHash,
           payload: parsed,
+          behaviorNames,
         });
         return "warning";
       }
 
-      const next = applyBehaviorMerge(saveGame, duplicantId, parsed.behaviors);
+      const next = applyBehaviorMerge(
+        saveGame,
+        duplicantId,
+        parsed.behaviors,
+        behaviorNames,
+      );
       setSaveGame(next, { isModified: next !== saveGame });
-      return "applied";
+      return next !== saveGame ? "applied" : "ignored";
     },
     [
       applyBehaviorMerge,
@@ -912,6 +919,7 @@ export function useDuplicantActions({
         saveGame,
         warning.duplicantId,
         warning.payload.behaviors,
+        warning.behaviorNames,
       );
       setSaveGame(next, { isModified: next !== saveGame });
     },
@@ -927,11 +935,11 @@ export function useDuplicantActions({
   const cloneDuplicant = useCallback(
     (duplicantId: number) => {
       if (!saveGame || !Array.isArray(saveGame.gameObjects)) {
-        return;
+        return false;
       }
       const location = findGameObjectLocation(saveGame, duplicantId);
       if (!location || location.group?.name !== "Minion") {
-        return;
+        return false;
       }
       const source = location.gameObject;
       const newId = Number.isFinite(saveGame?.settings?.nextUniqueID)
@@ -939,7 +947,7 @@ export function useDuplicantActions({
         : null;
       if (!Number.isFinite(newId)) {
         setError("Unable to clone duplicant: save has no nextUniqueID.");
-        return;
+        return false;
       }
 
       let clone: GameObject = {
@@ -990,6 +998,7 @@ export function useDuplicantActions({
       });
       setSaveGame(nextSaveGame, { isModified: true });
       setSelectedDuplicantId(newId);
+      return true;
     },
     [setError, setSaveGame, setSelectedDuplicantId, saveGame],
   );

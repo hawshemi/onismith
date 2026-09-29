@@ -63,7 +63,10 @@ export default function DuplicantActionsPanel({
     text: string;
   } | null>(null);
   const selectedNames = useMemo(() => [...selected], [selected]);
-  const canPaste = canPasteBehaviorsTo(duplicantId);
+  const canPasteType = canPasteBehaviorsTo(duplicantId);
+  const canPaste =
+    canPasteType &&
+    selectedNames.some((name) => copyPasteData?.behaviors[name]);
   const copiedCount = copyPasteData
     ? Object.keys(copyPasteData.behaviors || {}).length
     : 0;
@@ -105,7 +108,7 @@ export default function DuplicantActionsPanel({
 
   return (
     <M3CollapsibleSection
-      title="More actions"
+      title="Copy, import and clone"
       defaultCollapsed={true}
       expandSignal={expandSignal}
       containerClassName={containerClassName}
@@ -113,12 +116,18 @@ export default function DuplicantActionsPanel({
       headerClassName="rounded-xl px-3 py-2.5"
       expandedMarginClassName="mt-3"
     >
-      <p className="text-xs opacity-70">
-        Buffer: {copiedCount} behavior{copiedCount === 1 ? "" : "s"}
+      <p className="text-sm opacity-80">
+        {copyPasteData
+          ? `${copiedCount} copied setting ${copiedCount === 1 ? "category" : "categories"}`
+          : "No settings copied yet"}
         {bufferSourceLabel ? ` from ${bufferSourceLabel}` : ""}
       </p>
-      <p className="mt-1 text-xs opacity-60">
-        Target: {normalizeName(duplicantName)} ({duplicantId})
+      <p className="mt-1 text-sm opacity-80">
+        Editing {normalizeName(duplicantName)} (ID {duplicantId})
+      </p>
+      <p className="mt-3 text-sm opacity-75">
+        Choose which settings to copy, paste, import or export. Pasting and
+        importing replace the selected categories.
       </p>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -165,9 +174,7 @@ export default function DuplicantActionsPanel({
             }
             setFeedback({
               kind: "success",
-              text: `Copied ${selectedNames.length} behavior${
-                selectedNames.length === 1 ? "" : "s"
-              } to the buffer.`,
+              text: `Copied ${selectedNames.length} setting ${selectedNames.length === 1 ? "category" : "categories"}.`,
             });
           }}
           disabled={selectedNames.length === 0}
@@ -178,7 +185,7 @@ export default function DuplicantActionsPanel({
         <M3OutlinedButton
           onClick={() => {
             pasteDuplicantBehaviors(duplicantId, selectedNames);
-            setFeedback({ kind: "success", text: "Behaviors pasted." });
+            setFeedback({ kind: "success", text: "Copied settings applied." });
           }}
           disabled={selectedNames.length === 0 || !canPaste}
           className="px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
@@ -197,14 +204,22 @@ export default function DuplicantActionsPanel({
         </M3OutlinedButton>
         <M3OutlinedButton
           onClick={() => fileInputRef.current?.click()}
+          disabled={selectedNames.length === 0}
           className="px-3 py-1.5 text-xs font-semibold"
         >
           Import
         </M3OutlinedButton>
         <M3OutlinedButton
           onClick={() => {
-            cloneDuplicant(duplicantId);
-            setFeedback({ kind: "success", text: "Duplicant cloned." });
+            const cloned = cloneDuplicant(duplicantId);
+            setFeedback(
+              cloned
+                ? { kind: "success", text: "Duplicant cloned." }
+                : {
+                    kind: "error",
+                    text: "Could not clone this duplicant. See the save message for details.",
+                  },
+            );
           }}
           disabled={!canClone}
           className="px-3 py-1.5 text-xs font-semibold"
@@ -214,14 +229,18 @@ export default function DuplicantActionsPanel({
       </div>
 
       {!canPaste ? (
-        <p className="mt-2 text-xs opacity-65">
-          Paste disabled: copied behaviors are from a different object type.
+        <p className="mt-2 text-sm opacity-75">
+          {!copyPasteData
+            ? "Copy settings from a duplicant to enable paste."
+            : !canPasteType
+              ? "These copied settings belong to a different duplicant type."
+              : "Choose at least one copied category to paste."}
         </p>
       ) : null}
 
       {!canClone ? (
         <p className="mt-2 text-xs opacity-65">
-          Clone disabled: Bionic-specific state is preserved but not modeled.
+          Cloning bionic duplicants is not supported yet.
         </p>
       ) : null}
 
@@ -249,13 +268,25 @@ export default function DuplicantActionsPanel({
           if (!file) {
             return;
           }
-          const result = await importDuplicantBehaviors(duplicantId, file);
+          const result = await importDuplicantBehaviors(
+            duplicantId,
+            file,
+            selectedNames,
+          );
           if (result === "applied") {
-            setFeedback({ kind: "success", text: "Behaviors imported." });
+            setFeedback({
+              kind: "success",
+              text: "Selected settings imported.",
+            });
           } else if (result === "error") {
             setFeedback({
               kind: "error",
               text: "Import failed. See the message at the top of the page.",
+            });
+          } else if (result === "ignored") {
+            setFeedback({
+              kind: "error",
+              text: "The file has no settings matching your selected categories.",
             });
           } else {
             setFeedback(null);

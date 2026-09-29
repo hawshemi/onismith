@@ -73,17 +73,17 @@ export default function AppearanceModal({
       labelledBy="appearance-modal-title"
       className="flex max-h-[85vh] w-full max-w-3xl flex-col p-5"
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <h3 id="appearance-modal-title" className="text-xl font-semibold">
-          Edit Appearance
+          Edit appearance
         </h3>
         <M3OutlinedButton onClick={onClose} className="px-3 py-1 text-sm">
           Close
         </M3OutlinedButton>
       </div>
 
-      <div className="mt-4 flex flex-col items-center gap-2">
-        <div className="relative h-44 w-44 overflow-hidden rounded-lg border border-[var(--outline-faint)] bg-[var(--surface-container-low)]">
+      <div className="mt-4 flex shrink-0 flex-col items-center gap-2">
+        <div className="relative h-28 w-28 shrink-0 sm:h-36 sm:w-36 overflow-hidden rounded-lg border border-[var(--outline-faint)] bg-[var(--surface-container-low)]">
           <Image
             fill
             src={getAccessorySrc("head", headshapeOrdinal)}
@@ -112,16 +112,16 @@ export default function AppearanceModal({
       <div
         role="group"
         aria-label="Appearance category"
-        className="mt-4 grid grid-cols-3 gap-2"
+        className="mt-4 grid shrink-0 grid-cols-3 gap-2"
       >
         <button
           type="button"
           aria-pressed={tab === "head"}
           onClick={() => onTabChange("head")}
-          className={`rounded-md px-3 py-2 text-sm font-semibold text-[var(--on-accent)] ${
+          className={`rounded-lg border px-3 py-2 text-sm font-medium ${
             tab === "head"
-              ? "bg-[var(--accent-hover)]"
-              : "bg-[var(--accent)] hover:brightness-110"
+              ? "border-[var(--accent)] bg-[var(--state-hover)] text-[var(--foreground)]"
+              : "border-[var(--outline-faint)] hover:bg-[var(--state-hover)]"
           }`}
         >
           Head
@@ -130,10 +130,10 @@ export default function AppearanceModal({
           type="button"
           aria-pressed={tab === "hair"}
           onClick={() => onTabChange("hair")}
-          className={`rounded-md px-3 py-2 text-sm font-semibold text-[var(--on-accent)] ${
+          className={`rounded-lg border px-3 py-2 text-sm font-medium ${
             tab === "hair"
-              ? "bg-[var(--accent-hover)]"
-              : "bg-[var(--accent)] hover:brightness-110"
+              ? "border-[var(--accent)] bg-[var(--state-hover)] text-[var(--foreground)]"
+              : "border-[var(--outline-faint)] hover:bg-[var(--state-hover)]"
           }`}
         >
           Hair
@@ -142,10 +142,10 @@ export default function AppearanceModal({
           type="button"
           aria-pressed={tab === "eyes"}
           onClick={() => onTabChange("eyes")}
-          className={`rounded-md px-3 py-2 text-sm font-semibold text-[var(--on-accent)] ${
+          className={`rounded-lg border px-3 py-2 text-sm font-medium ${
             tab === "eyes"
-              ? "bg-[var(--accent-hover)]"
-              : "bg-[var(--accent)] hover:brightness-110"
+              ? "border-[var(--accent)] bg-[var(--state-hover)] text-[var(--foreground)]"
+              : "border-[var(--outline-faint)] hover:bg-[var(--state-hover)]"
           }`}
         >
           Eyes
@@ -165,13 +165,13 @@ export default function AppearanceModal({
                   onClick={() =>
                     onUpdateAppearance(modelId, "headshape", headOrdinal)
                   }
-                  className={`rounded-lg border p-2 text-left transition ${
+                  className={`min-w-0 rounded-lg border p-2 text-left transition ${
                     isSelected
-                      ? "border-transparent bg-[var(--accent-hover)] text-[var(--on-accent)]"
+                      ? "border-[var(--accent)] bg-[var(--state-hover)] text-[var(--foreground)]"
                       : "border-[var(--outline-faint)] bg-[var(--surface-container)] text-[var(--foreground)] hover:bg-[var(--state-hover)]"
                   }`}
                 >
-                  <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-md border border-[var(--outline-faint)] bg-[var(--surface-container-low)]">
+                  <div className="relative mx-auto h-24 w-full max-w-28 sm:h-28 overflow-hidden rounded-md border border-[var(--outline-faint)] bg-[var(--surface-container-low)]">
                     <Image
                       fill
                       src={getAccessorySrc("head", headOrdinal)}
@@ -229,13 +229,13 @@ export default function AppearanceModal({
                   onClick={() =>
                     onUpdateAppearance(modelId, "hair", hairOptionOrdinal)
                   }
-                  className={`rounded-lg border p-2 text-left transition ${
+                  className={`min-w-0 rounded-lg border p-2 text-left transition ${
                     isSelected
-                      ? "border-transparent bg-[var(--accent-hover)] text-[var(--on-accent)]"
+                      ? "border-[var(--accent)] bg-[var(--state-hover)] text-[var(--foreground)]"
                       : "border-[var(--outline-faint)] bg-[var(--surface-container)] text-[var(--foreground)] hover:bg-[var(--state-hover)]"
                   }`}
                 >
-                  <div className="relative mx-auto h-28 w-28 overflow-hidden rounded-md border border-[var(--outline-faint)] bg-[var(--surface-container-low)]">
+                  <div className="relative mx-auto h-24 w-full max-w-28 sm:h-28 overflow-hidden rounded-md border border-[var(--outline-faint)] bg-[var(--surface-container-low)]">
                     <Image
                       fill
                       src={getAccessorySrc("head", headshapeOrdinal)}

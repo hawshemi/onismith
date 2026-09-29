@@ -47,7 +47,11 @@ describe("saveSessionReducer", () => {
       type: "SET_SAVE_GAME",
       saveGame: firstEdit,
     });
-    state = saveSessionReducer(state, { type: "SAVE_SUCCESS", bytes: 100 });
+    state = saveSessionReducer(state, {
+      type: "SAVE_SUCCESS",
+      bytes: 100,
+      outcome: "original-updated",
+    });
     state = saveSessionReducer(state, {
       type: "SET_SAVE_GAME",
       saveGame: secondEdit,
@@ -60,4 +64,64 @@ describe("saveSessionReducer", () => {
     expect(discarded.isModified).toBe(false);
     expect(discarded.history.past).toEqual([]);
   });
+
+  it("keeps unsaved edits and history when a mutation does nothing", () => {
+    const original = save(1);
+    const edited = save(2);
+    const loaded = saveSessionReducer(INITIAL_STATE, {
+      type: "LOAD_SUCCESS",
+      saveGame: original,
+      fileName: "colony.sav",
+      parseTimeMs: 10,
+    });
+    const changed = saveSessionReducer(loaded, {
+      type: "SET_SAVE_GAME",
+      saveGame: edited,
+    });
+    const unchanged = saveSessionReducer(changed, {
+      type: "SET_SAVE_GAME",
+      saveGame: edited,
+      isModified: false,
+    });
+
+    expect(unchanged).toBe(changed);
+    expect(unchanged.isModified).toBe(true);
+    expect(saveSessionReducer(unchanged, { type: "UNDO" }).saveGame).toBe(
+      original,
+    );
+  });
+
+  it("keeps a clean session clean when a mutation does nothing", () => {
+    const loaded = saveSessionReducer(INITIAL_STATE, {
+      type: "LOAD_SUCCESS",
+      saveGame: save(1),
+      fileName: "colony.sav",
+      parseTimeMs: 10,
+    });
+    expect(
+      saveSessionReducer(loaded, {
+        type: "SET_SAVE_GAME",
+        saveGame: loaded.saveGame,
+      }),
+    ).toBe(loaded);
+  });
+
+  it.each([
+    "original-updated",
+    "download-started",
+    "download-fallback",
+  ] as const)(
+    "records the %s result and clears it for the next save",
+    (outcome) => {
+      const saved = saveSessionReducer(INITIAL_STATE, {
+        type: "SAVE_SUCCESS",
+        bytes: 100,
+        outcome,
+      });
+      expect(saved.lastSaveOutcome).toBe(outcome);
+      expect(
+        saveSessionReducer(saved, { type: "SAVE_BEGIN" }).lastSaveOutcome,
+      ).toBeNull();
+    },
+  );
 });

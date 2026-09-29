@@ -23,6 +23,22 @@ type NumberFieldProps = {
   | "type"
 >;
 
+export function getNumberFieldError(
+  draft: string,
+  min?: string | number,
+  max?: string | number,
+): string | null {
+  const parsed = Number(draft);
+  if (!draft.trim() || !Number.isFinite(parsed)) {
+    return "Enter a number.";
+  }
+  const bounded = clampToRange(parsed, min, max);
+  if (bounded !== parsed) {
+    return `Enter ${bounded} or ${parsed < bounded ? "more" : "less"}.`;
+  }
+  return null;
+}
+
 // Commit on release/blur rather than on every input event. Each committed
 // change rebuilds the whole saveGame and re-derives the dependent cards, so
 // firing per keystroke or per slider tick freezes the tab while dragging.
@@ -37,43 +53,67 @@ export function NumberField({
 }: NumberFieldProps) {
   const normalized = Number.isFinite(value) ? value : 0;
   const [draft, setDraft] = useState(String(normalized));
+  const [error, setError] = useState<string | null>(null);
+  const errorId = useId();
 
   useSyncOnChange([normalized], () => {
     setDraft(String(normalized));
+    setError(null);
   });
 
   const commit = () => {
-    const parsed = Number(draft);
-    if (!Number.isFinite(parsed)) {
-      setDraft(String(normalized));
+    const nextError = getNumberFieldError(draft, min, max);
+    setError(nextError);
+    if (nextError) {
       return;
     }
-    const clamped = clampToRange(parsed, min, max);
-    if (clamped !== parsed) {
-      setDraft(String(clamped));
-    }
-    if (clamped !== normalized) {
-      onCommit(clamped);
+    const parsed = Number(draft);
+    if (parsed !== normalized) {
+      onCommit(parsed);
     }
   };
 
   return (
-    <input
-      type="number"
-      step={step}
-      min={min}
-      max={max}
-      value={draft}
-      onChange={(event) => setDraft(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.currentTarget.blur();
+    <>
+      <input
+        {...rest}
+        type="number"
+        step={step}
+        min={min}
+        max={max}
+        value={draft}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setError(null);
+        }}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.currentTarget.blur();
+          } else if (event.key === "Escape") {
+            event.preventDefault();
+            setDraft(String(normalized));
+            setError(null);
+          }
+        }}
+        aria-invalid={error ? true : rest["aria-invalid"]}
+        aria-describedby={
+          [rest["aria-describedby"], error ? errorId : null]
+            .filter(Boolean)
+            .join(" ") || undefined
         }
-      }}
-      className={className}
-      {...rest}
-    />
+        className={className}
+      />
+      {error ? (
+        <span
+          id={errorId}
+          role="alert"
+          className="mt-1 block text-xs text-[var(--error)]"
+        >
+          {error}
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -125,6 +165,7 @@ export function FractionField({
     >
       <span id={labelId} className={labelClassName ?? "opacity-75"}>
         {label}
+        {displayAsPercentage ? " (%)" : ""}
       </span>
       {description ? (
         <span className="leading-relaxed opacity-65">{description}</span>
@@ -144,7 +185,7 @@ export function FractionField({
           onKeyUp={(event) => commit((event.target as HTMLInputElement).value)}
           className="w-full accent-[var(--accent)]"
         />
-        <div className="relative shrink-0">
+        <div className="w-20 shrink-0">
           <NumberField
             value={displayedValue}
             step={displayAsPercentage ? "1" : "0.01"}
@@ -152,18 +193,8 @@ export function FractionField({
             max={displayAsPercentage ? "100" : "1"}
             onCommit={(next) => commit(displayAsPercentage ? next / 100 : next)}
             aria-label={`${label} (${displayAsPercentage ? "percent" : "value"})`}
-            className={`m3-field w-20 py-2 text-right text-sm tabular-nums ${
-              displayAsPercentage ? "pr-6 pl-2" : "px-2"
-            }`}
+            className="m3-field w-full px-2 py-2 text-right text-sm tabular-nums"
           />
-          {displayAsPercentage ? (
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-xs opacity-60"
-            >
-              %
-            </span>
-          ) : null}
         </div>
       </div>
     </div>

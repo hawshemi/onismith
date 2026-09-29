@@ -191,21 +191,21 @@ export default function ReactionModal({
           : "max-h-[88vh] max-w-xl"
       }`}
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-3">
         <div className="min-w-0">
           <h3 id="reaction-modal-title" className="text-xl font-semibold">
             {kind === "overjoyed"
-              ? "Choose Overjoyed Response"
+              ? "Choose overjoyed response"
               : kind === "stress"
-                ? "Choose Stress Reaction"
+                ? "Choose stress reaction"
                 : "Add trait"}
           </h3>
           <p className="mt-1 text-xs opacity-60">
             {kind === "add-traits"
               ? "Browse traits by category or search by name"
               : kind === "overjoyed"
-                ? "Select this Duplicant's response to high morale"
-                : "Select this Duplicant's reaction at maximum stress"}
+                ? "Select this duplicant's response to high morale"
+                : "Select this duplicant's reaction at maximum stress"}
           </p>
         </div>
         <M3OutlinedButton
@@ -216,7 +216,7 @@ export default function ReactionModal({
         </M3OutlinedButton>
       </div>
       {kind === "add-traits" ? (
-        <div className="mt-4">
+        <div className="mt-4 shrink-0">
           <div
             role="group"
             aria-label="Trait category"

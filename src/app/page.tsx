@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import {
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ChangeEvent,
+} from "react";
 import {
   useSaveSession,
   type SaveSessionValue,
@@ -8,7 +14,7 @@ import {
 import { FaFileArrowUp } from "react-icons/fa6";
 import M3Select from "@/components/ui/m3-select";
 import M3ToggleField from "@/components/ui/m3-toggle-field";
-import M3OutlinedButton from "@/components/ui/m3-outlined-button";
+import M3TonalButton from "@/components/ui/m3-tonal-button";
 import { NumberField } from "@/components/ui/numeric-fields";
 import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import { getDlcDisplayName } from "@/lib/oni/dlc";
@@ -139,14 +145,21 @@ type ColonyNameFieldProps = {
 // rebuilds the saveGame and re-derives the cards. Empty names are rejected.
 function ColonyNameField({ value, onCommit }: ColonyNameFieldProps) {
   const [draft, setDraft] = useState(value);
+  const [error, setError] = useState("");
 
   useSyncOnChange([value], () => {
     setDraft(value);
+    setError("");
   });
 
   const commit = () => {
     const trimmed = draft.trim();
-    if (trimmed && trimmed !== value) {
+    if (!trimmed) {
+      setError("Enter a colony name.");
+      return;
+    }
+    setError("");
+    if (trimmed !== value) {
       onCommit(trimmed);
     } else {
       setDraft(value);
@@ -155,19 +168,33 @@ function ColonyNameField({ value, onCommit }: ColonyNameFieldProps) {
 
   return (
     <label className="block">
-      <span className="m3-label">Colony Name</span>
+      <span className="m3-label">Colony name</span>
       <input
         type="text"
         value={draft}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setError("");
+        }}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? "colony-name-error" : undefined}
         onBlur={commit}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             event.currentTarget.blur();
           }
         }}
-        className="m3-field mt-1 w-full px-3 py-2 text-2xl font-semibold"
+        className="m3-field mt-1 w-full px-3 py-2 text-xl font-semibold"
       />
+      {error ? (
+        <span
+          id="colony-name-error"
+          role="alert"
+          className="mt-1 block text-sm text-[var(--error)]"
+        >
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -179,123 +206,66 @@ function NoSaveState({
   onChooseSave: () => void;
   isBusy: boolean;
 }) {
+  const platform = useSyncExternalStore(
+    () => () => {},
+    () =>
+      /Mac/i.test(navigator.userAgent)
+        ? "mac"
+        : /Linux/i.test(navigator.userAgent)
+          ? "linux"
+          : "windows",
+    () => "windows",
+  );
+  const locations = [
+    { id: "windows", label: "Windows", path: SAVE_PATHS.windows },
+    { id: "mac", label: "macOS", path: SAVE_PATHS.mac },
+    { id: "linux", label: "Linux", path: SAVE_PATHS.linux },
+  ].sort((a, b) => Number(b.id === platform) - Number(a.id === platform));
   return (
-    <section className="m3-card mx-auto max-w-3xl p-5 sm:p-6">
-      <h2 className="text-xl font-semibold">No Save Loaded</h2>
-      <p className="mt-2 text-sm opacity-80">
-        Everything is parsed in your browser; nothing is uploaded.
+    <section className="mx-auto w-full max-w-xl py-6 sm:py-12">
+      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--state-hover)] text-[var(--accent)]">
+        <FaFileArrowUp aria-hidden="true" className="h-6 w-6" />
+      </div>
+      <h2 className="text-2xl font-semibold sm:text-3xl">Open your colony</h2>
+      <p className="mt-3 max-w-md text-base text-[var(--muted)]">
+        Edit your Oxygen Not Included save. Adjust your colony, Duplicants, and
+        worlds in one place.
       </p>
-
-      <div className="mt-4 flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-[var(--outline-strong)] bg-[var(--surface-container)] px-4 py-7 text-center">
-        <FaFileArrowUp
-          aria-hidden="true"
-          className="h-7 w-7 text-[var(--accent)]"
-        />
-        <p className="text-base font-semibold">Drag and drop your save here</p>
-        <p className="max-w-md text-sm opacity-75">
-          Drop a <code>.sav</code> file anywhere on this page or choose one from
-          your device.
-        </p>
-        <M3OutlinedButton
+      <div className="mt-7 rounded-xl border border-dashed border-[var(--outline-strong)] p-6 sm:p-8">
+        <M3TonalButton
           onClick={onChooseSave}
           disabled={isBusy}
-          className="mt-2 px-5 py-2.5 text-sm"
+          className="w-full px-5 py-3 text-base sm:w-auto"
         >
           Choose save file
-        </M3OutlinedButton>
+        </M3TonalButton>
+        <p className="mt-3 text-sm text-[var(--muted)]">
+          Or drop a <code>.sav</code> file anywhere here.
+        </p>
       </div>
-
-      <div className="mt-5">
-        <p className="m3-label">Common save locations</p>
-        <div className="mt-2 grid gap-2">
-          <div className="m3-panel px-3 py-2">
-            <p className="m3-label">Windows</p>
-            <code className="mt-1 block break-all text-xs">
-              {SAVE_PATHS.windows}
-            </code>
-          </div>
-          <div className="m3-panel px-3 py-2">
-            <p className="m3-label">macOS</p>
-            <code className="mt-1 block break-all text-xs">
-              {SAVE_PATHS.mac}
-            </code>
-          </div>
-          <div className="m3-panel px-3 py-2">
-            <p className="m3-label">Linux</p>
-            <code className="mt-1 block break-all text-xs">
-              {SAVE_PATHS.linux}
-            </code>
-          </div>
+      <p className="mt-4 text-sm text-[var(--muted)]">
+        Your save stays on your device. Nothing is uploaded.
+      </p>
+      <details className="mt-7 border-t border-[var(--outline-faint)] pt-4">
+        <summary className="cursor-pointer py-1 text-sm font-semibold">
+          Where is my save?
+        </summary>
+        <div className="mt-3 space-y-4">
+          {locations.map((location) => (
+            <div key={location.id}>
+              <p className="text-sm font-medium">{location.label}</p>
+              <code className="mt-1 block break-all text-xs leading-relaxed">
+                {location.path}
+              </code>
+            </div>
+          ))}
         </div>
-      </div>
+      </details>
     </section>
   );
 }
 
 type OverviewSummary = ReturnType<typeof makeOverviewSummary>;
-
-type SaveError = SaveSessionValue["error"];
-
-type ErrorStateProps = {
-  error?: SaveError | null;
-  canForceLoad?: boolean;
-  forceLoadPendingFile?: () => void;
-  pendingFileName?: string;
-};
-
-function ErrorState({
-  error,
-  canForceLoad,
-  forceLoadPendingFile,
-  pendingFileName,
-}: ErrorStateProps) {
-  const isMajorMismatch = error?.code === "E_VERSION_MAJOR";
-  const isMinorMismatch = error?.code === "E_VERSION_MINOR";
-
-  return (
-    <section
-      role="alert"
-      className="m3-card border-[color:var(--error)]/40 bg-[var(--error-surface)] p-5"
-    >
-      <h2 className="m3-error-text text-xl font-semibold">
-        Failed To Load Save
-      </h2>
-      {pendingFileName ? (
-        <p className="mt-2 text-xs opacity-75">
-          File: <code>{pendingFileName}</code>
-        </p>
-      ) : null}
-      <p className="m3-error-text mt-2 text-sm">
-        {error?.message || "Unknown parsing error."}
-      </p>
-      {isMajorMismatch ? (
-        <p className="mt-2 text-sm opacity-85">
-          This save appears to use a different major ONI save format and is
-          likely incompatible with the current parser.
-        </p>
-      ) : null}
-      {isMinorMismatch ? (
-        <p className="mt-2 text-sm opacity-85">
-          Minor version mismatch detected. You can try force-loading with major
-          strictness.
-        </p>
-      ) : null}
-      {error?.code ? (
-        <p className="mt-2 text-xs opacity-75">
-          Error code: <code>{error.code}</code>
-        </p>
-      ) : null}
-      {canForceLoad ? (
-        <M3OutlinedButton
-          onClick={forceLoadPendingFile}
-          className="mt-4 px-3 py-2 text-sm"
-        >
-          Override safety check and load with major strictness
-        </M3OutlinedButton>
-      ) : null}
-    </section>
-  );
-}
 
 type ReadyStateProps = {
   summary: OverviewSummary;
@@ -337,40 +307,110 @@ function ReadyState({
     options.includes("Disabled");
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(20rem,0.9fr)_minmax(28rem,1.1fr)] lg:items-start">
-      <section className="m3-card p-4 sm:p-5">
-        <ColonyNameField
-          value={summary.colonyName}
-          onCommit={onUpdateColonyName}
-        />
-
-        <div className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-          <div className="m3-panel px-3 py-2.5">
+    <div className="space-y-6">
+      <section className="m3-card p-4 sm:p-5" aria-label="Colony summary">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <ColonyNameField
+            value={summary.colonyName}
+            onCommit={onUpdateColonyName}
+          />
+          <div className="grid grid-cols-2 gap-4">
             <label className="block">
-              <span className="m3-label">Cycles</span>
+              <span className="m3-label">Cycle</span>
               <NumberField
                 value={summary.cyclesValue}
                 min={0}
                 step={1}
                 onCommit={onUpdateCycleCount}
-                aria-label="Cycles"
-                className="m3-field mt-1 w-full px-2 py-1 text-sm font-semibold tabular-nums"
+                aria-label="Cycle"
+                className="m3-field mt-1 w-full px-3 py-2 text-xl font-semibold tabular-nums"
               />
             </label>
+            <div>
+              <p className="m3-label">Duplicants</p>
+              <p className="mt-2 text-xl font-semibold tabular-nums">
+                {summary.duplicants}
+              </p>
+            </div>
           </div>
-          <StatTile label="Duplicants" value={summary.duplicants} />
-          <StatTile label="Save Version" value={summary.version} />
-          <StatTile label="Game Build" value={summary.buildVersion} />
-          <StatTile label="Cluster" value={summary.cluster} />
+        </div>
+        <p className="mt-4 text-sm text-[var(--muted)]">{summary.cluster}</p>
+      </section>
+      <section className="m3-card p-4 sm:p-5">
+        <h2 className="text-lg font-semibold">Game settings</h2>
+        <p className="mt-1 text-xs opacity-70">
+          Edits stay in this session until you save or download a copy.
+        </p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {displaySettingOrder.map((settingName) => {
+            const options = difficultyOptions[settingName] || [];
+            const selected = difficulty[settingName] ?? options[0] ?? "";
+            const label = getDifficultySettingLabel(settingName);
+            if (isToggleOptions(options)) {
+              return (
+                <M3ToggleField
+                  key={settingName}
+                  label={label}
+                  checked={selected === "Enabled"}
+                  onChange={(event) =>
+                    onUpdateDifficulty(
+                      settingName,
+                      event.target.checked ? "Enabled" : "Disabled",
+                    )
+                  }
+                />
+              );
+            }
+            return (
+              <label key={settingName} className="flex flex-col gap-1 text-sm">
+                <span id={`difficulty-${settingName}`} className="opacity-80">
+                  {label}
+                </span>
+                {options.length > 0 ? (
+                  <M3Select
+                    aria-labelledby={`difficulty-${settingName}`}
+                    value={selected}
+                    onChange={(event) =>
+                      onUpdateDifficulty(settingName, event.target.value)
+                    }
+                    className="px-3 py-2 text-sm"
+                  >
+                    {options.map((value) => (
+                      <option key={value} value={value}>
+                        {getDifficultyValueLabel(settingName, value)}
+                      </option>
+                    ))}
+                  </M3Select>
+                ) : (
+                  <input
+                    type="text"
+                    value={selected}
+                    onChange={(event) =>
+                      onUpdateDifficulty(settingName, event.target.value)
+                    }
+                    className="m3-field px-3 py-2 text-sm"
+                  />
+                )}
+              </label>
+            );
+          })}
+        </div>
+      </section>
+      <details className="m3-card p-4 sm:p-5">
+        <summary className="cursor-pointer text-base font-semibold">
+          Save details
+        </summary>
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+          <StatTile label="Save version" value={summary.version} />
+          <StatTile label="Game build" value={summary.buildVersion} />
           <StatTile
-            label="Developer Tools Used"
+            label="Developer tools used"
             value={summary.developerToolsUsed ? "Yes" : "No"}
           />
           <StatTile label="File" value={summary.fileName} mono />
-          <StatTile label="Last Saved Size" value={summary.lastWrittenBytes} />
-          <StatTile label="Auto Save" value={summary.autoSave ? "Yes" : "No"} />
+          <StatTile label="Last saved size" value={summary.lastWrittenBytes} />
+          <StatTile label="Autosave" value={summary.autoSave ? "Yes" : "No"} />
         </div>
-
         <div className="mt-4 grid gap-2.5 sm:grid-cols-2">
           <section className="m3-panel p-3" aria-labelledby="overview-dlc">
             <div className="flex items-center justify-between gap-3">
@@ -396,7 +436,7 @@ function ReadyState({
                       {dlc.name}
                     </p>
                     <code
-                      className="mt-0.5 block truncate text-[0.6875rem] opacity-55"
+                      className="mt-0.5 block truncate text-xs text-[var(--muted)]"
                       title={dlc.id}
                     >
                       {dlc.id}
@@ -431,7 +471,7 @@ function ReadyState({
                       {mod.title}
                     </p>
                     <code
-                      className="mt-0.5 block truncate text-[0.6875rem] opacity-55"
+                      className="mt-0.5 block truncate text-xs text-[var(--muted)]"
                       title={mod.id}
                     >
                       {mod.id}
@@ -521,7 +561,7 @@ function ReadyState({
                       {setting.label}
                     </p>
                     <code
-                      className="block truncate text-[0.6875rem] opacity-55"
+                      className="block truncate text-xs text-[var(--muted)]"
                       title={setting.id}
                     >
                       {setting.id}
@@ -534,71 +574,10 @@ function ReadyState({
           </details>
         ) : null}
 
-        <p className="mt-3 text-xs opacity-60">
+        <p className="mt-3 text-xs text-[var(--muted)]">
           Parsed in {summary.parseTimeMs}
         </p>
-      </section>
-
-      <section className="m3-card p-4 sm:p-5">
-        <h2 className="text-lg font-semibold">Difficulty & Game Settings</h2>
-        <p className="mt-1 text-xs opacity-70">
-          Changes apply to the loaded save and are written back when you save.
-        </p>
-        <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-          {displaySettingOrder.map((settingName) => {
-            const options = difficultyOptions[settingName] || [];
-            const selected = difficulty[settingName] ?? options[0] ?? "";
-            const label = getDifficultySettingLabel(settingName);
-            if (isToggleOptions(options)) {
-              return (
-                <M3ToggleField
-                  key={settingName}
-                  label={label}
-                  checked={selected === "Enabled"}
-                  onChange={(event) =>
-                    onUpdateDifficulty(
-                      settingName,
-                      event.target.checked ? "Enabled" : "Disabled",
-                    )
-                  }
-                />
-              );
-            }
-            return (
-              <label key={settingName} className="flex flex-col gap-1 text-sm">
-                <span id={`difficulty-${settingName}`} className="opacity-80">
-                  {label}
-                </span>
-                {options.length > 0 ? (
-                  <M3Select
-                    aria-labelledby={`difficulty-${settingName}`}
-                    value={selected}
-                    onChange={(event) =>
-                      onUpdateDifficulty(settingName, event.target.value)
-                    }
-                    className="px-3 py-2 text-sm"
-                  >
-                    {options.map((value) => (
-                      <option key={value} value={value}>
-                        {getDifficultyValueLabel(settingName, value)}
-                      </option>
-                    ))}
-                  </M3Select>
-                ) : (
-                  <input
-                    type="text"
-                    value={selected}
-                    onChange={(event) =>
-                      onUpdateDifficulty(settingName, event.target.value)
-                    }
-                    className="m3-field px-3 py-2 text-sm"
-                  />
-                )}
-              </label>
-            );
-          })}
-        </div>
-      </section>
+      </details>
     </div>
   );
 }
@@ -640,7 +619,7 @@ export default function OverviewPage() {
 
   return (
     <div className="m3-page m3-page-flow">
-      {!session.hasSave && session.status !== "error" ? (
+      {!session.hasSave ? (
         <NoSaveState onChooseSave={chooseSave} isBusy={session.isBusy} />
       ) : null}
 
@@ -651,15 +630,6 @@ export default function OverviewPage() {
         className="hidden"
         onChange={onFileChange}
       />
-
-      {session.status === "error" ? (
-        <ErrorState
-          error={session.error}
-          canForceLoad={session.canForceLoad}
-          forceLoadPendingFile={session.forceLoadPendingFile}
-          pendingFileName={session.pendingFile?.name}
-        />
-      ) : null}
 
       {session.hasSave ? (
         <ReadyState

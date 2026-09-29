@@ -576,7 +576,7 @@ export default function SettingsDevTools() {
               <div>
                 <label
                   htmlFor="hair-offset-json"
-                  className="text-xs font-semibold uppercase tracking-wide opacity-70"
+                  className="text-sm font-semibold text-[var(--muted)]"
                 >
                   Paste JSON
                 </label>

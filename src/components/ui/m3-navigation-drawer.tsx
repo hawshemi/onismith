@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, Ref } from "react";
+import { Fragment, type ReactNode, type Ref } from "react";
 import type { IconType } from "react-icons";
 import Link from "next/link";
 
@@ -17,6 +17,7 @@ type NavItem = {
   fallback: string;
   saveRequired?: boolean;
   icon?: IconType;
+  group?: string;
 };
 
 type TranslateFn = (key: string, options?: { fallback?: string }) => string;
@@ -58,6 +59,7 @@ export default function M3NavigationDrawer({
     <>
       {open ? (
         <div
+          data-dialog-backdrop
           className="fixed inset-0 z-40 bg-[var(--scrim-soft)] md:hidden"
           aria-hidden="true"
           onClick={onClose}
@@ -66,96 +68,87 @@ export default function M3NavigationDrawer({
       <aside
         ref={drawerRef}
         id={id}
-        className={`m3-surface m3-scrollbar m3-vertical-scroll m3-navigation-drawer fixed inset-y-0 left-0 z-50 flex w-64 flex-col p-4 transition-transform duration-200 md:static md:z-auto md:h-full md:visible md:translate-x-0 ${
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? true : undefined}
+        aria-label={open ? "Navigation" : undefined}
+        className={`m3-surface m3-scrollbar m3-vertical-scroll m3-navigation-drawer fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col p-4 transition-transform duration-200 md:static md:z-auto md:h-full md:w-56 md:visible md:translate-x-0 ${
           open ? "visible translate-x-0" : "invisible -translate-x-full"
         }`}
       >
-        <div className="px-1">
-          <p className="m3-brand text-lg font-semibold leading-tight">
-            {appName}
-          </p>
-          <p className="text-xs uppercase tracking-[0.12em] opacity-70">
-            {t("app.tagline", { fallback: "ONI Save Editor" })}
-          </p>
+        <div className="flex items-start justify-between gap-2 px-1">
+          <div>
+            <p className="m3-brand text-lg font-semibold leading-tight">
+              {appName}
+            </p>
+            <p className="mt-1 text-xs text-[var(--muted)]">ONI save editor</p>
+          </div>
+          {open ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="m3-button m3-button-hollow px-2 text-sm md:hidden"
+              aria-label="Close navigation"
+            >
+              Close
+            </button>
+          ) : null}
         </div>
         <nav
           className="mt-5"
           aria-label={t("app.nav.label", { fallback: "Main navigation" })}
         >
           <ul className="space-y-1">
-            {navItems.map((item) => {
-              const disabled = Boolean(item.saveRequired) && !hasSave;
-              const active = isActive(pathname, item.href);
-              const badgeValue = itemBadges?.[item.href];
-              const showBadge = Number.isFinite(badgeValue);
-              const Icon = item.icon;
-
-              if (disabled) {
-                return (
-                  <li key={item.href}>
-                    <span
-                      className="m3-navigation-drawer-item m3-navigation-drawer-item-disabled block w-full px-3 py-2 text-sm"
-                      title={t("app.nav.load-save-first", {
-                        fallback: "Load a save first.",
-                      })}
-                      aria-disabled="true"
-                    >
-                      <span className="flex items-center gap-2.5">
-                        {Icon ? (
-                          <Icon
-                            aria-hidden="true"
-                            className="h-4 w-4 shrink-0 opacity-70"
-                          />
-                        ) : null}
-                        <span className="truncate">
-                          {t(item.i18nKey, { fallback: item.fallback })}
-                        </span>
-                        {showBadge ? (
-                          <span
-                            className="m3-navigation-drawer-badge"
-                            aria-hidden="true"
-                          >
-                            {badgeValue}
-                          </span>
-                        ) : null}
-                      </span>
-                    </span>
-                  </li>
+            {navItems
+              .filter((item) => hasSave || !item.saveRequired)
+              .map((item, index, items) => {
+                const active = isActive(
+                  pathname.replace(/-editor\/?$/, ""),
+                  item.href,
                 );
-              }
+                const badgeValue = itemBadges?.[item.href];
+                const showBadge = Number.isFinite(badgeValue);
+                const Icon = item.icon;
 
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={onNavigate}
-                    className={`m3-navigation-drawer-item block w-full px-3 py-2 text-sm ${
-                      active ? "m3-navigation-drawer-item-active" : ""
-                    }`}
-                  >
-                    <span className="flex items-center gap-2.5">
-                      {Icon ? (
-                        <Icon
-                          aria-hidden="true"
-                          className="h-4 w-4 shrink-0 opacity-80"
-                        />
-                      ) : null}
-                      <span className="truncate">
-                        {t(item.i18nKey, { fallback: item.fallback })}
-                      </span>
-                      {showBadge ? (
-                        <span
-                          className="m3-navigation-drawer-badge"
-                          aria-hidden="true"
-                        >
-                          {badgeValue}
+                return (
+                  <Fragment key={item.href}>
+                    {item.group && item.group !== items[index - 1]?.group ? (
+                      <li className="px-3 pt-5 pb-1 text-xs font-semibold text-[var(--muted)]">
+                        {item.group}
+                      </li>
+                    ) : null}
+                    <li>
+                      <Link
+                        href={item.href}
+                        onClick={onNavigate}
+                        aria-current={active ? "page" : undefined}
+                        className={`m3-navigation-drawer-item block w-full px-3 py-2.5 text-sm ${
+                          active ? "m3-navigation-drawer-item-active" : ""
+                        }`}
+                      >
+                        <span className="flex items-center gap-2.5">
+                          {Icon ? (
+                            <Icon
+                              aria-hidden="true"
+                              className="h-4 w-4 shrink-0 opacity-80"
+                            />
+                          ) : null}
+                          <span className="truncate">
+                            {t(item.i18nKey, { fallback: item.fallback })}
+                          </span>
+                          {showBadge ? (
+                            <span
+                              className="m3-navigation-drawer-badge"
+                              aria-hidden="true"
+                            >
+                              {badgeValue}
+                            </span>
+                          ) : null}
                         </span>
-                      ) : null}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
+                      </Link>
+                    </li>
+                  </Fragment>
+                );
+              })}
           </ul>
         </nav>
         {bottomSlot}
