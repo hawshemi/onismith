@@ -14,6 +14,7 @@ import {
 } from "react";
 import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import { useModalDialog } from "@/lib/use-modal-dialog";
+import { siteTitle } from "@/lib/site";
 import {
   FaBars,
   FaArrowLeft,
@@ -149,6 +150,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setMobileActionsOpen(false);
   });
   const pageTitle = useMemo(() => getPageTitle(pathname, t), [pathname, t]);
+  const PageHeading = normalizedPathname === "/" && !hasSave ? "p" : "h1";
   // Sidebar badge counts require full-tree scans (creatures/geysers walk every
   // game object) but only change when entities are added/removed, which is rare.
   // Derive them from a deferred save so an edit's render isn't blocked by the
@@ -295,11 +297,10 @@ export default function AppShell({ children }: { children: ReactNode }) {
     await loadSaveFile(file, { versionStrictness: parseStrictness });
   };
 
-  // Reflect the current section in the browser tab. One-page site, so the base
-  // name stands alone on the overview and gains the section name elsewhere.
+  // Keep the homepage search title after hydration and client navigation.
   useEffect(() => {
     document.title =
-      normalizedPathname === "/" ? "Onismith" : `Onismith - ${pageTitle}`;
+      normalizedPathname === "/" ? siteTitle : `Onismith - ${pageTitle}`;
   }, [normalizedPathname, pageTitle]);
 
   useEffect(() => {
@@ -611,9 +612,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
                       <span className="hidden sm:inline">Back</span>
                     </M3HollowButton>
                   ) : null}
-                  <h1 className="min-w-0 truncate text-base font-semibold">
+                  <PageHeading className="min-w-0 truncate text-base font-semibold">
                     {pageTitle}
-                  </h1>
+                  </PageHeading>
                 </div>
                 {hasSave ? (
                   <>

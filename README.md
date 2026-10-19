@@ -44,6 +44,8 @@ npm run deploy
 
 The app is a static Next.js export served by Cloudflare Workers assets.
 
+The canonical production URL is https://onismith.com/. It is defined in `src/lib/site.ts` and shared by the homepage metadata, structured data, robots file, and sitemap. Only the homepage allows indexing. Editor routes and settings use `noindex` because they depend on local session data or preferences.
+
 ```bash
 npx wrangler login
 npm run deploy

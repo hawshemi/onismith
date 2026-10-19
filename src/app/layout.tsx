@@ -3,11 +3,15 @@ import type { Metadata, Viewport } from "next";
 import AppShell from "@/components/app-shell";
 import { I18nProvider } from "@/lib/i18n/i18n-context";
 import { SaveSessionProvider } from "@/lib/save-session/save-session-context";
+import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Onismith",
   applicationName: "Onismith",
   description: "Web-based Oxygen Not Included save editor",
+  // Only the public homepage opts into indexing.
+  robots: { index: false, follow: true },
   manifest: "/brand/site.webmanifest",
   icons: {
     icon: [

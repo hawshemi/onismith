@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">Onismith: Oxygen Not Included save editor</title>
+  <desc id="description">Edit your colony. Keep your save local.</desc>
+  <rect width="1200" height="630" fill="#11171b"/>
+  <rect x="84" y="110" width="64" height="6" rx="3" fill="#96cbbb"/>
+  <text x="80" y="250" fill="#e4e9e9" font-family="Quicksand, Nunito, Segoe UI, sans-serif" font-size="96" font-weight="700" letter-spacing="-3">Onismith</text>
+  <text x="84" y="320" fill="#e4e9e9" font-family="Nunito, Segoe UI, sans-serif" font-size="36" font-weight="400">Oxygen Not Included save editor</text>
+  <text x="84" y="516" fill="#a5b2b8" font-family="Nunito, Segoe UI, sans-serif" font-size="28" font-weight="400">Edit your colony. Keep your save local.</text>
+  <rect x="838" y="158" width="278" height="278" rx="56" fill="#172127"/>
+  <g transform="translate(848 164) scale(4.05)">
+    <path fill="#96cbbb" fill-rule="evenodd" d="M24 14h30a2 2 0 0 1 2 2v13h-8l-6 6v8l7 6v5H17v-5l7-6v-9c-8 0-14-7-18-16h18v-4Zm14.5 18a5.5 5.5 0 1 0-11 0 5.5 5.5 0 0 0 11 0Z" clip-rule="evenodd"/>
+  </g>
+</svg>
