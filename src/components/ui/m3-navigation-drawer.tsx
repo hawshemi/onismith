@@ -36,7 +36,7 @@ type M3NavigationDrawerProps = {
   // are ignored; below md it slides in as an overlay when `open` is true.
   open?: boolean;
   onClose?: () => void;
-  onNavigate?: () => void;
+  onNavigate?: (href: string) => void;
   id?: string;
   drawerRef?: Ref<HTMLElement>;
   t: TranslateFn;
@@ -133,7 +133,14 @@ export default function M3NavigationDrawer({
                     <li>
                       <Link
                         href={item.href}
-                        onClick={onNavigate}
+                        onNavigate={
+                          onNavigate
+                            ? (event) => {
+                                event.preventDefault();
+                                onNavigate(item.href);
+                              }
+                            : undefined
+                        }
                         aria-current={active ? "page" : undefined}
                         className={`m3-navigation-drawer-item block w-full px-3 py-2 text-sm ${
                           active ? "m3-navigation-drawer-item-active" : ""

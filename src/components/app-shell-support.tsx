@@ -295,6 +295,9 @@ export function LoadingDialog({
             {progressText}
           </p>
         </div>
+        <p className="mt-3 text-sm text-[var(--muted)]">
+          Still working. Large colonies can take a moment. Please wait.
+        </p>
       </div>
     </M3Dialog>
   );

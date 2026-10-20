@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type Dispatch } from "react";
+import { startTransition, useCallback, type Dispatch } from "react";
 import type { SaveGame } from "@/lib/save-parser/model";
 import { parseSaveInWorker, writeSaveInWorker } from "@/lib/oni/parser-client";
 import {
@@ -49,6 +49,10 @@ export function useSaveFileActions(
         DEFAULT_STRICTNESS;
       dispatch({ type: "LOAD_BEGIN", file, strictness });
       try {
+        // Give the loading dialog a frame before reading a large file.
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
         const data = await file.arrayBuffer();
         const startedAt = performance.now();
         const saveGame = await parseSaveInWorker(data, {
@@ -57,12 +61,21 @@ export function useSaveFileActions(
           onProgress: (message) => dispatch({ type: "LOAD_PROGRESS", message }),
         });
         dispatch({
-          type: "LOAD_SUCCESS",
-          saveGame,
-          fileName: file.name,
-          fileHandle: options.fileHandle || null,
-          parseTimeMs: Math.round(performance.now() - startedAt),
+          type: "LOAD_PROGRESS",
+          message: "Preparing colony data. Please wait.",
         });
+        await new Promise((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
+        startTransition(() =>
+          dispatch({
+            type: "LOAD_SUCCESS",
+            saveGame,
+            fileName: file.name,
+            fileHandle: options.fileHandle || null,
+            parseTimeMs: Math.round(performance.now() - startedAt),
+          }),
+        );
       } catch (error) {
         dispatch({ type: "LOAD_ERROR", error: normalizeError(error) });
       }

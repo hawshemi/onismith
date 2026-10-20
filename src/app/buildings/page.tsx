@@ -9,6 +9,9 @@ import M3TonalButton from "@/components/ui/m3-tonal-button";
 import { useSaveSession } from "@/lib/save-session/save-session-context";
 import { selectBuildings, type Building } from "@/lib/oni/save-selectors";
 import { useBrowseState } from "@/lib/use-browse-state";
+import { NumberField } from "@/components/ui/numeric-fields";
+
+const PAGE_SIZE = 100;
 
 const SORT_OPTIONS = [
   { value: "name-asc", label: "Name A to Z" },
@@ -34,10 +37,7 @@ const BuildingCard = memo(function BuildingCard({
     ? readableSavedName(building.customName)
     : null;
   return (
-    <article
-      className="min-w-0 border-b border-[var(--outline-faint)] px-4 py-3 last:border-b-0 sm:px-5"
-      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 112px" }}
-    >
+    <article className="min-w-0 border-b border-[var(--outline-faint)] px-4 py-3 last:border-b-0 sm:px-5">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--surface-container)] text-[var(--muted)]">
           <FaBuilding aria-hidden="true" className="h-4 w-4" />
@@ -180,10 +180,8 @@ function BuildingEditorDialog({
 export default function BuildingsPage() {
   const { saveGame, hasSave, updateBuildingName } = useSaveSession();
   const buildings = useMemo(() => selectBuildings(saveGame), [saveGame]);
-  const { query, setQuery, sort, setSort, filter, setFilter } = useBrowseState(
-    "buildings",
-    "name-asc",
-  );
+  const { query, setQuery, sort, setSort, filter, setFilter, page, setPage } =
+    useBrowseState("buildings", "name-asc");
   const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(
     null,
   );
@@ -199,16 +197,17 @@ export default function BuildingsPage() {
 
   const visibleBuildings = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
+    const typeNeedle = needle.replace(/\s+/g, "");
     const filtered = buildings.filter(
       (building) =>
         (filter !== "editable" || building.customName !== null) &&
         (!needle ||
-          building.type.toLowerCase().includes(needle) ||
+          building.type.toLowerCase().includes(typeNeedle) ||
           building.displayName.toLowerCase().includes(needle) ||
           building.customName?.toLowerCase().includes(needle) ||
           String(building.id).includes(needle)),
     );
-    return [...filtered].sort((a, b) => {
+    return filtered.sort((a, b) => {
       switch (sort) {
         case "name-desc":
           return b.displayName.localeCompare(a.displayName) || b.id - a.id;
@@ -222,6 +221,57 @@ export default function BuildingsPage() {
       }
     });
   }, [buildings, deferredQuery, sort, filter]);
+
+  const pageCount = Math.max(1, Math.ceil(visibleBuildings.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const changePage = (nextPage: number) => {
+    setPage(nextPage);
+    document.getElementById("main-content")?.scrollTo({ top: 0 });
+  };
+  const pagination =
+    pageCount > 1 ? (
+      <nav
+        aria-label="Building pages"
+        className="flex flex-wrap items-center justify-end gap-3 text-sm"
+      >
+        <span className="mr-auto text-[var(--muted)]">
+          {(pageStart + 1).toLocaleString()}–
+          {Math.min(
+            pageStart + PAGE_SIZE,
+            visibleBuildings.length,
+          ).toLocaleString()}{" "}
+          of {visibleBuildings.length.toLocaleString()}
+        </span>
+        <M3OutlinedButton
+          disabled={currentPage === 1}
+          onClick={() => changePage(currentPage - 1)}
+          className="min-h-11 px-3 py-2"
+        >
+          Previous
+        </M3OutlinedButton>
+        <label className="flex items-center gap-2">
+          Page
+          <NumberField
+            aria-label="Building page"
+            value={currentPage}
+            min={1}
+            max={pageCount}
+            step={1}
+            onCommit={(value) => changePage(Math.trunc(value))}
+            className="m3-field min-h-11 w-20 px-2 py-2"
+          />
+          of {pageCount.toLocaleString()}
+        </label>
+        <M3OutlinedButton
+          disabled={currentPage === pageCount}
+          onClick={() => changePage(currentPage + 1)}
+          className="min-h-11 px-3 py-2"
+        >
+          Next
+        </M3OutlinedButton>
+      </nav>
+    ) : null;
 
   return (
     <BrowseListShell
@@ -260,15 +310,19 @@ export default function BuildingsPage() {
       noMatchLabel="buildings"
       deferredQuery={deferredQuery}
     >
+      {pagination}
       <div className="m3-card overflow-hidden">
-        {visibleBuildings.map((building) => (
-          <BuildingCard
-            key={building.id}
-            building={building}
-            onEdit={setSelectedBuildingId}
-          />
-        ))}
+        {visibleBuildings
+          .slice(pageStart, pageStart + PAGE_SIZE)
+          .map((building) => (
+            <BuildingCard
+              key={building.id}
+              building={building}
+              onEdit={setSelectedBuildingId}
+            />
+          ))}
       </div>
+      {pagination}
       <BuildingEditorDialog
         key={selectedBuilding?.id ?? "closed"}
         building={selectedBuilding}

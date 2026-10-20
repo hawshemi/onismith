@@ -15,10 +15,29 @@ export interface Building {
   opaqueStateBytes: number;
 }
 
+// Game names from STRINGS.BUILDINGS.PREFABS.*.NAME in strings_template.pot.
 const BUILDING_DISPLAY_NAMES: Record<string, string> = {
+  AirConditioner: "Thermo Regulator",
+  AirFilter: "Deodorizer",
+  AlgaeDistillery: "Algae Distiller",
+  AlgaeHabitat: "Algae Terrarium",
+  CookingStation: "Electric Grill",
+  GourmetCookingStation: "Gas Range",
+  LiquidConditioner: "Thermo Aquatuner",
+  ManualPressureDoor: "Manual Airlock",
+  PressureDoor: "Mechanized Airlock",
+  SolidConduitInbox: "Conveyor Loader",
+  SolidConduitOutbox: "Conveyor Receptacle",
+  WaterPurifier: "Water Sieve",
   SnowTile: "Snow Tile",
   WoodTile: "Wood Tile",
 };
+
+// Keep one view so undo history cannot retain a full list for every edit.
+let buildingCache: {
+  groups: SaveGame["gameObjects"];
+  buildings: Building[];
+} | null = null;
 
 function humanizeIdentifier(value: string): string {
   return value
@@ -37,9 +56,11 @@ export function selectBuildings(saveGame: SaveGame | null): Building[] {
     ? saveGame.gameObjects
     : [];
   const buildings: Building[] = [];
+  if (buildingCache?.groups === groups) return buildingCache.buildings;
 
   for (const group of groups) {
     const type = asString(group?.name);
+    const displayName = getBuildingDisplayName(type);
     const gameObjects = Array.isArray(group?.gameObjects)
       ? group.gameObjects
       : [];
@@ -60,7 +81,7 @@ export function selectBuildings(saveGame: SaveGame | null): Building[] {
       buildings.push({
         id,
         type,
-        displayName: getBuildingDisplayName(type),
+        displayName,
         customName: typeof savedName === "string" ? savedName : null,
         position: {
           x: asNumber(gameObject.position?.x),
@@ -73,5 +94,7 @@ export function selectBuildings(saveGame: SaveGame | null): Building[] {
     }
   }
 
-  return buildings.sort((a, b) => a.id - b.id);
+  buildings.sort((a, b) => a.id - b.id);
+  buildingCache = { groups, buildings };
+  return buildings;
 }
