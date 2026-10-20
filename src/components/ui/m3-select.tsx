@@ -478,7 +478,7 @@ const M3Select = forwardRef<HTMLButtonElement, M3SelectProps>(function M3Select(
         {...props}
         className={`m3-select-trigger m3-field w-full pr-9 text-left focus-visible:outline-none ${className}`}
       >
-        <span className="truncate">
+        <span className="block truncate">
           {selectedOption?.label ?? <span className="opacity-60">Select</span>}
         </span>
       </button>

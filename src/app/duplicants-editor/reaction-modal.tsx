@@ -225,7 +225,6 @@ export default function ReactionModal({
                   key={category.id}
                   type="button"
                   aria-pressed={isActive}
-                  aria-label={`${category.label}, ${stats.ownedCount} of ${stats.traitIds.length} owned`}
                   onClick={() => onCategoryChange(category.id)}
                   className="m3-button-outlined flex min-h-11 flex-wrap items-center justify-center gap-x-2 rounded-lg px-2 py-2 text-sm font-semibold transition-colors"
                   style={
@@ -241,6 +240,7 @@ export default function ReactionModal({
                   <span>{category.label}</span>
                   <span className="text-xs font-normal tabular-nums text-[var(--muted)]">
                     {stats.ownedCount}/{stats.traitIds.length}
+                    <span className="sr-only"> owned</span>
                   </span>
                 </button>
               );
@@ -273,12 +273,20 @@ export default function ReactionModal({
               {activeCategory.label.toLocaleLowerCase()}
             </M3OutlinedButton>
           </div>
-          <p className="mt-2 text-xs tabular-nums text-[var(--muted)]">
+          <p
+            role="status"
+            className="mt-2 text-xs tabular-nums text-[var(--muted)]"
+          >
             {options.length} results
           </p>
         </div>
       ) : null}
-      <div className="m3-scrollbar m3-vertical-scroll mt-3 min-h-0 flex-1 pr-1">
+      <div
+        tabIndex={0}
+        role="region"
+        aria-label="Traits"
+        className="m3-scrollbar m3-vertical-scroll mt-3 min-h-0 flex-1 pr-1"
+      >
         <div
           className={
             kind === "add-traits"
