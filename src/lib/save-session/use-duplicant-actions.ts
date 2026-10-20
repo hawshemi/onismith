@@ -11,7 +11,6 @@ import {
 import {
   getCanonicalTraitId,
   isBionicIdentityTraitId,
-  normalizeTraitId,
 } from "@/lib/oni/trait-names";
 import {
   deepClone,
@@ -127,8 +126,7 @@ export function useDuplicantActions({
               : [];
             if (
               current.some(
-                (id: unknown) =>
-                  normalizeTraitId(id) === normalizeTraitId(cleanTraitId),
+                (id: string) => getCanonicalTraitId(id) === cleanTraitId,
               )
             ) {
               return template;
@@ -159,8 +157,8 @@ export function useDuplicantActions({
               ? template.TraitIds
               : [];
             const filtered = current.filter(
-              (item: unknown) =>
-                normalizeTraitId(item) !== normalizeTraitId(traitId),
+              (item: string) =>
+                getCanonicalTraitId(item) !== getCanonicalTraitId(traitId),
             );
             if (filtered.length === current.length) {
               return template;
