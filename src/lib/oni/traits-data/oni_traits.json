@@ -25,7 +25,7 @@
     "desc": "This Duplicant doesn't have much Insulation, so they are more Temperature sensitive than others"
   },
   {
-    "id": "PREFERSCOOLER",
+    "id": "PREFERSCOLDER",
     "traits": "Pudgy",
     "desc": "This Duplicant has some extra Insulation, so the room Temperature affects them a little less"
   },

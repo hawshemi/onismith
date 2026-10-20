@@ -8,7 +8,10 @@ import {
   getSkillGroupHash,
   getSkillGroupNameByHash,
 } from "@/lib/oni/minion-interests";
-import { isBionicIdentityTraitId } from "@/lib/oni/trait-names";
+import {
+  getCanonicalTraitId,
+  isBionicIdentityTraitId,
+} from "@/lib/oni/trait-names";
 import {
   deepClone,
   findGameObjectLocation,
@@ -109,7 +112,7 @@ export function useDuplicantActions({
       if (!saveGame || !traitId) {
         return;
       }
-      const cleanTraitId = String(traitId).trim();
+      const cleanTraitId = getCanonicalTraitId(String(traitId).trim());
       if (!cleanTraitId) {
         return;
       }
@@ -121,7 +124,11 @@ export function useDuplicantActions({
             const current = Array.isArray(template?.TraitIds)
               ? template.TraitIds
               : [];
-            if (current.includes(cleanTraitId)) {
+            if (
+              current.some(
+                (id: string) => getCanonicalTraitId(id) === cleanTraitId,
+              )
+            ) {
               return template;
             }
             return {
@@ -150,7 +157,8 @@ export function useDuplicantActions({
               ? template.TraitIds
               : [];
             const filtered = current.filter(
-              (item: unknown) => item !== traitId,
+              (item: string) =>
+                getCanonicalTraitId(item) !== getCanonicalTraitId(traitId),
             );
             if (filtered.length === current.length) {
               return template;
