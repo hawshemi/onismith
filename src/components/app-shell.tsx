@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
   type ChangeEvent,
   type DragEvent,
   type ReactNode,
@@ -36,6 +37,7 @@ import M3TonalButton from "@/components/ui/m3-tonal-button";
 import M3HollowButton from "@/components/ui/m3-hollow-button";
 import M3OutlinedButton from "@/components/ui/m3-outlined-button";
 import M3Dialog from "@/components/ui/m3-dialog";
+import M3ExpressiveLoadingIndicator from "@/components/ui/m3-expressive-loading-indicator";
 
 import {
   BackupPromptDialog,
@@ -51,6 +53,8 @@ import {
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const [isNavigating, startNavigation] = useTransition();
+  const [navigationTitle, setNavigationTitle] = useState("");
   const pathname = usePathname();
   const { t } = useI18n();
   const normalizedPathname = useMemo(
@@ -539,7 +543,18 @@ export default function AppShell({ children }: { children: ReactNode }) {
             id="app-mobile-nav"
             open={mobileNavOpen}
             onClose={() => setMobileNavOpen(false)}
-            onNavigate={() => setMobileNavOpen(false)}
+            onNavigate={(href) => {
+              setMobileNavOpen(false);
+              if (normalizePathname(href) === normalizedPathname) return;
+              setNavigationTitle(getPageTitle(href, t));
+              startNavigation(async () => {
+                // Paint the busy state before the destination scans the save.
+                await new Promise((resolve) =>
+                  requestAnimationFrame(() => requestAnimationFrame(resolve)),
+                );
+                startNavigation(() => router.push(href));
+              });
+            }}
             drawerRef={mobileNavRef}
             navItems={NAV_ITEMS}
             itemBadges={
@@ -692,11 +707,22 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 onChange={onFileChange}
               />
             </header>
+            {isNavigating ? (
+              <div
+                role="status"
+                aria-live="polite"
+                className="flex shrink-0 items-center gap-3 border-b border-[var(--outline-faint)] bg-[var(--surface-container)] px-4 py-3 text-sm"
+              >
+                <M3ExpressiveLoadingIndicator size={24} aria-hidden="true" />
+                Loading {navigationTitle}. Please wait.
+              </div>
+            ) : null}
             <main
               id="main-content"
               key={normalizedPathname}
               ref={mainRef}
               tabIndex={-1}
+              aria-busy={isNavigating || isBusy}
               className="m3-page-enter m3-scrollbar m3-vertical-scroll relative flex-1 bg-[var(--surface)] focus:outline-none"
               onDragEnter={onMainDragEnter}
               onDragOver={onMainDragOver}

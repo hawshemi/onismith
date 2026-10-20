@@ -11,6 +11,21 @@ function behavior(name: string, rawBytes = 0) {
 }
 
 describe("selectWorldObjectGroups", () => {
+  it("uses game names for buildings without changing serialized identifiers", () => {
+    const saveGame = {
+      gameObjects: [
+        {
+          name: "AirFilter",
+          gameObjects: [{ behaviors: [behavior("BuildingComplete")] }],
+        },
+      ],
+    } as unknown as SaveGame;
+    expect(selectWorldObjectGroups(saveGame)[0]).toMatchObject({
+      type: "AirFilter",
+      displayName: "Deodorizer",
+      category: "Building",
+    });
+  });
   it("classifies and summarizes serialized object groups", () => {
     const saveGame = {
       gameObjects: [

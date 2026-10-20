@@ -1,5 +1,6 @@
 import { SimHashNames, type SaveGame } from "@/lib/save-parser/model";
 import { asString } from "./save-selector-utils";
+import { getBuildingDisplayName } from "./building-selectors";
 
 export type WorldObjectCategory =
   | "Building"
@@ -113,10 +114,14 @@ export function selectWorldObjectGroups(
         }
       }
 
+      const category = classifyGroup(type, behaviorNames);
       return {
         type,
-        displayName: humanizeIdentifier(type) || type,
-        category: classifyGroup(type, behaviorNames),
+        displayName:
+          category === "Building"
+            ? getBuildingDisplayName(type)
+            : humanizeIdentifier(type) || type,
+        category,
         count: objects.length,
         behaviorNames: [...behaviorNames].sort((a, b) => a.localeCompare(b)),
         opaqueStateBytes,

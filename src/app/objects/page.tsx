@@ -83,11 +83,12 @@ export default function ObjectsPage() {
 
   const visibleGroups = useMemo(() => {
     const needle = deferredQuery.trim().toLowerCase();
+    const typeNeedle = needle.replace(/\s+/g, "");
     const filtered = groups.filter(
       (group) =>
         (!filter || group.category === filter) &&
         (!needle ||
-          group.type.toLowerCase().includes(needle) ||
+          group.type.toLowerCase().includes(typeNeedle) ||
           group.displayName.toLowerCase().includes(needle) ||
           group.category.toLowerCase().includes(needle) ||
           group.behaviorNames.some((name) =>
