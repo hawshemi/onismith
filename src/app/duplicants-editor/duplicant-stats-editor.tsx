@@ -667,7 +667,7 @@ export default function DuplicantStatsEditor({
                     <input
                       type="number"
                       min="0"
-                      aria-label={`Cycles for ${effect.id}`}
+                      aria-label={`Duration in cycles for ${getEffectDefinition(effect.id).name}`}
                       value={effectCycleDrafts[effect.id] ?? ""}
                       onChange={(event) =>
                         setEffectCycleDrafts((prev) => ({
@@ -764,7 +764,10 @@ export default function DuplicantStatsEditor({
               placeholder="Search effects"
               className="m3-field min-h-11 min-w-0 flex-1 px-3 py-1.5 text-sm md:min-h-9"
             />
-            <span className="shrink-0 text-xs tabular-nums opacity-60">
+            <span
+              role="status"
+              className="shrink-0 text-xs tabular-nums opacity-60"
+            >
               {filteredAvailableEffects.length} results
             </span>
           </div>

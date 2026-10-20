@@ -122,7 +122,6 @@ function DuplicantCard({
     <Link
       href={`/duplicants-editor?id=${duplicant.id}`}
       onClick={() => onSelect(duplicant.id)}
-      aria-label={`Edit ${duplicant.name}`}
       className="m3-card m3-card-hover group flex h-full min-h-24 w-full items-center gap-3 p-3"
       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 96px" }}
     >
@@ -167,12 +166,9 @@ function DuplicantCard({
           <span>{attributeCount} attributes</span>
         </div>
       </div>
-      <span
-        className="flex shrink-0 items-center gap-1 text-xs font-medium text-[var(--accent)]"
-        aria-hidden="true"
-      >
+      <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-[var(--accent)]">
         Edit
-        <FaChevronRight className="h-2.5 w-2.5" />
+        <FaChevronRight aria-hidden="true" className="h-2.5 w-2.5" />
       </span>
     </Link>
   );

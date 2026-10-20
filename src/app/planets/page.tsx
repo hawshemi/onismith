@@ -209,7 +209,7 @@ const PlanetCard = memo(function PlanetCard({
             <label className="flex flex-1 flex-col gap-1 text-xs">
               <span className="opacity-75">Add element</span>
               <M3Select
-                aria-label={`Add recoverable element to planet #${planet.id}`}
+                aria-label={`Add element to planet #${planet.id}`}
                 value={selectedToAdd}
                 onChange={(event) => setElementDraft(event.target.value)}
                 className="px-3 py-2 text-sm"
@@ -244,11 +244,11 @@ const PlanetoidCard = memo(function PlanetoidCard({
     : "Unknown";
 
   return (
-    <article className="m3-card m3-card-hover flex h-full flex-col p-4 sm:p-5">
+    <article className="m3-card m3-card-hover flex h-full min-w-0 flex-col p-4 sm:p-5">
       <div className="flex flex-wrap items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className="m3-label">Planetoid #{planetoid.id}</p>
-          <h2 className="truncate text-lg font-semibold" title={planetoid.name}>
+          <h2 className="break-words text-lg font-semibold">
             {planetoid.name}
           </h2>
         </div>
@@ -260,16 +260,10 @@ const PlanetoidCard = memo(function PlanetoidCard({
         </span>
       </div>
 
-      <p
-        className="mt-2 truncate text-sm font-medium"
-        title={planetoid.displayWorldName}
-      >
+      <p className="mt-2 break-words text-sm font-medium">
         {planetoid.displayWorldName}
       </p>
-      <code
-        className="mt-1 block truncate text-xs opacity-65"
-        title={planetoid.worldName}
-      >
+      <code className="mt-1 block break-all text-xs opacity-65">
         {planetoid.worldName}
       </code>
 
@@ -315,7 +309,7 @@ const PlanetoidCard = memo(function PlanetoidCard({
               return (
                 <span
                   key={biome.zoneType}
-                  className="m3-tag"
+                  className="m3-tag max-w-full break-words"
                   title={`Zone ${biome.zoneType}`}
                 >
                   {label} · {biome.cellCount}

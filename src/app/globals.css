@@ -89,6 +89,10 @@ h3 {
   scroll-margin-top: 5rem;
 }
 
+#main-content :focus {
+  scroll-margin-top: 5rem;
+}
+
 button,
 a,
 summary {
@@ -395,7 +399,7 @@ select option:focus,
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
 }
 
 .m3-horizontal-scroll {
@@ -403,7 +407,7 @@ select option:focus,
   overflow-y: hidden;
   overscroll-behavior-inline: contain;
   scrollbar-gutter: stable;
-  touch-action: pan-x;
+  touch-action: pan-x pinch-zoom;
 }
 
 .no-scrollbar {
@@ -488,6 +492,10 @@ select option:focus,
 }
 
 @media (max-width: 767px) {
+  #main-content :focus {
+    scroll-margin-top: 12rem;
+  }
+
   .m3-button {
     min-height: 2.75rem;
     min-width: 2.75rem;

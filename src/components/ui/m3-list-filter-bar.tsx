@@ -51,7 +51,7 @@ export default function M3ListFilterBar({
         className="m3-field min-h-11 min-w-0 basis-full px-3 py-2 text-base sm:min-h-10 sm:flex-1 sm:basis-48 sm:text-sm"
       />
       {filters}
-      <label className="flex min-w-0 flex-1 items-center gap-2 text-sm sm:flex-none">
+      <label className="flex min-w-0 flex-1 basis-48 items-center gap-2 text-sm sm:flex-none sm:basis-auto">
         <span className="text-[var(--muted)]">Sort</span>
         <M3Select
           aria-label={sortAriaLabel}

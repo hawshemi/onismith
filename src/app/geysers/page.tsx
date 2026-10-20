@@ -61,7 +61,7 @@ const GeyserCard = memo(function GeyserCard({
           <label className="mt-3 flex flex-col gap-2">
             <span className="m3-label">Geyser type</span>
             <M3Select
-              aria-label={`Type for geyser #${geyser.id}`}
+              aria-label={`Geyser type for #${geyser.id}`}
               value={geyser.geyserType}
               onChange={(event) => onTypeChange(geyser.id, event.target.value)}
               className="px-3 py-2.5 text-sm"
