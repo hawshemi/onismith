@@ -15,6 +15,7 @@ import { FaFileArrowUp } from "react-icons/fa6";
 import M3Select from "@/components/ui/m3-select";
 import M3ToggleField from "@/components/ui/m3-toggle-field";
 import M3TonalButton from "@/components/ui/m3-tonal-button";
+import M3HollowButton from "@/components/ui/m3-hollow-button";
 import { NumberField } from "@/components/ui/numeric-fields";
 import { useSyncOnChange } from "@/lib/use-sync-on-change";
 import { getDlcDisplayName } from "@/lib/oni/dlc";
@@ -29,8 +30,7 @@ import {
 } from "@/lib/oni/save-selectors";
 
 const SAVE_PATHS = {
-  windows:
-    "C:\\Users\\<Your Username>\\Documents\\Klei\\OxygenNotIncluded\\save_files\\",
+  windows: "%USERPROFILE%\\Documents\\Klei\\OxygenNotIncluded\\save_files\\",
   mac: "~/Library/Application Support/unity.Klei.Oxygen Not Included/save_files/",
   linux: "~/.config/unity3d/Klei/Oxygen Not Included/save_files/",
 };
@@ -99,7 +99,10 @@ function makeOverviewSummary(session: OverviewSession) {
     activeMods,
     mixingSettings,
     fog,
-    lastWrittenBytes: formatBytes(session.lastWrittenBytes),
+    lastWrittenBytes:
+      session.lastWrittenBytes === null
+        ? null
+        : formatBytes(session.lastWrittenBytes),
   };
 }
 
@@ -127,12 +130,29 @@ function StatTile({ label, value, mono }: StatTileProps) {
 
 type ColonyNameFieldProps = {
   value: string;
+  originalValue?: string;
   onCommit: (name: string) => void;
 };
 
+function ChangeMark({ original }: { original: string | number }) {
+  return (
+    <span className="inline-flex items-center" title={`Was ${original}`}>
+      <span
+        aria-hidden="true"
+        className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]"
+      />
+      <span className="sr-only">Changed. Was {original}.</span>
+    </span>
+  );
+}
+
 // Commit on blur/Enter (like NumberField) instead of per keystroke: each commit
 // rebuilds the saveGame and re-derives the cards. Empty names are rejected.
-function ColonyNameField({ value, onCommit }: ColonyNameFieldProps) {
+function ColonyNameField({
+  value,
+  originalValue,
+  onCommit,
+}: ColonyNameFieldProps) {
   const [draft, setDraft] = useState(value);
   const [error, setError] = useState("");
 
@@ -157,7 +177,12 @@ function ColonyNameField({ value, onCommit }: ColonyNameFieldProps) {
 
   return (
     <label className="block">
-      <span className="m3-label">Colony name</span>
+      <span className="m3-label inline-flex items-center gap-1.5">
+        Colony name
+        {originalValue !== undefined && value !== originalValue ? (
+          <ChangeMark original={originalValue} />
+        ) : null}
+      </span>
       <input
         type="text"
         value={draft}
@@ -195,6 +220,7 @@ function NoSaveState({
   onChooseSave: () => void;
   isBusy: boolean;
 }) {
+  const [copyStatus, setCopyStatus] = useState("Copy path");
   const platform = useSyncExternalStore(
     () => () => {},
     () =>
@@ -223,16 +249,14 @@ function NoSaveState({
                 Oxygen Not Included save editor
               </h1>
               <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-                Open an ONI .sav file in your browser to edit Duplicants, colony
-                settings, creatures, geysers, and worlds.
+                Edit your colony in your browser.
               </p>
             </div>
           </div>
           <div className="mt-5 flex flex-col items-start gap-3 rounded-lg border border-dashed border-[var(--outline-strong)] bg-[var(--surface-container-low)] p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm font-medium">Start with a save file</p>
-              <p className="mt-1 text-xs text-[var(--muted)]">
-                Choose a <code>.sav</code> file or drop one here.
+              <p className="text-sm font-medium">
+                Drop a <code>.sav</code> file here.
               </p>
             </div>
             <M3TonalButton
@@ -244,8 +268,7 @@ function NoSaveState({
             </M3TonalButton>
           </div>
           <p className="mt-3 text-xs text-[var(--muted)]">
-            Your save is processed locally in your browser. Nothing is uploaded.
-            Keep a backup, then save your changes or download a copy.
+            Processed locally. Nothing is uploaded. Keep a backup.
           </p>
         </div>
         <details className="border-t border-[var(--outline-faint)] px-5 py-3 sm:px-6">
@@ -253,14 +276,45 @@ function NoSaveState({
             Where is my save?
           </summary>
           <div className="mt-3 space-y-3 pb-2">
-            {locations.map((location) => (
-              <div key={location.id}>
-                <p className="text-xs font-medium">{location.label}</p>
-                <code className="mt-1 block break-all text-xs leading-relaxed text-[var(--muted)]">
-                  {location.path}
-                </code>
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-medium">{locations[0].label}</p>
+                <M3HollowButton
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(locations[0].path);
+                      setCopyStatus("Copied");
+                    } catch {
+                      setCopyStatus("Copy manually");
+                    }
+                  }}
+                  className="px-2 py-1 text-xs"
+                >
+                  {copyStatus}
+                </M3HollowButton>
+                <span role="status" className="sr-only">
+                  {copyStatus === "Copy path" ? "" : copyStatus}
+                </span>
               </div>
-            ))}
+              <code className="mt-1 block break-all text-xs leading-relaxed text-[var(--muted)]">
+                {locations[0].path}
+              </code>
+            </div>
+            <details>
+              <summary className="cursor-pointer py-1 text-xs font-medium">
+                Other platforms
+              </summary>
+              <div className="mt-2 space-y-3">
+                {locations.slice(1).map((location) => (
+                  <div key={location.id}>
+                    <p className="text-xs font-medium">{location.label}</p>
+                    <code className="mt-1 block break-all text-xs leading-relaxed text-[var(--muted)]">
+                      {location.path}
+                    </code>
+                  </div>
+                ))}
+              </div>
+            </details>
           </div>
         </details>
       </div>
@@ -272,6 +326,7 @@ type OverviewSummary = ReturnType<typeof makeOverviewSummary>;
 
 type ReadyStateProps = {
   summary: OverviewSummary;
+  savedSaveGame: SaveSessionValue["savedSaveGame"];
   difficultyOptions: Record<string, string[]>;
   difficulty: Record<string, string>;
   difficultyOrder?: string[];
@@ -282,6 +337,7 @@ type ReadyStateProps = {
 
 function ReadyState({
   summary,
+  savedSaveGame,
   difficultyOptions,
   difficulty,
   difficultyOrder,
@@ -289,6 +345,11 @@ function ReadyState({
   onUpdateColonyName,
   onUpdateCycleCount,
 }: ReadyStateProps) {
+  const savedGameInfo = savedSaveGame?.header?.gameInfo;
+  const savedDifficulty = useMemo(
+    () => selectDifficultySettings(savedSaveGame).selectedValues,
+    [savedSaveGame],
+  );
   const settingOrder =
     Array.isArray(difficultyOrder) && difficultyOrder.length > 0
       ? difficultyOrder
@@ -298,12 +359,42 @@ function ReadyState({
     options.length === 2 &&
     options.includes("Enabled") &&
     options.includes("Disabled");
-  const valueSettings = settingOrder.filter(
-    (name) => !isToggleOptions(difficultyOptions[name] ?? []),
+  const groups = [
+    {
+      label: "Duplicants",
+      settings: [
+        "ImmuneSystem",
+        "CalorieBurn",
+        "Morale",
+        "Stress",
+        "StressBreaks",
+        "BionicWattage",
+      ],
+    },
+    {
+      label: "Environment",
+      settings: [
+        "Durability",
+        "MeteorShowers",
+        "Radiation",
+        "DemoliorDifficulty",
+      ],
+    },
+    {
+      label: "Colony",
+      settings: [
+        "CarePackages",
+        "SandboxMode",
+        "FastWorkersMode",
+        "Teleporters",
+      ],
+    },
+  ];
+  const otherSettings = settingOrder.filter(
+    (name) => !groups.some((group) => group.settings.includes(name)),
   );
-  const toggleSettings = settingOrder.filter((name) =>
-    isToggleOptions(difficultyOptions[name] ?? []),
-  );
+  if (otherSettings.length > 0)
+    groups.push({ label: "Other", settings: otherSettings });
 
   return (
     <div className="space-y-4">
@@ -311,11 +402,18 @@ function ReadyState({
         <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <ColonyNameField
             value={summary.colonyName}
+            originalValue={savedGameInfo?.baseName}
             onCommit={onUpdateColonyName}
           />
           <div className="grid grid-cols-2 gap-4">
             <label className="block">
-              <span className="m3-label">Cycle</span>
+              <span className="m3-label inline-flex items-center gap-1.5">
+                Cycle
+                {savedGameInfo?.numberOfCycles !== undefined &&
+                summary.cyclesValue !== savedGameInfo.numberOfCycles ? (
+                  <ChangeMark original={savedGameInfo.numberOfCycles} />
+                ) : null}
+              </span>
               <NumberField
                 value={summary.cyclesValue}
                 min={0}
@@ -338,70 +436,97 @@ function ReadyState({
       <section className="m3-card p-4">
         <h2 className="text-base font-semibold">Game settings</h2>
         <p className="mt-1 text-xs text-[var(--muted)]">
-          Edits stay in this session until you save or download a copy.
+          Save or download to keep your edits.
         </p>
-        <div className="mt-4 grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {valueSettings.map((settingName) => {
-            const options = difficultyOptions[settingName] || [];
-            const selected = difficulty[settingName] ?? options[0] ?? "";
-            const label = getDifficultySettingLabel(settingName);
-            return (
-              <label
-                key={settingName}
-                className="flex min-w-0 flex-col gap-1.5 text-sm"
-              >
-                <span id={`difficulty-${settingName}`} className="m3-label">
-                  {label}
-                </span>
-                {options.length > 0 ? (
-                  <M3Select
-                    aria-labelledby={`difficulty-${settingName}`}
-                    value={selected}
-                    onChange={(event) =>
-                      onUpdateDifficulty(settingName, event.target.value)
-                    }
-                    className="px-3 py-2 text-sm"
-                  >
-                    {options.map((value) => (
-                      <option key={value} value={value}>
-                        {getDifficultyValueLabel(settingName, value)}
-                      </option>
-                    ))}
-                  </M3Select>
-                ) : (
-                  <input
-                    type="text"
-                    value={selected}
-                    onChange={(event) =>
-                      onUpdateDifficulty(settingName, event.target.value)
-                    }
-                    className="m3-field px-3 py-2 text-sm"
-                  />
-                )}
-              </label>
-            );
-          })}
-        </div>
-        {toggleSettings.length > 0 ? (
-          <div className="mt-4 grid gap-3 border-t border-[var(--outline-faint)] pt-4 sm:grid-cols-2 xl:grid-cols-4">
-            {toggleSettings.map((settingName) => (
-              <M3ToggleField
-                key={settingName}
-                label={getDifficultySettingLabel(settingName)}
-                checked={
-                  (difficulty[settingName] ??
-                    difficultyOptions[settingName][0]) === "Enabled"
-                }
-                onChange={(event) =>
-                  onUpdateDifficulty(
-                    settingName,
-                    event.target.checked ? "Enabled" : "Disabled",
-                  )
-                }
-              />
-            ))}
-          </div>
-        ) : null}
+        {groups.map((group) => {
+          const settings = settingOrder.filter((name) =>
+            group.settings.includes(name),
+          );
+          if (settings.length === 0) return null;
+          return (
+            <fieldset
+              key={group.label}
+              className="mt-4 border-t border-[var(--outline-faint)] pt-3"
+            >
+              <legend className="pr-3 text-sm font-medium">
+                {group.label}
+              </legend>
+              <div className="grid items-end gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {settings.map((settingName) => {
+                  const options = difficultyOptions[settingName] || [];
+                  const selected = difficulty[settingName] ?? options[0] ?? "";
+                  const label = (
+                    <span className="inline-flex items-center gap-1.5">
+                      {getDifficultySettingLabel(settingName)}
+                      {savedDifficulty[settingName] !== undefined &&
+                      selected !== savedDifficulty[settingName] ? (
+                        <ChangeMark
+                          original={getDifficultyValueLabel(
+                            settingName,
+                            savedDifficulty[settingName],
+                          )}
+                        />
+                      ) : null}
+                    </span>
+                  );
+                  if (isToggleOptions(options)) {
+                    return (
+                      <M3ToggleField
+                        key={settingName}
+                        label={label}
+                        checked={selected === "Enabled"}
+                        onChange={(event) =>
+                          onUpdateDifficulty(
+                            settingName,
+                            event.target.checked ? "Enabled" : "Disabled",
+                          )
+                        }
+                      />
+                    );
+                  }
+                  return (
+                    <label
+                      key={settingName}
+                      className="flex min-w-0 flex-col gap-1.5 text-sm"
+                    >
+                      <span
+                        id={`difficulty-${settingName}`}
+                        className="m3-label"
+                      >
+                        {label}
+                      </span>
+                      {options.length > 0 ? (
+                        <M3Select
+                          aria-labelledby={`difficulty-${settingName}`}
+                          value={selected}
+                          onChange={(event) =>
+                            onUpdateDifficulty(settingName, event.target.value)
+                          }
+                          className="px-3 py-2 text-sm"
+                        >
+                          {options.map((value) => (
+                            <option key={value} value={value}>
+                              {getDifficultyValueLabel(settingName, value)}
+                            </option>
+                          ))}
+                        </M3Select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={selected}
+                          onChange={(event) =>
+                            onUpdateDifficulty(settingName, event.target.value)
+                          }
+                          className="m3-field px-3 py-2 text-sm"
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
+          );
+        })}
       </section>
       <details className="m3-card p-4">
         <summary className="cursor-pointer text-base font-semibold">
@@ -409,7 +534,12 @@ function ReadyState({
         </summary>
         <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatTile label="File" value={summary.fileName} mono />
-          <StatTile label="Last saved size" value={summary.lastWrittenBytes} />
+          {summary.lastWrittenBytes !== null ? (
+            <StatTile
+              label="Last saved size"
+              value={summary.lastWrittenBytes}
+            />
+          ) : null}
           <StatTile label="Autosave" value={summary.autoSave ? "Yes" : "No"} />
           <StatTile
             label="Developer tools used"
@@ -420,7 +550,7 @@ function ReadyState({
           <section className="min-w-0" aria-labelledby="overview-dlc">
             <div className="flex items-center justify-between gap-3">
               <h2 id="overview-dlc" className="text-sm font-semibold">
-                Downloadable content
+                DLCs
               </h2>
               <span className="m3-tag shrink-0">
                 {summary.dlcs.length} active
@@ -440,12 +570,6 @@ function ReadyState({
                     >
                       {dlc.name}
                     </p>
-                    <code
-                      className="mt-0.5 block truncate text-xs text-[var(--muted)]"
-                      title={dlc.id}
-                    >
-                      {dlc.id}
-                    </code>
                   </div>
                 ))
               )}
@@ -475,12 +599,6 @@ function ReadyState({
                     >
                       {mod.title}
                     </p>
-                    <code
-                      className="mt-0.5 block truncate text-xs text-[var(--muted)]"
-                      title={mod.id}
-                    >
-                      {mod.id}
-                    </code>
                   </div>
                 ))
               )}
@@ -488,103 +606,132 @@ function ReadyState({
           </section>
         </div>
 
-        <section
-          className="mt-4 border-t border-[var(--outline-faint)] pt-4"
-          aria-labelledby="overview-fog"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <h2 id="overview-fog" className="text-sm font-semibold">
-              Fog and streamed grids
-            </h2>
-            <span className="m3-tag shrink-0">Read-only</span>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <div>
-              <p className="m3-label">World grid</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums">
-                {summary.fog.width} × {summary.fog.height}
-              </p>
-            </div>
-            <div>
-              <p className="m3-label">Streamed data</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums">
-                {formatBytes(summary.fog.totalBytes)}
-              </p>
-            </div>
-            <div className="col-span-2 sm:col-span-1">
-              <p className="m3-label">Stored visible entries</p>
-              <p className="mt-1 text-sm font-semibold tabular-nums">
-                {summary.fog.visibleEntryCount === null
-                  ? "Not recorded"
-                  : summary.fog.visibleEntryCount.toLocaleString()}
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
-            This is the non-zero entry count from ONI&apos;s opaque visibility
-            stream, not a map-reveal percentage. Editing fog safely also
-            requires synchronized grid, simulation, and object state.
-          </p>
-          {summary.fog.streams.length > 0 ? (
-            <details className="mt-3">
-              <summary className="cursor-pointer text-xs font-medium">
-                Stream details ({summary.fog.streams.length})
-              </summary>
-              <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-                {summary.fog.streams.map((stream) => (
-                  <div
-                    key={stream.name}
-                    className="flex min-w-0 items-center justify-between gap-3 border-b border-[var(--outline-faint)] py-2 text-xs"
+        <details className="mt-4 border-t border-[var(--outline-faint)] pt-4">
+          <summary className="cursor-pointer text-sm font-medium">
+            Technical details
+          </summary>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {summary.dlcs.length > 0 ? (
+              <section>
+                <h3 className="m3-label">DLC IDs</h3>
+                {summary.dlcs.map((dlc) => (
+                  <code
+                    key={dlc.id}
+                    title={dlc.name}
+                    className="mt-1 block break-all text-xs text-[var(--muted)]"
                   >
-                    <code className="truncate" title={stream.name}>
-                      {stream.name}
-                    </code>
-                    <span className="shrink-0 tabular-nums opacity-70">
-                      {formatBytes(stream.bytes)}
-                    </span>
+                    {dlc.id}
+                  </code>
+                ))}
+              </section>
+            ) : null}
+            {summary.activeMods.length > 0 ? (
+              <section>
+                <h3 className="m3-label">Mod IDs</h3>
+                {summary.activeMods.map((mod) => (
+                  <code
+                    key={mod.id}
+                    title={mod.title}
+                    className="mt-1 block break-all text-xs text-[var(--muted)]"
+                  >
+                    {mod.id}
+                  </code>
+                ))}
+              </section>
+            ) : null}
+          </div>
+          <section className="mt-4" aria-labelledby="overview-fog">
+            <div className="flex items-center justify-between gap-3">
+              <h2 id="overview-fog" className="text-sm font-semibold">
+                Fog and streamed grids
+              </h2>
+              <span className="m3-tag shrink-0">Read-only</span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div>
+                <p className="m3-label">World grid</p>
+                <p className="mt-1 text-sm font-semibold tabular-nums">
+                  {summary.fog.width} × {summary.fog.height}
+                </p>
+              </div>
+              <div>
+                <p className="m3-label">Streamed data</p>
+                <p className="mt-1 text-sm font-semibold tabular-nums">
+                  {formatBytes(summary.fog.totalBytes)}
+                </p>
+              </div>
+              <div className="col-span-2 sm:col-span-1">
+                <p className="m3-label">Stored visible entries</p>
+                <p className="mt-1 text-sm font-semibold tabular-nums">
+                  {summary.fog.visibleEntryCount === null
+                    ? "Not recorded"
+                    : summary.fog.visibleEntryCount.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
+              Visible entries are not a map-reveal percentage.
+            </p>
+            {summary.fog.streams.length > 0 ? (
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs font-medium">
+                  Stream details ({summary.fog.streams.length})
+                </summary>
+                <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                  {summary.fog.streams.map((stream) => (
+                    <div
+                      key={stream.name}
+                      className="flex min-w-0 items-center justify-between gap-3 border-b border-[var(--outline-faint)] py-2 text-xs"
+                    >
+                      <code className="truncate" title={stream.name}>
+                        {stream.name}
+                      </code>
+                      <span className="shrink-0 tabular-nums opacity-70">
+                        {formatBytes(stream.bytes)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
+          </section>
+
+          {summary.mixingSettings.length > 0 ? (
+            <details className="mt-4 border-t border-[var(--outline-faint)] pt-4">
+              <summary className="cursor-pointer text-sm font-semibold">
+                DLC mixing ({summary.mixingSettings.length})
+              </summary>
+              <p className="mt-2 text-xs text-[var(--muted)]">
+                Read-only. Set during world generation.
+              </p>
+              <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+                {summary.mixingSettings.map((setting) => (
+                  <div
+                    key={setting.id}
+                    className="flex min-w-0 items-center justify-between gap-3 border-b border-[var(--outline-faint)] py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm" title={setting.label}>
+                        {setting.label}
+                      </p>
+                      <code
+                        className="block truncate text-xs text-[var(--muted)]"
+                        title={setting.id}
+                      >
+                        {setting.id}
+                      </code>
+                    </div>
+                    <span className="m3-tag shrink-0">{setting.value}</span>
                   </div>
                 ))}
               </div>
             </details>
           ) : null}
-        </section>
 
-        {summary.mixingSettings.length > 0 ? (
-          <details className="mt-4 border-t border-[var(--outline-faint)] pt-4">
-            <summary className="cursor-pointer text-sm font-semibold">
-              Saved DLC mixing choices ({summary.mixingSettings.length})
-            </summary>
-            <p className="mt-2 text-xs text-[var(--muted)]">
-              Read-only world-generation settings. Changing them after the
-              worlds exist would not regenerate the cluster.
-            </p>
-            <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-              {summary.mixingSettings.map((setting) => (
-                <div
-                  key={setting.id}
-                  className="flex min-w-0 items-center justify-between gap-3 border-b border-[var(--outline-faint)] py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm" title={setting.label}>
-                      {setting.label}
-                    </p>
-                    <code
-                      className="block truncate text-xs text-[var(--muted)]"
-                      title={setting.id}
-                    >
-                      {setting.id}
-                    </code>
-                  </div>
-                  <span className="m3-tag shrink-0">{setting.value}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        ) : null}
-
-        <p className="mt-3 text-xs text-[var(--muted)]">
-          Parsed in {summary.parseTimeMs}
-        </p>
+          <p className="mt-3 text-xs text-[var(--muted)]">
+            Parsed in {summary.parseTimeMs}
+          </p>
+        </details>
       </details>
     </div>
   );
@@ -642,6 +789,7 @@ export default function OverviewPage() {
       {session.hasSave ? (
         <ReadyState
           summary={summary}
+          savedSaveGame={session.savedSaveGame}
           difficultyOptions={optionsBySetting}
           difficulty={selectedValues}
           difficultyOrder={settingOrder}
