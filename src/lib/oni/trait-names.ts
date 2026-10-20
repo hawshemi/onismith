@@ -33,7 +33,7 @@ export function normalizeTraitId(id: unknown): string {
 const traitMap = new Map<string, string>();
 const traitDescMap = new Map<string, string>();
 const traitStatusMap = new Map<string, string>();
-const traitIds = new Set<string>();
+const traitIds = new Map<string, string>();
 
 function registerTraits(
   list: RegisterableTrait[] | undefined,
@@ -56,7 +56,9 @@ function registerTraits(
     }
     const key = id.toUpperCase();
     traitMap.set(key, name);
-    traitIds.add(key);
+    if (!traitIds.has(key)) {
+      traitIds.set(key, id);
+    }
     if (desc) {
       traitDescMap.set(key, desc);
     }
@@ -181,7 +183,7 @@ export function getTraitCategory(id: string): TraitCategory {
 }
 
 export function getAllKnownTraits(): KnownTrait[] {
-  return [...traitIds]
+  return [...traitIds.values()]
     .map((id) => ({
       id,
       name: getTraitDisplayName(id),
@@ -189,4 +191,8 @@ export function getAllKnownTraits(): KnownTrait[] {
       category: getTraitCategory(id),
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getCanonicalTraitId(id: string): string {
+  return traitIds.get(normalizeTraitId(id)) ?? id;
 }

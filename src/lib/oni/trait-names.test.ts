@@ -3,18 +3,33 @@ import {
   OVERJOYED_TRAIT_IDS,
   STRESS_REACTION_TRAIT_IDS,
   getAllKnownTraits,
+  getCanonicalTraitId,
   getTraitCategory,
   isBionicIdentityTraitId,
   isBionicTraitId,
+  normalizeTraitId,
 } from "./trait-names";
 
 describe("trait classification", () => {
+  it("offers the exact game ids for traits and reactions", () => {
+    const ids = getAllKnownTraits().map((trait) => trait.id);
+
+    expect(ids).toContain("DeeperDiversLungs");
+    expect(ids).toContain("GrantSkill_Arting1");
+    expect(ids).toContain("PrefersColder");
+    expect(ids).toContain("BionicBug1");
+    expect(ids).toContain("RoboDancer");
+    expect(ids).toContain("StressShocker");
+    expect(ids).not.toContain("DEEPERDIVERSLUNGS");
+    expect(ids).not.toContain("PREFERSCOOLER");
+  });
+
   it("matches the standard duplicant trait registry", () => {
     const standardTraits = getAllKnownTraits().filter(
       (trait) =>
         !isBionicTraitId(trait.id) &&
-        !OVERJOYED_TRAIT_IDS.has(trait.id) &&
-        !STRESS_REACTION_TRAIT_IDS.has(trait.id),
+        !OVERJOYED_TRAIT_IDS.has(normalizeTraitId(trait.id)) &&
+        !STRESS_REACTION_TRAIT_IDS.has(normalizeTraitId(trait.id)),
     );
 
     expect(
@@ -33,7 +48,7 @@ describe("trait classification", () => {
       "CLAUSTROPHOBIC",
       "SENSITIVEFEET",
       "FASHIONABLE",
-      "PREFERSCOOLER",
+      "PREFERSCOLDER",
       "PREFERSWARMER",
       "SOLITARYSLEEPER",
       "CLIMACOPHOBIC",
@@ -54,5 +69,12 @@ describe("trait classification", () => {
     expect(isBionicIdentityTraitId("BIONICBUG1")).toBe(true);
     expect(OVERJOYED_TRAIT_IDS.has("DATARAINER")).toBe(true);
     expect(STRESS_REACTION_TRAIT_IDS.has("STRESSSHOCKER")).toBe(true);
+  });
+
+  it("resolves game ids without changing unknown mod ids", () => {
+    expect(getCanonicalTraitId("DEEPERDIVERSLUNGS")).toBe("DeeperDiversLungs");
+    expect(getCanonicalTraitId("ROBODANCER")).toBe("RoboDancer");
+    expect(getCanonicalTraitId("BIONICBUG1")).toBe("BionicBug1");
+    expect(getCanonicalTraitId("Mod_CustomTrait")).toBe("Mod_CustomTrait");
   });
 });

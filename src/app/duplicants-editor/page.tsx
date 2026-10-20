@@ -23,6 +23,7 @@ import { getSkillGroupDisplayName } from "@/lib/oni/minion-interests";
 import {
   OVERJOYED_TRAIT_IDS,
   STRESS_REACTION_TRAIT_IDS,
+  getCanonicalTraitId,
   getTraitCategory,
   getTraitDisplayName,
   isBionicStarterBoosterTraitId,
@@ -590,7 +591,7 @@ function DuplicantEditorPageContent() {
     const filteredTraits = currentTraits.filter(
       (current) => !reactionSet.has(normalizeTraitId(current)),
     );
-    const nextTraitIds = [...filteredTraits, normalizedSelected];
+    const nextTraitIds = [...filteredTraits, getCanonicalTraitId(traitId)];
     modifyBehavior(model.id, "Klei.AI.Traits", "templateData", {
       TraitIds: nextTraitIds,
     });
@@ -618,9 +619,11 @@ function DuplicantEditorPageContent() {
     const nextTraitIds = enabled
       ? [
           ...currentTraits,
-          ...traitIds.filter(
-            (traitId) => !currentTraitIds.has(normalizeTraitId(traitId)),
-          ),
+          ...traitIds
+            .filter(
+              (traitId) => !currentTraitIds.has(normalizeTraitId(traitId)),
+            )
+            .map(getCanonicalTraitId),
         ]
       : currentTraits.filter(
           (traitId) => !categoryTraitIds.has(normalizeTraitId(traitId)),

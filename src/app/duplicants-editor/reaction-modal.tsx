@@ -112,8 +112,8 @@ export default function ReactionModal({
         .filter((trait) => isBionicTraitId(trait.id) === isBionic)
         .filter(
           (trait) =>
-            !OVERJOYED_TRAIT_IDS.has(trait.id) &&
-            !STRESS_REACTION_TRAIT_IDS.has(trait.id),
+            !OVERJOYED_TRAIT_IDS.has(normalizeTraitId(trait.id)) &&
+            !STRESS_REACTION_TRAIT_IDS.has(normalizeTraitId(trait.id)),
         ),
     [isBionic],
   );
@@ -129,7 +129,9 @@ export default function ReactionModal({
           category.id,
           {
             traitIds,
-            ownedCount: traitIds.filter((id) => ownedTraitIds.has(id)).length,
+            ownedCount: traitIds.filter((id) =>
+              ownedTraitIds.has(normalizeTraitId(id)),
+            ).length,
           },
         ];
       }),
@@ -149,7 +151,7 @@ export default function ReactionModal({
       )
       .map((trait) => ({
         ...trait,
-        isOwned: ownedTraitIds.has(trait.id),
+        isOwned: ownedTraitIds.has(normalizeTraitId(trait.id)),
       }));
   }, [addTraitCategory, knownAddableTraits, traitQuery, traits]);
 

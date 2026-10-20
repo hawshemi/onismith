@@ -56,6 +56,44 @@ function colony(nextUniqueID: number | null = 2): SaveGame {
 }
 
 describe("duplicant action results", () => {
+  it.each(["Klei.AI.Traits", "MinionTraits"])(
+    "writes canonical trait ids through %s without changing unknown ids",
+    (name) => {
+      const original = colony();
+      original.gameObjects[0].gameObjects[0].behaviors.push({
+        name,
+        templateData: { TraitIds: ["Mod_CustomTrait"] },
+      });
+      const session = sessionActions(original);
+
+      session.addDuplicantTrait(1, "DEEPERDIVERSLUNGS");
+
+      const next = session.setSaveGame.mock.calls[0][0];
+      expect(
+        getBehavior(getGameObjectById(next, 1), name)?.templateData.TraitIds,
+      ).toEqual(["Mod_CustomTrait", "DeeperDiversLungs"]);
+      expect(
+        original.gameObjects[0].gameObjects[0].behaviors.at(-1)?.templateData
+          .TraitIds,
+      ).toEqual(["Mod_CustomTrait"]);
+    },
+  );
+
+  it("does not add a trait already present with different casing", () => {
+    const original = colony();
+    original.gameObjects[0].gameObjects[0].behaviors.push({
+      name: "Klei.AI.Traits",
+      templateData: { TraitIds: ["DeeperDiversLungs"] },
+    });
+    const session = sessionActions(original);
+
+    session.addDuplicantTrait(1, "DEEPERDIVERSLUNGS");
+
+    expect(session.setSaveGame).toHaveBeenCalledWith(original, {
+      isModified: false,
+    });
+  });
+
   it("imports only selected categories from a file", async () => {
     const session = sessionActions(colony());
     const file = new File(
